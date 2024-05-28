@@ -47,7 +47,8 @@ stages:
                 Write-Host "Source Branch Name $(Build.SourceBranchName)"
                 $branch = '$(Build.SourceBranch)'
                 $branchName = '$(Build.SourceBranchName)'
-                $shortVersion = "$(MajorVersion).$(MinorVersion).$(date:yyMM)"
+                $parts = $(Build.BuildNumber) -split '\.'
+                $shortVersion = ($parts[0..2] -join '.')
                 if ($branch.StartsWith("refs/tags/r")) {
                   $major = [int]$branchName.Split(".")[0].substring(1)
                   $minor = [int]$branchName.Split(".")[1]
