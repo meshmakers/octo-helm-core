@@ -17,7 +17,9 @@ variables:
     value: 0
   - name: MinorVersion
     value: 0
-
+  - name: ShortBuildNumber
+    value: "0.0.0"
+    
 stages:
   - stage: Build
     jobs:
@@ -45,7 +47,7 @@ stages:
                 Write-Host "Source Branch Name $(Build.SourceBranchName)"
                 $branch = '$(Build.SourceBranch)'
                 $branchName = '$(Build.SourceBranchName)'
-                $shortVersion = $(MajorVersion).$(MinorVersion).0
+                $shortVersion = "$(MajorVersion).$(MinorVersion).0"
                 if ($branch.StartsWith("refs/tags/r")) {
                   $major = [int]$branchName.Split(".")[0].substring(1)
                   $minor = [int]$branchName.Split(".")[1]
@@ -65,9 +67,9 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
-              chartVersion: $(MajorVersion)
+              chartVersion: $(ShortBuildNumber)
               destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber) --version $(MajorVersion)'
+              arguments: '--app-version $(Build.BuildNumber)'
           - task: PowerShell@2
             displayName: 'Create versioninfo file'
             inputs:
