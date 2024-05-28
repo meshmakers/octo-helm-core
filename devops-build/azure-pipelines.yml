@@ -59,6 +59,7 @@ stages:
                   Write-Host "Setting build number to $buildNumber"
                   Write-Host "##vso[build.updatebuildnumber]$buildNumber"
                 }
+                Write-Host "Setting short build number to $shortVersion"
                 Write-Host "##vso[task.setvariable variable=ShortBuildNumber]$shortVersion"
                 
             displayName: 'Set build number'
