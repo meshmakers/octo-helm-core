@@ -5,6 +5,9 @@
 # Override of common names
 nameOverride: ""
 
+# Override for tag version of images
+appVersion: ""
+
 imageDefaults:
   pullPolicy: IfNotPresent
   imagePullSecrets: []
