@@ -67,7 +67,7 @@ stages:
               chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
               chartVersion: $(ShortBuildNumber)
               destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'
+              arguments: '--app-version $(Build.BuildNumber) --version $(ShortBuildNumber)'
           - task: PowerShell@2
             displayName: 'Create versioninfo file'
             inputs:
