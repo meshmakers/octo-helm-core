@@ -59,7 +59,7 @@ stages:
                   Write-Host "Setting build number to $buildNumber"
                   Write-Host "##vso[build.updatebuildnumber]$buildNumber"
                 }
-                Write-Host "##vso[task.setvariable variable=ShortBuildNumber;]$shortVersion"
+                Write-Host "##vso[task.setvariable variable=ShortBuildNumber]$shortVersion"
                 
             displayName: 'Set build number'
           - task: HelmDeploy@0
@@ -67,7 +67,7 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
-              chartVersion: $(ShortBuildNumber)
+              chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: PowerShell@2
