@@ -1,0 +1,3 @@
+Thanks for installing OctoMesh!
+
+Goto {{.Values.services.identity.publicUri}} to create a user!

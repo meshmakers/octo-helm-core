@@ -1,0 +1,389 @@
+## Default values for octo-mesh.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+# Override of common names
+nameOverride: ""
+
+imageDefaults:
+  pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  
+secrets:
+  databaseUser: ""
+  databaseAdmin: ""
+  crate: ""
+  rabbitmq: ""
+  # content of the root ca certificate chain
+  rootCa: ""
+
+clusterDependencies:
+  mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
+  rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
+  rabbitMqUser: "octo-mq-user"
+
+externalUris:
+  # URI of CrateDB to be used by the services
+  crateDb: ""
+
+notifications:
+  smtp:
+    host: "smtp.office365.com"
+    port: 587
+    enableSsl: true
+    senderEmailAddress: ""
+    username: ""
+    password: ""
+  
+serviceDefaults:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    # set to allow uploads of big rt model files using import rt function
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    # set to prevent "upstream sent too big header while reading response header from upstream"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+  tls: false
+  tlsExtra: []
+#  tlsExtra:
+#    - hosts:
+#        - "*.example.com"
+#      secretName: example-com-certificate
+  
+services:
+  identity:
+    # Public URI of service
+    publicUri: ""
+    
+    signingKey:
+      # certificate with private and public key in pfx format, by command arg 
+      key: ""
+      # password of certificate
+      password: ""
+    
+    # set to false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "identity-services"
+    image:
+      repository: meshmakers/octo-mesh-identity-services
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+#      livenessProbe:
+#        httpGet:
+#          path: /
+#          port: http
+#      readinessProbe:
+#        httpGet:
+#          path: /
+#          port: http
+      resources: {}
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+        # requests:
+        #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+      
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }    
+    
+  assetRepository:
+    # Public URI of service
+    publicUri: ""
+    # set to false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "asset-rep-services"
+    image:
+      repository: meshmakers/octo-mesh-asset-rep-services
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      #      livenessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      #      readinessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      resources: {}
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+        # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+      
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+    
+  bot:
+    # Public URI of service
+    publicUri: ""
+    # set to false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "bot-services"
+    image:
+      repository: meshmakers/octo-mesh-bot-services
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      #      livenessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      #      readinessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      resources: {}
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+        #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+      
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+    
+  communication:
+    # Public URI of service
+    publicUri: ""
+    # set to false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "communication-controller-services"
+    image:
+      repository: meshmakers/octo-mesh-communication-controller-services
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      #      livenessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      #      readinessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      resources: {}
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+        #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+      
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+        
+  adminPanel:
+    # Public URI of service
+    publicUri: ""
+    # set to false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "adminpanel"
+    image:
+      repository: meshmakers/octo-mesh-adminpanel
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      #      livenessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      #      readinessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      resources: {}
+        # We usually recommend not to specify default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+      
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+        
+meshAdapter: []
+#    # when set, the service will be deployed with the given full name
+#  - fullnameOverride: ""
+#    # the service will be deployed with the given name and chart name
+#    nameOverride: ""
+#    # Tenant id the adapter is executing
+#    tenantId: meshTest
+#    # Runtime id of adapter in database
+#    adapterRtId: "66004fda527ac79a03ecedd7"
+#    image:
+#      repository: meshmakers/octo-mesh-adapter
+#      # Overrides the image tag whose default is the chart appVersion.
+#      tag: ""
+#    replicaCount: 1
+#    podAnnotations: {}
+#    podLabels: {}
+#    pod:
+#      port: 80
+#      #      livenessProbe:
+#      #        httpGet:
+#      #          path: /
+#      #          port: http
+#      #      readinessProbe:
+#      #        httpGet:
+#      #          path: /
+#      #          port: http
+#      resources: {}
+#        # We usually recommend not to specify default resources and to leave this as a conscious
+#        # choice for the user. This also increases chances charts run on environments with little
+#        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+#      # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+#      # limits:
+#      #   cpu: 100m
+#      #   memory: 128Mi
+#      # requests:
+#      #   cpu: 100m
+#      #   memory: 128Mi
+#      # Additional volumes on the output Deployment definition.
+#      
+#      volumes: [ ]
+#      # - name: foo
+#      #   secret:
+#      #     secretName: mysecret
+#      #     optional: false
+#      
+#      # Additional volumeMounts on the output Deployment definition.
+#      volumeMounts: [ ]
+#      # - name: foo
+#      #   mountPath: "/etc/foo"
+#      #   readOnly: true
+#      nodeSelector: { }
+#      tolerations: [ ]
+#      affinity: { }
+#
+#      

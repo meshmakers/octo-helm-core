@@ -1,0 +1,114 @@
+{{- include "checkMandatoryValue" (dict "name" "services.identity.publicUri" "value" .Values.services.identity.publicUri) }}
+{{- if .Values.services.assetRepository.deploy -}}  
+{{- include "checkMandatoryValue" (dict "name" "services.assetRepository.publicUri" "value" .Values.services.assetRepository.publicUri) }}
+{{- end }}
+{{- if .Values.services.bot.deploy -}}
+{{- include "checkMandatoryValue" (dict "name" "services.bot.publicUri" "value" .Values.services.bot.publicUri) }}
+{{- end }}
+{{- if .Values.services.communication.deploy -}}
+{{- include "checkMandatoryValue" (dict "name" "services.communication.publicUri" "value" .Values.services.communication.publicUri) }}
+{{- end }}
+{{- if .Values.services.adminPanel.deploy -}}
+{{- include "checkMandatoryValue" (dict "name" "services.adminPanel.publicUri" "value" .Values.services.adminPanel.publicUri) }}
+{{- end }}
+
+{{- $global := . -}}
+{{- range $key, $svc := .Values.services }}
+{{- if $svc.deploy -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc)  }}
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc)  | nindent 4 }}
+spec:
+  replicas: {{ $svc.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $svc.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "octo-mesh.service-labels" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
+        {{- with $svc.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $global.Values.imageDefaults.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ $key | lower }}  
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag | default $global.Chart.AppVersion }}"
+        imagePullPolicy: {{ $global.Values.imageDefaults.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ $svc.pod.port }}
+            protocol: TCP
+        env:
+          {{- include "octo-mesh.env" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
+        {{- with $svc.pod.livenessProbe}}            
+        livenessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with $svc.pod.readinessProbe}}
+        readinessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with $svc.pod.resources}}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if or $svc.signingKey $svc.pod.volumeMounts $global.Values.secrets.rootCa }}
+        volumeMounts:
+        {{- end }}
+        {{- with $svc.pod.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if $svc.signingKey }}
+        - name: signin-key-volume
+          mountPath: /etc/octo-identity
+        {{- end }}           
+        {{- if $global.Values.secrets.rootCa }}
+        - name: root-ca-volume
+          mountPath: /etc/ssl/certs/root-ca.pem
+          subPath: root-ca.pem
+          readOnly: false
+        {{- end }}
+      {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa }}
+      volumes:
+      {{- end }}        
+      {{- with $svc.pod.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $svc.signingKey }}
+      - name: signin-key-volume
+        secret:
+          secretName: {{ printf "%s-signing-key" (include "octo-mesh.fullname" $global) }}
+      {{- end }}
+      {{- if $global.Values.secrets.rootCa }}
+      - name: root-ca-volume
+        secret:
+          secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" $global) }}
+      {{- end }}
+      {{- with $svc.pod.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $svc.pod.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $svc.pod.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+
+{{- end }}
+{{- end }}

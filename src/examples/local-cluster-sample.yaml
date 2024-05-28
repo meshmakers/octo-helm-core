@@ -1,0 +1,42 @@
+
+secrets:
+  databaseUser: "<mongodb user password>"
+  databaseAdmin: "<mongodb admin password>"
+  crate:  "<crate db password>"
+  rabbitmq: "<rabbitmq password>"
+  rootCa: "" # set via command param
+
+externalUris:
+  crateDb: https://<URI CRATE DB ADMIN>
+  
+notifications:
+  smtp:
+    host: "smtp.domain.local"
+    port: 587
+    enableSsl: true
+    senderEmailAddress: "notifications@domain.local"
+    username: "notifications@domain.local"
+    password: "<smtp password>"  
+  
+ingress: 
+  annotations:
+    cert-manager.io/cluster-issuer: "<cluster-issuer-name>"
+  tls: true
+
+services:
+  identity: 
+    publicUri: https://connect.domain.local
+    signingKey:
+      # certificate with private and public key in pfx format, by command arg 
+      key: ""
+      # password of certificate
+      password: "<signing key certificate password>"    
+  assetRepository: 
+    publicUri: https://assets.domain.local
+  bot:
+    publicUri: https://bots.domain.local
+  communication:
+    publicUri: https://communication.domain.local
+  adminPanel: 
+    publicUri: https://adminpanel.domain.local
+  

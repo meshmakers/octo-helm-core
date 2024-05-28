@@ -1,0 +1,60 @@
+{{- $global := . -}}
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "octo-mesh.fullname" . -}}
+{{- $svcPort := .Values.serviceDefaults.port -}}
+{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "octo-mesh.labels" .  | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tlsExtra }}
+  tls:
+    {{- with .Values.ingress.tlsExtra }}
+    {{- toYaml . | nindent 2 }}
+    {{- end }}
+  {{- else }}
+  tls:
+  - hosts:
+      {{- range .Values.services  }}
+      {{- if .deploy }}
+      - {{ .publicUri | replace "https://" "" | trimSuffix "/" | quote }}
+      {{- end }}
+      {{- end }}
+    secretName: {{ $fullName }}
+  {{- end }}
+  rules:
+  {{- range $key, $svc := .Values.services }}
+  {{- if .deploy }}
+  - host: {{ .publicUri | replace "https://" "" | trimSuffix "/" | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc)  }}
+            port:
+              number: {{ $svcPort }}
+  {{- end }}
+  {{- end }}
+{{- end }}

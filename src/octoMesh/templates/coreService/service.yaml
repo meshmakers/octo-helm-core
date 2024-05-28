@@ -1,0 +1,18 @@
+{{- $global := . -}}
+{{- range $key, $svc := .Values.services }}
+{{- if $svc.deploy -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc)  }}
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc)  | nindent 4 }}
+spec:
+  type: {{ $.Values.serviceDefaults.type }}
+  ports:
+    - port: {{ $.Values.serviceDefaults.port }}
+  selector:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 6 }}
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,43 @@
+
+secrets:
+  databaseUser: "<mongodb user password>"
+  databaseAdmin: "<mongodb admin password>"
+  crate:  "<crate db password>"
+  rabbitmq: "<rabbitmq password>"
+  rootCa: "" # set via command param
+
+externalUris:
+  crateDb: https://<URI CRATE DB ADMIN>
+  
+notifications:
+  smtp:
+    host: "smtp.office365.com"
+    port: 587
+    enableSsl: true
+    senderEmailAddress: "notifications@example.com"
+    username: "notifications@example.com"
+    password: "<smtp password>"
+  
+ingress: 
+  annotations:
+    cert-manager.io/cluster-issuer: "<cluster-issuer-name>"
+  tls: true # set to true if you want to use tls
+
+services:
+  identity: 
+    publicUri: https://connect.example.com
+    signingKey:
+      # certificate with private and public key in pfx format, by command arg 
+      key: ""
+      # password of certificate
+      password: "<signing key certificate password>"
+      
+  assetRepository: 
+    publicUri: https://assets.example.com
+  bot:
+    publicUri: https://bots.example.com
+  communication:
+    publicUri: https://communication.example.com
+  adminPanel: 
+    publicUri: https://adminpanel.example.com
+  
