@@ -14,7 +14,7 @@
 
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
-{{- if $svc.deploy -}}
+{{ if $svc.deploy -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
