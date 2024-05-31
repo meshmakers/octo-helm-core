@@ -26,8 +26,19 @@ See the [values.yaml](src/octoMesh/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
 ## Install Octo Mesh
+
+Register meshmaker's helm repository 
 ```bash
-helm install octo-mesh src/octoMesh
-helm install --namespace octo --create-namespace --values ./src/examples/aks-cert-manager-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.crt <releaseName> ../../octoMesh/ 
+helm repo add meshmakers https://meshmakers.github.io/charts
+helm repo update
 ```
 
+Execute the following command to install Octo Mesh
+```bash
+helm upgrade --install --namespace octo --create-namespace --values ./src/examples/aks-cert-manager-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx <releaseName> meshmakers/octo-mesh
+```
+
+Custom root certicates can be added to the secrets using the `--set-file secrets.rootCa=<rootCa.crt>` flag.
+```bash
+helm upgrade --install --namespace octo --create-namespace --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh meshmakers/octo-mesh 
+```
