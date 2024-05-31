@@ -42,3 +42,9 @@ Custom root certicates can be added to the secrets using the `--set-file secrets
 ```bash
 helm upgrade --install --namespace octo --create-namespace --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh meshmakers/octo-mesh 
 ```
+
+## Render chart template locally and display the output
+
+```bash
+helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octoMesh
+```

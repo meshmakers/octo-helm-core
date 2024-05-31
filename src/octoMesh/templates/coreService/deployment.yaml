@@ -44,7 +44,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ $key | lower }}  
-        image: "{{ $svc.image.repository }}:{{ default $svc.image.tag $global.Values.appVersion $global.Chart.AppVersion }}"
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag | default $global.Values.appVersion | default $global.Chart.AppVersion }}"
         imagePullPolicy: {{ $global.Values.imageDefaults.pullPolicy }}
         ports:
           - name: http
