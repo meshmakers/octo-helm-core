@@ -25,13 +25,14 @@ Octo Mesh needs a running MongoDB and RabbitMQ instance, for stream data CrateDB
 See the [values.yaml](src/octoMesh/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
-## Install Octo Mesh core services
+## Add the Octo Mesh helm repository
 
-Register meshmaker's helm repository 
 ```bash
 helm repo add meshmakers https://meshmakers.github.io/charts
 helm repo update
 ```
+
+## Install Octo Mesh core services
 
 Execute the following command to install Octo Mesh
 ```bash
@@ -40,9 +41,12 @@ helm upgrade --install --namespace octo --create-namespace --values ./src/exampl
 
 Custom root certicates can be added to the secrets using the `--set-file secrets.rootCa=<rootCa.crt>` flag.
 ```bash
-helm upgrade --install --namespace octo --create-namespace --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh meshmakers/octo-mesh 
+helm upgrade --install --namespace octo --create-namespace --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh meshmakers/octo-mesh
+```
+
+It is also possible to set the image tag for the services using the `--set services.<service>.image.tag=<tag>` flag.
+```bash
 helm upgrade --install --namespace octo --create-namespace --values rke2-local-values.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=root-ca-collection.crt --set services.identity.image.tag="0.0.2406.3001" octo-mesh meshmakers/octo-mesh
-helm upgrade --install --namespace octo --create-namespace --values rke2-local-values.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=root-ca-collection.crt --set services.identity.image.tag="0.0.2406.3001" --set services.assetRepository.image.tag="0.0.2406.3001" --set services.bot.image.tag="0.0.2406.3001" --set services.communication.image.tag="0.0.2406.3001" --set services.adminPanel.image.tag="0.0.2406.3001" octo-mesh ..\..\..\..\octo-helm\src\octoMesh\ 
 ```
 
 ## Render chart template locally and display the output
@@ -51,8 +55,8 @@ helm upgrade --install --namespace octo --create-namespace --values rke2-local-v
 helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octoMesh
 ```
 
-## Install Octo Mesh mesh adapter
+## Install Octo Mesh Adapter
 
 ```bash
-helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter ..\..\..\..\octo-helm\src\octoMeshAdapter\ 
+helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
 ```
