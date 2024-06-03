@@ -1,3 +1,18 @@
+
+{{/*
+Create a default fully qualified app name for adapters
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "octo-mesh.adapterFullname" -}}
+    {{- if .Values.fullnameOverride }}
+        {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+    {{- else }}
+        {{- $name := default "mesh-adapter" .Values.nameOverride  }}
+        {{- printf "%s-%s-%s-%s" .Release.Name $name .Values.tenantId .Values.adapterRtId | lower | trunc 63 | trimSuffix "-" | lower }}
+    {{- end }}
+{{- end }}
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -25,12 +40,20 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "octo-mesh.service-fullname" -}}
-    {{- if .svc.fullnameOverride }}
-        {{- .svc.fullnameOverride | trunc 63 | trimSuffix "-" }}
+    {{- if .Values.fullnameOverride }}
+        {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
     {{- else }}
-        {{- $name := default .name .svc.nameOverride  }}
-        {{- printf "%s-%s" .global.Release.Name $name | trunc 63 | trimSuffix "-" | lower }}
+        {{- $name := default "meshAdapter" .Values.nameOverride  }}
+        {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" | lower }}
     {{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "octo-mesh.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "octo-mesh.name" . }}
+app.kubernetes.io/instance: {{ include "octo-mesh.fullname" . }}
 {{- end }}
 
 {{/*
@@ -53,37 +76,19 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-Selector labels
+Selector labels service related
 */}}
-{{- define "octo-mesh.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "octo-mesh.name" . }}
-app.kubernetes.io/instance: {{ include "octo-mesh.fullname" . }}
+{{- define "octo-mesh.service-selectorLabels" -}}
+{{ include "octo-mesh.selectorLabels" . }}
+app.kubernetes.io/service: {{ include "octo-mesh.service-fullname" . }}
 {{- end }}
-
 
 {{/*
 Common labels service related
 */}}
 {{- define "octo-mesh.service-labels" -}}
-{{ include "octo-mesh.service-selectorLabels" (dict "global" .global "name" .name "svc" .svc)  }}
+{{ include "octo-mesh.service-selectorLabels" . }}
 {{- end }}
-
-{{/*
-Selector labels service related
-*/}}
-{{- define "octo-mesh.service-selectorLabels" -}}
-{{ include "octo-mesh.selectorLabels" .global }}
-app.kubernetes.io/service: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc)  }}
-{{- end }}
-
-{{/*
-Check if a file exists in the `files` directory. If not, return an error.
-*/}}
-{{- define "checkFileExists" -}}
-{{- if not (index .global.Files .file) -}}
-{{- fail (printf "File %s does not exist. Please add the file to the correspondings directory." .file) -}}
-{{- end -}}
-{{- end -}}
 
 {{/*
 Check if a mandadory value exists

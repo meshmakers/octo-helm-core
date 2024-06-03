@@ -43,8 +43,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: {{ $key | lower }}  
+      - name: {{ $key | lower }}
+        {{- if $global.Values.imageDefaults.privateRegistry }}
+        image: "{{ $global.Values.imageDefaults.privateRegistry }}/{{ $svc.image.repository }}:{{ $svc.image.tag | default $global.Values.appVersion | default $global.Chart.AppVersion }}"
+        {{- else }}
         image: "{{ $svc.image.repository }}:{{ $svc.image.tag | default $global.Values.appVersion | default $global.Chart.AppVersion }}"
+        {{- end }}
         imagePullPolicy: {{ $global.Values.imageDefaults.pullPolicy }}
         ports:
           - name: http

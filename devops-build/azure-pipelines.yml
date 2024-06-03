@@ -66,13 +66,21 @@ stages:
                 
             displayName: 'Set build number'
           - task: HelmDeploy@0
-            displayName: 'helm package'
+            displayName: 'helm package octo-mesh'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-adapter'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshAdapter'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'              
           - task: PowerShell@2
             displayName: 'Create versioninfo file'
             inputs:
