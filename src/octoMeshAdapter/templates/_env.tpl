@@ -44,7 +44,7 @@
 {{- $name := "OCTO_ADAPTER" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" . "name" $name) }} 
-{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.streamdata-env" (dict "global" . "name" $name) }}
 - name: OCTO_ADAPTER__TENANTID
   value: {{ .Values.tenantId }}
 - name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI

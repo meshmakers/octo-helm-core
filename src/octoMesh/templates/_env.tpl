@@ -112,22 +112,6 @@
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
 
-{{- else if eq .name "meshAdapter" -}}
-{{- $name := "OCTO_ADAPTER" }}
-{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
-- name: OCTO_ADAPTER__TENANTID
-  value: {{ .svc.tenantId }}
-- name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI
-  value: {{ .global.Values.services.communication.publicUri }}
-- name: OCTO_ADAPTER__ADAPTERCKTYPEID
-  value: "System.Communication/MeshAdapter"              
-- name: OCTO_ADAPTER__ADAPTERRTID
-  value: {{ .svc.adapterRtId }}
-- name: OCTO_ADAPTER__STREAMDATACONNECTIONSTRING
-  valueFrom:
-    secretKeyRef:
-        name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
-        key: crateDbConnectionString
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}

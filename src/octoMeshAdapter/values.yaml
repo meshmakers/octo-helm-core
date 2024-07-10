@@ -25,7 +25,7 @@ clusterDependencies:
   mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
-  crateHost: "cratedb.rke2-local.srv.mm.local"
+  crateHost: "crate-octo-crate.cratedb.svc.cluster.local"
   crateUser: "crate"
 
 image:
