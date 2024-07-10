@@ -21,6 +21,7 @@ secrets:
   rabbitmq: ""
   # content of the root ca certificate chain
   rootCa: ""
+  crateDbConnectionString: ""
 
 clusterDependencies:
   mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
