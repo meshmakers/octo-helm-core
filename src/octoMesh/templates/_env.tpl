@@ -25,6 +25,18 @@
       key: rabbitmq     
 {{- end }}
 
+{{- define "octo-mesh.streamdata-env" -}}
+- name: {{ printf "%s__STREAMDATAHOST" (upper .name) }}
+  value: {{ .global.Values.clusterDependencies.crateHost }}
+- name: {{ printf "%s__STREAMDATAUSER" (upper .name) }}
+  value: {{ .global.Values.clusterDependencies.crateUser }}
+- name: {{ printf "%s__STREAMDATAPASSWORD" (upper .name) }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
+      key: crate     
+{{- end }}
+
 
 {{- define "octo-mesh.env" -}}
 - name: ASPNETCORE_URLS
@@ -42,21 +54,19 @@
         key: identityKeyFile
 - name: OCTO_IDENTITY__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
+
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
 - name: OCTO_ASSETREPOSITORY__AUTHORITY
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
-- name: OCTO_ASSETREPOSITORY__STREAMDATACONNECTIONSTRING
-  valueFrom:
-    secretKeyRef:
-        name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
-        key: crateDbConnectionString
+
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
 {{ include "octo-mesh.system-env" . }}
@@ -82,6 +92,7 @@
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
       key: email
+
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}
 {{ include "octo-mesh.system-env" . }}
@@ -100,8 +111,10 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+
 {{- else if eq .name "meshAdapter" -}}
 {{- $name := "OCTO_ADAPTER" }}
+{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
 - name: OCTO_ADAPTER__TENANTID
   value: {{ .svc.tenantId }}
 - name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI
