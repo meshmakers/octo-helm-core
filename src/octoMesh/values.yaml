@@ -27,7 +27,7 @@ clusterDependencies:
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
   crateHost: "crate-octo-crate.cratedb.svc.cluster.local"
-  crateUser: "crate"  
+  crateUser: "octo-system"  
 
 externalUris:
   # URI of CrateDB to be used by the services

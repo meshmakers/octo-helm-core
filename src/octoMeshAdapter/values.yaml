@@ -26,7 +26,7 @@ clusterDependencies:
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
   crateHost: "crate-octo-crate.cratedb.svc.cluster.local"
-  crateUser: "crate"
+  crateUser: "octo-system"
 
 image:
   repository: meshmakers/octo-mesh-adapter
