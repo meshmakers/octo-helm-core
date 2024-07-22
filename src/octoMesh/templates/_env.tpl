@@ -25,6 +25,17 @@
       key: rabbitmq     
 {{- end }}
 
+{{- define "octo-mesh.streamdata-env" -}}
+- name: {{ printf "%s__STREAMDATAHOST" (upper .name) }}
+  value: {{ .global.Values.clusterDependencies.streamDataHost }}
+- name: {{ printf "%s__STREAMDATAUSER" (upper .name) }}
+  value: {{ .global.Values.clusterDependencies.streamDataUser }}
+- name: {{ printf "%s__STREAMDATAPASSWORD" (upper .name) }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
+      key: crate     
+{{- end }}
 
 {{- define "octo-mesh.env" -}}
 - name: ASPNETCORE_URLS
@@ -46,6 +57,7 @@
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
 - name: OCTO_ASSETREPOSITORY__AUTHORITY
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
@@ -97,6 +109,8 @@
   value: {{ .global.Values.services.adminPanel.publicUri }}
 {{- else if eq .name "meshAdapter" -}}
 {{- $name := "OCTO_ADAPTER" }}
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
 - name: OCTO_ADAPTER__TENANTID
   value: {{ .svc.tenantId }}
 - name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI

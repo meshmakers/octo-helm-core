@@ -21,6 +21,8 @@ clusterDependencies:
   mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
+  streamDataHost: "crate-octo-crate.cratedb.svc.cluster.local"
+  streamDataUser: "octo-system"
 
 externalUris:
   # URI of CrateDB to be used by the services
@@ -46,7 +48,7 @@ ingress:
     # set to allow uploads of big rt model files using import rt function
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     # set to prevent "upstream sent too big header while reading response header from upstream"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
   tls: false
   tlsExtra: []
 #  tlsExtra:
