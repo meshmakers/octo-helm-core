@@ -1,0 +1,16 @@
+# Tenant id the adapter is executing
+tenantId: <tenant id>
+# Runtime id of adapter in database
+adapterRtId: <runtime id>
+# The communication controller service uri
+communicationControllerServiceUri: <communication controller service uri>
+
+secrets:
+  databaseUser: <mongodb user password>
+  databaseAdmin: <mongodb admin password>
+  crate:  <crate db password>
+  rabbitmq: <rabbit mq password>
+
+
+image:
+  privateRegistry: <registry url>

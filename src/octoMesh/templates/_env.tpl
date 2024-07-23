@@ -37,6 +37,7 @@
       key: crate     
 {{- end }}
 
+
 {{- define "octo-mesh.env" -}}
 - name: ASPNETCORE_URLS
   value: "http://+:80"
@@ -53,6 +54,7 @@
         key: identityKeyFile
 - name: OCTO_IDENTITY__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
+
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
@@ -64,6 +66,7 @@
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
 {{ include "octo-mesh.system-env" . }}
@@ -89,6 +92,7 @@
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
       key: email
+
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}
 {{ include "octo-mesh.system-env" . }}
@@ -107,18 +111,7 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
-{{- else if eq .name "meshAdapter" -}}
-{{- $name := "OCTO_ADAPTER" }}
-{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
-{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
-- name: OCTO_ADAPTER__TENANTID
-  value: {{ .svc.tenantId }}
-- name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI
-  value: {{ .global.Values.services.communication.publicUri }}
-- name: OCTO_ADAPTER__ADAPTERCKTYPEID
-  value: "System.Communication/MeshAdapter"              
-- name: OCTO_ADAPTER__ADAPTERRTID
-  value: {{ .svc.adapterRtId }}
+
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}

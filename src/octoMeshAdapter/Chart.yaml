@@ -1,6 +1,6 @@
 apiVersion: v2
-name: octo-mesh
-description: OctoMesh Data refinery helm chart
+name: octo-mesh-adapter
+description: An adapter for the OctoMesh Data refinery
 icon: https://raw.githubusercontent.com/meshmakers/octo-helm/main/assets/meshmakers64.png
 
 # A chart can be either an 'application' or a 'library' chart.

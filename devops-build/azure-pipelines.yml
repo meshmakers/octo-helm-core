@@ -1,0 +1,96 @@
+name: $(MajorVersion).$(MinorVersion).$(date:yyMM).$(DayOfMonth)$(rev:rrr)
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - dev/*
+      - main
+  tags:
+    exclude:
+      - '*'
+
+variables:
+  - group: GitSSHGroup
+  - group: OctoDefault
+  - name: MajorVersion
+    value: 0
+  - name: MinorVersion
+    value: 0
+  - name: ShortBuildNumber
+    value: "0.0.0"
+    
+stages:
+  - stage: Build
+    jobs:
+      - job: linux
+        displayName: helm build
+        pool:
+          name: Gerald-Local-Linux
+        steps:
+          - checkout: self
+            clean: true
+            submodules: recursive
+          - task: InstallSSHKey@0
+            inputs:
+              knownHostsEntry: '$(SSHKnownHosts)'
+              sshPublicKey: '$(SSHPublicKey)'
+              sshPassphrase: '$(SSHPassphrase)'
+              sshKeySecureFile: '$(SSHPrivateKeyFile)'     
+          - task: HelmInstaller@0
+            displayName: 'Install Helm'
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Source Branch $(Build.SourceBranch)"
+                Write-Host "Source Branch Name $(Build.SourceBranchName)"
+                $branch = '$(Build.SourceBranch)'
+                $branchName = '$(Build.SourceBranchName)'
+                $buildNumber = '$(Build.BuildNumber)'
+                $parts = $buildNumber -split '\.'
+                $shortVersion = ($parts[0..2] -join '.')
+                if ($branch.StartsWith("refs/tags/r")) {
+                  $major = [int]$branchName.Split(".")[0].substring(1)
+                  $minor = [int]$branchName.Split(".")[1]
+                  $revision = [int]$branchName.Split(".")[2]
+                  $buildNumber = "$major.$minor.$revision.0"
+                  $shortVersion = "$major.$minor.$revision"
+                  Write-Host "##vso[task.setvariable variable=MajorVersion;]$major"
+                  Write-Host "##vso[task.setvariable variable=MinorVersion;]$minor"
+                  Write-Host "Setting build number to $buildNumber"
+                  Write-Host "##vso[build.updatebuildnumber]$buildNumber"
+                }
+                Write-Host "Setting short build number to $shortVersion"
+                Write-Host "##vso[task.setvariable variable=ShortBuildNumber]$shortVersion"
+                
+            displayName: 'Set build number'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-adapter'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshAdapter'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'              
+          - task: PowerShell@2
+            displayName: 'Create versioninfo file'
+            inputs:
+              targetType: 'inline'
+              script: |
+                New-Item $(build.artifactstagingdirectory)/versioninfo.txt
+                Set-Content $(build.artifactstagingdirectory)/versioninfo.txt $(Build.BuildNumber)
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact: local'
+            inputs:
+              ArtifactName: local
+ 
+

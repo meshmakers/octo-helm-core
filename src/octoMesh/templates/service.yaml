@@ -1,6 +1,6 @@
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
-{{- if $svc.deploy -}}
+{{ if $svc.deploy -}}
 apiVersion: v1
 kind: Service
 metadata:
