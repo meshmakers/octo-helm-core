@@ -27,9 +27,9 @@
 
 {{- define "octo-mesh.streamdata-env" -}}
 - name: {{ printf "%s__STREAMDATAHOST" (upper .name) }}
-  value: {{ .global.Values.clusterDependencies.crateHost }}
+  value: {{ .global.Values.clusterDependencies.streamDataHost }}
 - name: {{ printf "%s__STREAMDATAUSER" (upper .name) }}
-  value: {{ .global.Values.clusterDependencies.crateUser }}
+  value: {{ .global.Values.clusterDependencies.streamDataUser }}
 - name: {{ printf "%s__STREAMDATAPASSWORD" (upper .name) }}
   valueFrom:
     secretKeyRef:

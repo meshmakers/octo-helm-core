@@ -26,8 +26,8 @@ clusterDependencies:
   mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
-  crateHost: "crate-octo-crate.cratedb.svc.cluster.local"
-  crateUser: "octo-system"  
+  streamDataHost: "crate-octo-crate.cratedb.svc.cluster.local"
+  streamDataUser: "octo-system"
 
 externalUris:
   # URI of CrateDB to be used by the services
