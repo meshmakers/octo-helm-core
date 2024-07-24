@@ -34,7 +34,7 @@
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
-      key: crate     
+      key: streamDataPassword     
 {{- end }}
 
 

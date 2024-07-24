@@ -5,10 +5,10 @@
 replicaCount: 1
 
 # Tenant id the adapter is executing
-tenantId: meshTest
+tenantId: ""
 
 # Runtime id of adapter in database
-adapterRtId: "66004fda527ac79a03ecedd7"
+adapterRtId: ""
   
 # The communication controller service uri
 communicationControllerServiceUri: ""
@@ -16,7 +16,7 @@ communicationControllerServiceUri: ""
 secrets:
   databaseUser: ""
   databaseAdmin: ""
-  crate: ""  
+  streamDataPassword: ""  
   rabbitmq: ""
   # content of the root ca certificate chain
   rootCa: ""
@@ -25,8 +25,8 @@ clusterDependencies:
   mongodbHost: "octo-mongodb-0.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-1.octo-mongodb-svc.mongodb.svc.cluster.local:27017,octo-mongodb-2.octo-mongodb-svc.mongodb.svc.cluster.local:27017"
   rabbitMqHost: "rabbitmq.rabbitmq.svc.cluster.local"
   rabbitMqUser: "octo-mq-user"
-  crateHost: "crate-octo-crate.cratedb.svc.cluster.local"
-  crateUser: "octo-system"
+  streamDataHost: "crate-octo-crate.cratedb.svc.cluster.local"
+  streamDataUser: "octo-system"
 
 image:
   repository: meshmakers/octo-mesh-adapter

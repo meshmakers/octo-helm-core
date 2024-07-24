@@ -17,7 +17,7 @@ imageDefaults:
 secrets:
   databaseUser: ""
   databaseAdmin: ""
-  crate: ""
+  streamDataPassword: ""
   rabbitmq: ""
   # content of the root ca certificate chain
   rootCa: ""
