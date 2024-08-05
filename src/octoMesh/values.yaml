@@ -32,6 +32,7 @@ clusterDependencies:
 externalUris:
   # URI of CrateDB to be used by the services
   crateDb: ""
+  grafana: ""
 
 notifications:
   smtp:

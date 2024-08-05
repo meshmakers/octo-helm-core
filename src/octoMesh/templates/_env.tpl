@@ -103,6 +103,8 @@
 {{- $name := "OCTO_ADMINPANEL" }}
 - name: OCTO_ADMINPANEL__CRATEDBADMINURL
   value: {{ .global.Values.externalUris.crateDb }}
+- name: OCTO_ADMINPANEL__GRAFANAURL
+  value: {{ .global.Values.externalUris.grafana }}
 - name: OCTO_ADMINPANEL__ASSETSERVICEURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ADMINPANEL__BOTSERVICEURL
