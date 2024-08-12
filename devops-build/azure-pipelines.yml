@@ -69,7 +69,7 @@ stages:
             displayName: 'helm package octo-mesh'
             inputs:
               command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMesh'
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
