@@ -38,7 +38,7 @@ spec:
               fieldPath: metadata.namespace
         envFrom:
         - configMapRef:
-            name: webhook-config
+            name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}
         {{- if .Values.image.privateRegistry }}
         image: "{{ .Values.image.privateRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- else }}
@@ -49,15 +49,22 @@ spec:
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}        
         ports:
-        - containerPort: {{ .Values.service.port }}
+        - containerPort: {{ .Values.pod.httpPort }}
+          name: http
+        - containerPort: {{ .Values.pod.httpsPort }}
           name: https
+        {{- with .Values.livenessProbe}}
         livenessProbe:
-          {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe}}
         readinessProbe:
-          {{- toYaml .Values.readinessProbe | nindent 12 }}          
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.resources}}
         resources:
-          {{- toYaml .Values.resources | nindent 12 }}          
-
+          {{- toYaml . | nindent 10 }}
+        {{- end }}        
         volumeMounts:
         - mountPath: /certs
           name: certificates
@@ -67,7 +74,12 @@ spec:
           readOnly: true
         {{- with .Values.volumeMounts }}
           {{- toYaml . | nindent 12 }}
-        {{- end }}          
+        {{- end }}
+        {{- if .Values.secrets.rootCa }}
+        - name: root-ca-volume
+          mountPath: /etc/ssl/certs/root-ca.pem
+          subPath: root-ca.pem
+        {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
       - name: certificates
@@ -76,6 +88,11 @@ spec:
       - name: ca-certificates
         secret:
           secretName: {{ printf "%s-webhook-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
+      {{- if .Values.secrets.rootCa }}
+      - name: root-ca-volume
+        secret:
+          secretName: {{ printf "%s-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
+      {{- end }}
     {{- with .Values.volumes }}
       {{- toYaml . | nindent 8 }}
     {{- end }}

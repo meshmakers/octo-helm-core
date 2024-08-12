@@ -1,8 +1,5 @@
-serviceHooks:
-  # certificate with private and public key in pfx format, by command arg 
-  caKey: "ca-key.pem"
-  caCrt: "ca.pem"
-  svcKey: "svc-key.pem"
-  svcCrt: "svc.pem"
-
-
+# Certs are set by --set-file
+  
+image:
+  privateRegistry: registry.salzburgdev.loki
+  tag: "arm64v8-0.0.2408.12005"

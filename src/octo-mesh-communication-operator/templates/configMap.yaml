@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}
+  labels:
+    {{- include "octoMeshCommunicationOperator.labels" . | nindent 4 }}
+data:
+  KESTREL__ENDPOINTS__HTTP__URL: "{{ .Values.configMap.kestrelHttpUrl }}"
+  KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__KEYPATH: "{{ .Values.configMap.certKeyPath }}"
+  KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__PATH: "{{ .Values.configMap.certPath }}"
+  KESTREL__ENDPOINTS__HTTPS__URL: "{{ .Values.configMap.kestrelHttpsUrl }}"
+---
