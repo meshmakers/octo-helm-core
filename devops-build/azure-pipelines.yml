@@ -90,21 +90,13 @@ stages:
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
-            displayName: 'helm package octo-mesh-crds for operator'
-            inputs:
-              command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
-              chartVersion: '$(ShortBuildNumber)'
-              destination: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator/charts'
-              arguments: '--app-version $(Build.BuildNumber)'              
-          - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-communication-operator'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'              
+              arguments: '--app-version $(Build.BuildNumber) --dependency-update'              
           - task: PowerShell@2
             displayName: 'Create version info file'
             inputs:

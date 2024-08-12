@@ -30,6 +30,6 @@ maintainers:
     
 dependencies:
   - name: octo-mesh-crds
-    version: 0.1.0
-    repository: https://meshmakers.github.io/charts
+    version: ~3.1.0
+    repository: file://../octo-mesh-crds
     condition: octo-mesh-crds.enabled  
