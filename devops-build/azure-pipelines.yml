@@ -77,7 +77,7 @@ stages:
             displayName: 'helm package octo-mesh-adapter'
             inputs:
               command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshAdapter'
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-adapter'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
@@ -85,20 +85,28 @@ stages:
             displayName: 'helm package octo-mesh-crds'
             inputs:
               command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshCrds'
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-crds for operator'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator/charts'
+              arguments: '--app-version $(Build.BuildNumber)'              
+          - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-communication-operator'
             inputs:
               command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshCommunicationOperator'
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'              
           - task: PowerShell@2
-            displayName: 'Create versioninfo file'
+            displayName: 'Create version info file'
             inputs:
               targetType: 'inline'
               script: |
