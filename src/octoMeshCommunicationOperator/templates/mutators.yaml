@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ printf "%s-mutators" (include "octoMeshCommunicationOperator.fullname" .) }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJsVENDQVR1Z0F3SUJBZ0lJQ2ZZSEE5V25XS1V3Q2dZSUtvWkl6ajBFQXdRd1BqRVRNQkVHQTFVRUJ4TUsKUzNWaVpYSnVaWFJsY3pFTU1Bb0dBMVVFQmhNRFJFVldNUmt3RndZRFZRUURFeEJQY0dWeVlYUnZjaUJTYjI5MApJRU5CTUI0WERUSTBNRGd3T1RBd01EQXdNRm9YRFRJNU1EZ3dPVEF3TURBd01Gb3dQakVUTUJFR0ExVUVCeE1LClMzVmlaWEp1WlhSbGN6RU1NQW9HQTFVRUJoTURSRVZXTVJrd0Z3WURWUVFERXhCUGNHVnlZWFJ2Y2lCU2IyOTAKSUVOQk1Ga3dFd1lIS29aSXpqMENBUVlJS29aSXpqMERBUWNEUWdBRTVJMW5EZHMvMlU2aStkYzJtQVp0bDEvVApDVmNsNlVTS3E0REg4bFBETUFLS2tGL0VxUDNwbDdBK3NWUCtOQ2RDbnpxQWlydG5rZGlpOHRnN0VqUWl1S01qCk1DRXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QU9CZ05WSFE4QkFmOEVCQU1DQVNZd0NnWUlLb1pJemowRUF3UUQKU0FBd1JRSWhBSk1hRUx0VjFJdFA1dStJQ0NqZzJBOGlwV0NmUnhHMWs2emJOQ1h5NUJxREFpQTkzUWFhYmtJUQpqQ3FleVRURHR3d2owVDdlSDZ3MUNCTGJHTFZjOHh5WS93PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
+    service:
+      name: {{ include "octoMeshCommunicationOperator.fullname" . }}
+      path: /mutate/v1communicationpoolentity
+      namespace: {{ .Release.Namespace }}      
+  matchPolicy: Exact
+  name: mutate.communicationpool.octo-mesh.meshmakers.io.v1alpha1
+  rules:
+  - apiGroups:
+    - octo-mesh.meshmakers.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - communicationpools
+  sideEffects: None

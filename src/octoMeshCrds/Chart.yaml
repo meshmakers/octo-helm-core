@@ -1,7 +1,6 @@
 apiVersion: v2
-name: octo-mesh-adapter
-description: An adapter for the OctoMesh Data refinery
-icon: https://raw.githubusercontent.com/meshmakers/octo-helm/main/assets/meshmakers64.png
+name: octo-mesh-crds
+description: Custom Resource Definitions for OctoMesh
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -22,7 +21,7 @@ version: 0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "3.1.81.0"
+appVersion: "1.16.0"
 
 maintainers:
   - name: meshmakers

@@ -1,0 +1,8 @@
+serviceHooks:
+  # certificate with private and public key in pfx format, by command arg 
+  caKey: "ca-key.pem"
+  caCrt: "ca.pem"
+  svcKey: "svc-key.pem"
+  svcCrt: "svc.pem"
+
+

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "octoMeshCommunicationOperator.labels" . | nindent 4 }}
+  name: {{ include "octoMeshCommunicationOperator.fullname" . }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      {{- include "octoMeshCommunicationOperator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}      
+      labels:
+        {{- include "octoMeshCommunicationOperator.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}      
+      containers:
+      - env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        envFrom:
+        - configMapRef:
+            name: webhook-config
+        {{- if .Values.image.privateRegistry }}
+        image: "{{ .Values.image.privateRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}        
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: https
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 12 }}          
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}          
+
+        volumeMounts:
+        - mountPath: /certs
+          name: certificates
+          readOnly: true
+        - mountPath: /ca
+          name: ca-certificates
+          readOnly: true
+        {{- with .Values.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}          
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: certificates
+        secret:
+          secretName: {{ printf "%s-webhook-cert" (include "octoMeshCommunicationOperator.fullname" .) }}
+      - name: ca-certificates
+        secret:
+          secretName: {{ printf "%s-webhook-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
+    {{- with .Values.volumes }}
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}            

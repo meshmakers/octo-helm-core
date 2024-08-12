@@ -1,6 +1,6 @@
 apiVersion: v2
-name: octo-mesh-adapter
-description: An adapter for the OctoMesh Data refinery
+name: octo-mesh-communication-operator
+description: The OctoMesh Communication Operator that manages plugs and sockets
 icon: https://raw.githubusercontent.com/meshmakers/octo-helm/main/assets/meshmakers64.png
 
 # A chart can be either an 'application' or a 'library' chart.
@@ -27,3 +27,9 @@ appVersion: "3.1.81.0"
 maintainers:
   - name: meshmakers
     email: support@meshmakers.io
+    
+dependencies:
+  - name: octo-mesh-crds
+    version: 0.1.0
+    repository: https://meshmakers.github.io/charts
+    condition: octo-mesh-crds.enabled  

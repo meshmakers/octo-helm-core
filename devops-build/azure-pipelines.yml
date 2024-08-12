@@ -80,6 +80,22 @@ stages:
               chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshAdapter'
               chartVersion: '$(ShortBuildNumber)'
               destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-crds'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshCrds'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-communication-operator'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octoMeshCommunicationOperator'
+              chartVersion: '$(ShortBuildNumber)'
+              destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'              
           - task: PowerShell@2
             displayName: 'Create versioninfo file'
