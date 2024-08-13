@@ -1,4 +1,4 @@
-# octo-helm
+# OctoMesh Helm Charts
 
 This repository contains the helm charts for OctoMesh. The charts are hosted on GitHub pages and can be accessed using the following URL:
 
@@ -111,16 +111,18 @@ Octo Mesh Communication Operator is responsible for managing adapters on edge cl
 See the [values.yaml](src/octo-mesh-communication-operator/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
-### Render octo-mesh-crts chart template locally and display the output
+### Generate CA and server certificates
+
+For webhooks to work, the operator requires a CA certificate and key, as well as a server certificate and key. The following command can be used to generate the certificates:
 
 ```bash
-helm template --namespace octo --values crts-sample.yaml octo-mesh-crts ../octoMeshCrts
+octo-cli -c GenerateOperatorCertificates -o . -n octo-operator-system -s octo-mesh-op1-communication-operator
 ```
+-n is the namespace where the operator is installed, -s is the name of the operator server, it is the combination of the release name and "communication-operator".
 
-### Install Octo Mesh CRDs
+### Install the Octo Mesh Communication Operator
 
 ```bash
-helm upgrade --install octo-mesh-crts meshmakers/octo-mesh-crts
-```
-
 helm install --namespace octo-ns --values ./examples/operator-sample.yaml --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 --set "octo-mesh-crds.enabled=false" ./octo-mesh-communication-operator/
+```
+The operator requires the CRDs to be installed, but they are installed by default. To disable install the CRDs, set the `octo-mesh-crds.enabled` value to `false`.
