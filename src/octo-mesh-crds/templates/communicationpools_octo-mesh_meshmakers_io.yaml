@@ -34,6 +34,9 @@ spec:
               communicationControllerUri:
                 nullable: false
                 type: string
+              ignoreCertificateValidation:
+                nullable: false
+                type: boolean                
               brokerHost:
                 nullable: false
                 type: string
