@@ -108,7 +108,9 @@
 - name: OCTO_ADMINPANEL__ASSETSERVICEURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ADMINPANEL__BOTSERVICEURL
-  value: {{ .global.Values.services.bot.publicUri }}         
+  value: {{ .global.Values.services.bot.publicUri }}
+- name: OCTO_ADMINPANEL__COMMUNICATIONSERVICEURL
+  value: {{ .global.Values.services.communication.publicUri }}      
 - name: OCTO_ADMINPANEL__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
