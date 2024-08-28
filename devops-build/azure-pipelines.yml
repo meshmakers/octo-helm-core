@@ -17,7 +17,7 @@ variables:
     value: 0
   - name: MinorVersion
     value: 0
-  - name: ShortBuildNumber
+  - name: BuildNumberShort
     value: "0.0.0"
     
 stages:
@@ -45,7 +45,7 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh'
-              chartVersion: '$(ShortBuildNumber)'
+              chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
@@ -53,7 +53,7 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-adapter'
-              chartVersion: '$(ShortBuildNumber)'
+              chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
@@ -61,7 +61,7 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
-              chartVersion: '$(ShortBuildNumber)'
+              chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
@@ -69,7 +69,7 @@ stages:
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator'
-              chartVersion: '$(ShortBuildNumber)'
+              chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber) --dependency-update'              
           - task: PowerShell@2

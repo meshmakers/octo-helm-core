@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ede2ee9d-f99f-4661-80e8-60a5e79876df" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="ede2ee9d-f99f-4661-80e8-60a5e79876df" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -71,6 +69,7 @@
       <workItem from="1724700528455" duration="13000" />
       <workItem from="1724700610684" duration="16000" />
       <workItem from="1724703647630" duration="1255000" />
+      <workItem from="1724761462553" duration="3053000" />
     </task>
     <task id="LOCAL-00001" summary="AB#1319: New: Show branch name in build">
       <option name="closed" value="true" />
@@ -104,7 +103,23 @@
       <option name="project" value="LOCAL" />
       <updated>1724700621143</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="AB#1102: New: Added new setting ignoreCertificateValidation">
+      <option name="closed" value="true" />
+      <created>1724761867138</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1724761867138</updated>
+    </task>
+    <task id="LOCAL-00006" summary="AB#1102: Fix: Set communication service uri at admin panel">
+      <option name="closed" value="true" />
+      <created>1724763365800</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1724763365800</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -117,6 +132,8 @@
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="AB#1319: New: Show branch name in build" />
     <MESSAGE value="AB#1099: Fix: Documentation" />
-    <option name="LAST_COMMIT_MESSAGE" value="AB#1099: Fix: Documentation" />
+    <MESSAGE value="AB#1102: New: Added new setting ignoreCertificateValidation" />
+    <MESSAGE value="AB#1102: Fix: Set communication service uri at admin panel" />
+    <option name="LAST_COMMIT_MESSAGE" value="AB#1102: Fix: Set communication service uri at admin panel" />
   </component>
 </project>
