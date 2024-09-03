@@ -101,6 +101,8 @@
   value: {{ .global.Values.services.identity.publicUri }}
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
+{{ include "octo-mesh.system-env" . }}
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
 - name: OCTO_ADMINPANEL__CRATEDBADMINURL
   value: {{ .global.Values.externalUris.crateDb }}
 - name: OCTO_ADMINPANEL__GRAFANAURL
@@ -115,7 +117,6 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
-
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}

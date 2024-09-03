@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ede2ee9d-f99f-4661-80e8-60a5e79876df" name="Changes" comment="" />
+    <list default="true" id="ede2ee9d-f99f-4661-80e8-60a5e79876df" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/octo-mesh/templates/_env.tpl" beforeDir="false" afterPath="$PROJECT_DIR$/src/octo-mesh/templates/_env.tpl" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -70,6 +73,8 @@
       <workItem from="1724700610684" duration="16000" />
       <workItem from="1724703647630" duration="1255000" />
       <workItem from="1724761462553" duration="3053000" />
+      <workItem from="1724820218893" duration="678000" />
+      <workItem from="1725311390684" duration="314000" />
     </task>
     <task id="LOCAL-00001" summary="AB#1319: New: Show branch name in build">
       <option name="closed" value="true" />
@@ -119,7 +124,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724763365800</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Fix: Set build number of chart correctly">
+      <option name="closed" value="true" />
+      <created>1724820361647</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1724820361647</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -134,6 +147,7 @@
     <MESSAGE value="AB#1099: Fix: Documentation" />
     <MESSAGE value="AB#1102: New: Added new setting ignoreCertificateValidation" />
     <MESSAGE value="AB#1102: Fix: Set communication service uri at admin panel" />
-    <option name="LAST_COMMIT_MESSAGE" value="AB#1102: Fix: Set communication service uri at admin panel" />
+    <MESSAGE value="Fix: Set build number of chart correctly" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix: Set build number of chart correctly" />
   </component>
 </project>
