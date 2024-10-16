@@ -80,7 +80,7 @@ helm upgrade --install --namespace octo --create-namespace --values rke2-local-v
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
-helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octoMesh
+helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octo-mesh
 ```
 
 ## Setup Octo Mesh Adapter
@@ -94,7 +94,7 @@ Examples are available in the [example's](src/examples) directory.
 ### Render octo-mesh-adapter chart template locally and display the output
 
 ```bash
-helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ../octoMeshAdapter
+helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ../octo-mesh-adapter
 ```
 
 ### Install Octo Mesh Adapter

@@ -13,6 +13,9 @@ adapterRtId: ""
 # The communication controller service uri
 communicationControllerServiceUri: ""
 
+# The public uri of the adapter
+publicUri: ""
+
 secrets:
   databaseUser: ""
   databaseAdmin: ""
@@ -116,4 +119,16 @@ tolerations: []
 
 affinity: {}
 
-
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  tls: false
+  tlsExtra: []
+#  tlsExtra:
+#    - hosts:
+#        - "*.example.com"
+#      secretName: example-com-certificate

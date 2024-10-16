@@ -1,0 +1,39 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "octo-mesh.adapterFullname" . -}}  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "octo-mesh.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tlsExtra }}
+  tls:
+    {{- with .Values.ingress.tlsExtra }}
+    {{- toYaml . | nindent 2 }}
+    {{- end }}
+  {{- else }}
+  tls:
+    - hosts:
+        - {{ .Values.publicUri | replace "https://" "" | trimSuffix "/" | quote }}
+      secretName: {{ $fullName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.publicUri | replace "https://" "" | trimSuffix "/" | quote }}
+      http:
+        paths:
+          - path: {{ printf "/%s" .Values.tenantId | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $.Values.service.port }}
+{{- end }}

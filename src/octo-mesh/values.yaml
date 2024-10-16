@@ -32,7 +32,10 @@ clusterDependencies:
 externalUris:
   # URI of CrateDB to be used by the services
   crateDb: ""
+  # URI of the Grafana to be used by the services
   grafana: ""
+  # URI of the mesh adapter to be used by the services
+  meshAdapter: ""
 
 notifications:
   smtp:

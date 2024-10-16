@@ -4,6 +4,8 @@ tenantId: <tenant id>
 adapterRtId: <runtime id>
 # The communication controller service uri
 communicationControllerServiceUri: <communication controller service uri>
+# The public uri of the adapter
+publicUri: https://demo.example.com
 
 secrets:
   databaseUser: <mongodb user password>
@@ -14,3 +16,10 @@ secrets:
 
 image:
   privateRegistry: <registry url>
+  
+  
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "demo"
+  tls: true
