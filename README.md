@@ -16,6 +16,7 @@ There are several helm charts available in this repository:
 2) octo-mesh-adapter: Mesh Adapters host mesh pipelines and are installed in the same cluster as the core services, but for each tenant.
 3) octo-mesh-crts: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
 4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
+5) octo-mesh-office: This chart contains the OctoMesh Office, which is an Excel add-in that allows users to interact with OctoMesh.
 
 To use the charts, add the repository to your helm configuration:
 
@@ -26,9 +27,9 @@ helm repo update
 
 ## Setup octo-mesh core services
 
-Octo Mesh needs a running MongoDB and RabbitMQ instance, for stream data CrateDB is required. Ingress NGINX is recommended for routing. Cert Manager or valid public certificates are required for HTTPS.
+OctoMesh needs a running MongoDB and RabbitMQ instance, for stream data CrateDB is required. Ingress NGINX is recommended for routing. Cert Manager or valid public certificates are required for HTTPS.
 
-Summarized, the following prerequisites are required to install Octo Mesh:
+Summarized, the following prerequisites are required to install OctoMesh:
 1) Ingress NGINX
 2) Cert Manager
 3) MongoDB
@@ -59,7 +60,7 @@ Examples are available in the [example's](src/examples) directory.
 
 ### Install OctoMesh core services
 
-Execute the following command to install Octo Mesh
+Execute the following command to install OctoMesh
 
 ```bash
 helm upgrade --install --namespace octo --create-namespace --values ./src/examples/aks-cert-manager-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx <releaseName> meshmakers/octo-mesh
@@ -83,9 +84,9 @@ helm upgrade --install --namespace octo --create-namespace --values rke2-local-v
 helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octo-mesh
 ```
 
-## Setup Octo Mesh Adapter
+## Setup OctoMesh Adapter
 
-Octo Mesh Adapter is a service that hosts mesh pipelines and is installed in the same cluster as the core services, but for each tenant. The adapter requires a running MongoDB instance and CRATE DB for stream data.
+OctoMesh Adapter is a service that hosts mesh pipelines and is installed in the same cluster as the core services, but for each tenant. The adapter requires a running MongoDB instance and CRATE DB for stream data.
 
 ### Create a values file to configure OctoMesh Adapter
 See the [values.yaml](src/octo-mesh-adapter/values.yaml) file for configuration options.
@@ -97,15 +98,35 @@ Examples are available in the [example's](src/examples) directory.
 helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ../octo-mesh-adapter
 ```
 
-### Install Octo Mesh Adapter
+### Install OctoMesh Adapter
 
 ```bash
 helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
 ```
 
-## Setup Octo Mesh Communication Operator
+## Setup OctoMesh Excel Add-in
 
-Octo Mesh Communication Operator is responsible for managing adapters on edge clusters. The operator requires octo-mesh-crts to be installed.
+OctoMesh Excel Add-In is a service that allows users to interact with OctoMesh using Excel. The add-in does not have nay prerequisites, because the connection to OctoMesh is done through Excel.
+
+### Create a values file to configure OctoMesh Office
+See the [values.yaml](src/octo-mesh-office/values.yaml) file for configuration options.
+Examples are available in the [example's](src/examples) directory.
+
+### Render octo-mesh-office chart template locally and display the output
+
+```bash
+helm template --namespace octo --values office-sample.yaml octo-mesh-office ../octo-mesh-office
+```
+
+### Install OctoMesh Excel Add-in
+
+```bash
+helm upgrade --install --namespace octo --create-namespace --values office-values.yaml --set image.tag="0.0.2406.3001" mesh-add-in meshmakers/octo-mesh-office
+```
+
+## Setup OctoMesh Communication Operator
+
+OctoMesh Communication Operator is responsible for managing adapters on edge clusters. The operator requires octo-mesh-crts to be installed.
 
 ### Create a values file to configure OctoMesh Communication Operator
 See the [values.yaml](src/octo-mesh-communication-operator/values.yaml) file for configuration options.
@@ -120,13 +141,13 @@ octo-cli -c GenerateOperatorCertificates -o . -n octo-operator-system -s octo-me
 ```
 -n is the namespace where the operator is installed, -s is the name of the operator server, it is the combination of the release name and "communication-operator".
 
-### Install Octo Mesh CRDs
+### Install OctoMesh CRDs
 
 ```bash
 helm install --namespace octo-operator-system octo-mesh-crds ./octo-mesh-crds/
 ```
 
-### Install the Octo Mesh Communication Operator
+### Install the OctoMesh Communication Operator
 
 ```bash
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 --set "octo-mesh-crds.enabled=false" ./octo-mesh-communication-operator/

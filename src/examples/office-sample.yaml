@@ -1,0 +1,12 @@
+# The public uri of the adapter
+publicUri: https://demo.example.com
+
+image:
+  privateRegistry: <registry url>
+  tag: 3.1.0
+  
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "demo"
+  tls: true
