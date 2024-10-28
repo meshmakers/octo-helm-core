@@ -28,7 +28,7 @@ spec:
     - host: {{ .Values.publicUri | replace "https://" "" | trimSuffix "/" | quote }}
       http:
         paths:
-          - path: {{ printf "/%s" .Values.tenantId | lower | quote }}
+          - path: /
             pathType: Prefix
             backend:
               service:
