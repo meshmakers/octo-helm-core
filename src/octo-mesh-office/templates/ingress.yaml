@@ -29,7 +29,7 @@ spec:
       http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "octo-mesh-office.fullname" . }}
