@@ -1,3 +1,7 @@
+
+# This will pass the client id to the office add-in
+clientId: "octo-office-integration-demo"
+
 # The public uri of the adapter
 publicUri: https://demo.example.com
 
