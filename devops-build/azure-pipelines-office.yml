@@ -41,37 +41,13 @@ stages:
           - task: HelmInstaller@0
             displayName: 'Install Helm'
           - task: HelmDeploy@0
-            displayName: 'helm package octo-mesh'
+            displayName: 'helm package octo-mesh-office'
             inputs:
               command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh'
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-office'
               chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'
-          - task: HelmDeploy@0
-            displayName: 'helm package octo-mesh-adapter'
-            inputs:
-              command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-adapter'
-              chartVersion: '$(BuildNumberShort)'
-              destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'
-          - task: HelmDeploy@0
-            displayName: 'helm package octo-mesh-crds'
-            inputs:
-              command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
-              chartVersion: '$(BuildNumberShort)'
-              destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'
-          - task: HelmDeploy@0
-            displayName: 'helm package octo-mesh-communication-operator'
-            inputs:
-              command: package
-              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator'
-              chartVersion: '$(BuildNumberShort)'
-              destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber) --dependency-update'              
+              arguments: '--app-version $(Build.BuildNumber)'              
           - task: PowerShell@2
             displayName: 'Create version info file'
             inputs:
