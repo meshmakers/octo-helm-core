@@ -37,7 +37,7 @@ stages:
               knownHostsEntry: '$(SSHKnownHosts)'
               sshPublicKey: '$(SSHPublicKey)'
               sshPassphrase: '$(SSHPassphrase)'
-              sshKeySecureFile: '$(SSHPrivateKeyFile)'     
+              sshKeySecureFile: '$(SSHPrivateKeyFile)'
           - task: HelmInstaller@0
             displayName: 'Install Helm'
           - task: HelmDeploy@0
@@ -47,7 +47,7 @@ stages:
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-office'
               chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
-              arguments: '--app-version $(Build.BuildNumber)'              
+              arguments: '--app-version $(Build.BuildNumber)'
           - task: PowerShell@2
             displayName: 'Create version info file'
             inputs:
