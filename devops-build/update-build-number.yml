@@ -26,7 +26,7 @@ steps:
         $versionArray = $versionString.Split(".")
         $major = [int]$versionArray[0]
         $minor = [int]$versionArray[1]
-        $build = [int]$versionArray[2]
+        $build = [int]($versionArray[2] -split '-')[0]
         $buildNumberShort = "$major.$minor.$build"
         $buildNumberLong = "$major.$minor.$build.0"
         Write-Host "Setting build number to $buildNumberLong"
