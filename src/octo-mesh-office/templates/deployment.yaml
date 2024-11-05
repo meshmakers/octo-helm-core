@@ -47,6 +47,8 @@ spec:
           env:
             - name: CLIENT_ID
               value: {{ .Values.clientId | quote }}
+            - name: OFFICE_URL
+              value: {{ .Values.publicUri | quote }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
