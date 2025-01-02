@@ -36,15 +36,6 @@ externalUris:
   grafana: ""
   # URI of the mesh adapter to be used by the services
   meshAdapter: ""
-
-notifications:
-  smtp:
-    host: "smtp.office365.com"
-    port: 587
-    enableSsl: true
-    senderEmailAddress: ""
-    username: ""
-    password: ""
   
 serviceDefaults:
   type: ClusterIP

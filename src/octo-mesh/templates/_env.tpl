@@ -77,21 +77,6 @@
   value: {{ .global.Values.services.bot.publicUri }}
 - name: OCTO_BOT__PUBLICADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
-- name: OCTO_EMAIL__HOST
-  value: {{ .global.Values.notifications.smtp.host }}
-- name: OCTO_EMAIL__PORT
-  value: {{ .global.Values.notifications.smtp.port | quote }}
-- name: OCTO_EMAIL__ENABLESSL
-  value: {{ .global.Values.notifications.smtp.enableSsl | quote }}         
-- name: OCTO_EMAIL__SENDEREMAIL
-  value: {{ .global.Values.notifications.smtp.senderEmailAddress }}  
-- name: OCTO_EMAIL__USERNAME
-  value: {{ .global.Values.notifications.smtp.username }}  
-- name: OCTO_EMAIL__PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
-      key: email
 
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}

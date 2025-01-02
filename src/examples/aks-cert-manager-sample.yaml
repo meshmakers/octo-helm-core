@@ -9,15 +9,6 @@ secrets:
 externalUris:
   crateDb: https://<URI CRATE DB ADMIN>
   
-notifications:
-  smtp:
-    host: "smtp.office365.com"
-    port: 587
-    enableSsl: true
-    senderEmailAddress: "notifications@example.com"
-    username: "notifications@example.com"
-    password: "<smtp password>"
-  
 ingress: 
   annotations:
     cert-manager.io/cluster-issuer: "<cluster-issuer-name>"
