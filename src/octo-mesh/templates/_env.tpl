@@ -82,7 +82,7 @@
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
-- name: OCTO_COMMUNICATIONCONTROLLER__AUTHORITY
+- name: OCTO_COMMUNICATIONCONTROLLER__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_COMMUNICATIONCONTROLLER__PUBLICURL
   value: {{ .global.Values.services.communication.publicUri }}  
