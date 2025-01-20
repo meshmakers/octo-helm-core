@@ -84,6 +84,8 @@
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
 - name: OCTO_COMMUNICATIONCONTROLLER__AUTHORITY
   value: {{ .global.Values.services.identity.publicUri }}
+- name: OCTO_COMMUNICATIONCONTROLLER__PUBLICURL
+  value: {{ .global.Values.services.communication.publicUri }}  
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}
