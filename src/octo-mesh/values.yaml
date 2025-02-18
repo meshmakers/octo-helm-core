@@ -67,7 +67,7 @@ services:
       # password of certificate
       password: ""
     
-    # set to false to prevent deployment
+    # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
@@ -91,7 +91,7 @@ services:
 #          path: /
 #          port: http
       resources: {}
-        # We usually recommend not to specify default resources and to leave this as a conscious
+        # We usually recommend not specifying default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
         # resources, such as Minikube. If you do want to specify resources, uncomment the following
         # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -121,7 +121,7 @@ services:
   assetRepository:
     # Public URI of service
     publicUri: ""
-    # set to false to prevent deployment
+    # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
@@ -145,7 +145,7 @@ services:
       #          path: /
       #          port: http
       resources: {}
-        # We usually recommend not to specify default resources and to leave this as a conscious
+        # We usually recommend not specifying default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
         # resources, such as Minikube. If you do want to specify resources, uncomment the following
         # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -175,7 +175,7 @@ services:
   bot:
     # Public URI of service
     publicUri: ""
-    # set to false to prevent deployment
+    # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
@@ -199,7 +199,7 @@ services:
       #          path: /
       #          port: http
       resources: {}
-        # We usually recommend not to specify default resources and to leave this as a conscious
+        # We usually recommend not specifying default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
         # resources, such as Minikube. If you do want to specify resources, uncomment the following
         # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -229,7 +229,7 @@ services:
   communication:
     # Public URI of service
     publicUri: ""
-    # set to false to prevent deployment
+    # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
@@ -253,7 +253,7 @@ services:
       #          path: /
       #          port: http
       resources: {}
-        # We usually recommend not to specify default resources and to leave this as a conscious
+        # We usually recommend not specifying default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
         # resources, such as Minikube. If you do want to specify resources, uncomment the following
         # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -283,7 +283,7 @@ services:
   adminPanel:
     # Public URI of service
     publicUri: ""
-    # set to false to prevent deployment
+    # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
@@ -307,7 +307,7 @@ services:
       #          path: /
       #          port: http
       resources: {}
-        # We usually recommend not to specify default resources and to leave this as a conscious
+        # We usually recommend not specifying default resources and to leave this as a conscious
         # choice for the user. This also increases chances charts run on environments with little
         # resources, such as Minikube. If you do want to specify resources, uncomment the following
         # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -334,3 +334,56 @@ services:
       tolerations: [ ]
       affinity: { }
         
+  studio:
+    # Public URI of service
+    publicUri: ""
+    # set false to prevent deployment
+    deploy: false
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "refinery-studio"
+    image:
+      repository: meshmakers/octo-mesh-refinery-studio
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      #      livenessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      #      readinessProbe:
+      #        httpGet:
+      #          path: /
+      #          port: http
+      resources: {}
+        # We usually recommend not specifying default resources and to leave this as a conscious
+        # choice for the user. This also increases chances charts run on environments with little
+        # resources, such as Minikube. If you do want to specify resources, uncomment the following
+        # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # requests:
+      #   cpu: 100m
+      #   memory: 128Mi
+      # Additional volumes on the output Deployment definition.
+
+      volumes: [ ]
+      # - name: foo
+      #   secret:
+      #     secretName: mysecret
+      #     optional: false
+
+      # Additional volumeMounts on the output Deployment definition.
+      volumeMounts: [ ]
+      # - name: foo
+      #   mountPath: "/etc/foo"
+      #   readOnly: true
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }

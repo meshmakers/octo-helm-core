@@ -106,6 +106,12 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+{{- else if eq .name "studio" -}}
+{{- $name := "OCTO_REFINERY_STUDIO" }}
+- name: ADMIN_PANEL_URI
+  value: {{ .global.Values.services.adminPanel.publicUri }}
+- name: APP_URI
+  value: {{ .global.Values.services.studio.publicUri }}
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}

@@ -2,6 +2,7 @@
 secrets:
   databaseUser: "<mongodb user password>"
   databaseAdmin: "<mongodb admin password>"
+  streamDataPassword: "<stream data password>"
   crate:  "<crate db password>"
   rabbitmq: "<rabbitmq password>"
   rootCa: "" # set via command param
@@ -30,4 +31,6 @@ services:
     publicUri: https://communication.domain.local
   adminPanel: 
     publicUri: https://adminpanel.domain.local
-  
+  studio:
+    publicUri: https://studio.domain.local
+    deploy: true

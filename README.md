@@ -124,11 +124,37 @@ helm template --namespace octo --values office-sample.yaml octo-mesh-office ../o
 helm upgrade --install --namespace octo --create-namespace --values office-values.yaml --set image.tag="0.0.2406.3001" mesh-add-in meshmakers/octo-mesh-office
 ```
 
+### Install OctoMesh Adapter
+
+```bash
+helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
+```
+
+## Setup OctoMesh Frontend App Template
+
+OctoMesh App Template shows the possibilities for the frontend UI provides
+
+### Create a values file to configure app template
+See the [values.yaml](src/octo-mesh-app-template/values.yaml) file for configuration options.
+Examples are available in the [example's](src/examples) directory.
+
+### Render octo-mesh-app-template chart template locally and display the output
+
+```bash
+helm template --namespace octo --values template-app-sample.yaml mytemplate ../octo-mesh-app-template
+```
+
+### Install OctoMesh Excel Add-in
+
+```bash
+helm upgrade --install --namespace octo --create-namespace --values office-values.yaml --set image.tag="0.0.2406.3001" mesh-add-in meshmakers/octo-mesh-office
+```
+
 ## Setup OctoMesh Communication Operator
 
 OctoMesh Communication Operator is responsible for managing adapters on edge clusters. The operator requires octo-mesh-crts to be installed.
 
-### Create a values file to configure OctoMesh Communication Operator
+### Create a value file to configure OctoMesh Communication Operator
 See the [values.yaml](src/octo-mesh-communication-operator/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
@@ -154,4 +180,6 @@ helm install --namespace octo-operator-system --values ./examples/operator-sampl
 ```
 The operator requires the CRDs to be installed, but they are installed by default. To disable install the CRDs, set the `octo-mesh-crds.enabled` value to `false`.
 
+```bash
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set image.tag=0.0.2408.23001-main  --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 ./octo-mesh-communication-operator/
+```
