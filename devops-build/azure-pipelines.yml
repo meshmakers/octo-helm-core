@@ -59,6 +59,14 @@ stages:
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
           - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-app-template'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-app-template'
+              chartVersion: '$(BuildNumberShort)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-crds'
             inputs:
               command: package
