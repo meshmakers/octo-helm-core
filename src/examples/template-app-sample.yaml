@@ -1,6 +1,6 @@
 
-# This will pass the client id to the office add-in
-clientId: "octo-office-integration-demo"
+# This will pass the client id to the template app
+clientId: "octo-template-app"
 
 # The public uri of the adapter
 publicUri: https://template.example.com
