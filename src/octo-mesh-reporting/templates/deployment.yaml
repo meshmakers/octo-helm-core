@@ -45,6 +45,8 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:80"
             - name: CLIENT_ID
               value: {{ .Values.clientId | quote }}
             - name: OFFICE_URL
