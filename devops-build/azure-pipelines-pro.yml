@@ -50,6 +50,14 @@ stages:
               chartVersion: '$(BuildNumberShort)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
+          - task: HelmDeploy@0
+            displayName: 'helm package octo-mesh-reporting'
+            inputs:
+              command: package
+              chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-reporting'
+              chartVersion: '$(BuildNumberShort)'
+              destination: '$(Build.artifactstagingdirectory)'
+              arguments: '--app-version $(Build.BuildNumber) --dependency-update'
           - task: PowerShell@2
             displayName: 'Create version info file'
             inputs:
