@@ -17,6 +17,8 @@ There are several helm charts available in this repository:
 3) octo-mesh-crts: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
 4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
 5) octo-mesh-office: This chart contains the OctoMesh Office, which is an Excel add-in that allows users to interact with OctoMesh.
+6) octo-mesh-reporting: This chart contains OctoMesh Reporting, which is a service that provides reporting capabilities for OctoMesh.
+7) octo-mesh-app-template: This chart contains a template for an OctoMesh frontend app.
 
 To use the charts, add the repository to your helm configuration:
 
@@ -183,3 +185,18 @@ The operator requires the CRDs to be installed, but they are installed by defaul
 ```bash
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set image.tag=0.0.2408.23001-main  --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 ./octo-mesh-communication-operator/
 ```
+
+### Install OctoMesh Reporting
+
+OctoMesh Reporting is a service that provides reporting capabilities for OctoMesh. This chart requires running octo-mesh core services.
+
+### Create a value file to configure OctoMesh Reporting
+See the [values.yaml](src/octo-mesh-reporting/values.yaml) file for configuration options.
+Examples are available in the [example's](src/examples) directory.
+
+### Render octo-mesh-reporting chart template locally and display the output
+
+```bash
+helm template --namespace octo --values reporting-sample.yaml octo-mesh-reporting ../octo-mesh-reporting
+```
+
