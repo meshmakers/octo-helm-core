@@ -39,8 +39,6 @@
 
 
 {{- define "octo-mesh.env" -}}
-- name: ASPNETCORE_URLS
-  value: "http://+:80"
 {{- $name := "OCTO_REPORTING" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" . "name" $name) }} 
