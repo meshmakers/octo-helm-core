@@ -60,3 +60,12 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Check if a mandadory value exists
+*/}}
+{{- define "checkMandatoryValue" -}}
+{{- if not .value -}}
+{{- fail (printf "Value %s does not exist. Please define a corresponding value." .name) -}}
+{{- end -}}
+{{- end -}}

@@ -31,39 +31,52 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.image.privateRegistry }}
-          image: "{{ .Values.image.privateRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- else }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          env:
-            - name: ASPNETCORE_URLS
-              value: "http://+:80"
-            - name: CLIENT_ID
-              value: {{ .Values.clientId | quote }}
-            - name: OFFICE_URL
-              value: {{ .Values.publicUri | quote }}
-          livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
-          readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+      - name: {{ .Chart.Name }}
+        {{- if .Values.image.privateRegistry }}
+        image: "{{ .Values.image.privateRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.port }}
+            protocol: TCP
+        env:
+          {{- include "octo-mesh.env" . | nindent 8 }}
+        {{- with .Values.livenessProbe}}
+        livenessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.readinessProbe}}
+        readinessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .Values.resources}}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if or .Values.volumeMounts .Values.secrets.rootCa }}
+        volumeMounts:
+        {{- end }}
+        {{- with .Values.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- if .Values.secrets.rootCa }}
+        - name: root-ca-volume
+          mountPath: /etc/ssl/certs/root-ca.pem
+          subPath: root-ca.pem
+        {{- end }}
+      {{- if or .Values.volumes .Values.secrets.rootCa }}
       volumes:
+      {{- end }}
+      {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.secrets.rootCa }}
+      - name: root-ca-volume
+        secret:
+          secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" .) }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
