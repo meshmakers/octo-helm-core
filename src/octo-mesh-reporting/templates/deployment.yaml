@@ -76,7 +76,7 @@ spec:
       {{- if .Values.secrets.rootCa }}
       - name: root-ca-volume
         secret:
-          secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" .) }}
+          secretName: {{ printf "%s-ca" (include "octo-mesh-reporting.fullname" .) }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
