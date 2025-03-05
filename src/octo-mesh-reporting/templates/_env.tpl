@@ -45,4 +45,8 @@
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" . "name" $name) }} 
 {{ include "octo-mesh.streamdata-env" (dict "global" . "name" $name) }}
+- name: OCTO_REPORTING__AUTHORITYURL
+  value: {{ .Values.authUri }}
+- name: OCTO_REPORTING__PUBLICURL
+  value: {{ .Values.publicUri }}
 {{- end }}

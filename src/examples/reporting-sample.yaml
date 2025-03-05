@@ -5,6 +5,9 @@ clientId: "octo-reporting-demo"
 # The public uri of the adapter
 publicUri: https://reporting.example.com
 
+# The public uri of the oauth service
+authUri: https://connect.example.com
+
 secrets:
   databaseUser: <mongodb user password>
   databaseAdmin: <mongodb admin password>

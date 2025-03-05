@@ -8,6 +8,9 @@ clientId: "octo-reporting"
 # The public uri of reporting
 publicUri: "https://localhost:5007"
 
+# The public uri of the oauth service
+authUri: "https://localhost:5003"
+
 secrets:
   databaseUser: ""
   databaseAdmin: ""
