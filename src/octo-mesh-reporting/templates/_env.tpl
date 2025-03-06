@@ -16,7 +16,7 @@
 {{- define "octo-mesh.broker-env" -}}
 - name: {{ printf "%s__BROKERHOST" (upper .name) }}
   value: {{ .global.Values.clusterDependencies.rabbitMqHost }}
-- name: {{ printf "%s__BROKERUSERNAME" (upper .name) }}
+- name: {{ printf "%s__BROKERUSER" (upper .name) }}
   value: {{ .global.Values.clusterDependencies.rabbitMqUser }}
 - name: {{ printf "%s__BROKERPASSWORD" (upper .name) }}
   valueFrom:
