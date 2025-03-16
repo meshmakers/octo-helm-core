@@ -194,9 +194,24 @@ OctoMesh Reporting is a service that provides reporting capabilities for OctoMes
 See the [values.yaml](src/octo-mesh-reporting/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
+
 ### Render octo-mesh-reporting chart template locally and display the output
 
 ```bash
 helm template --namespace octo --values reporting-sample.yaml octo-mesh-reporting ../octo-mesh-reporting
 ```
 
+
+### Install Schema Provider
+
+Schema Provider is a small container that provides construction kit schema files as a Web API.
+
+### Create a value file to configure Schema Provider
+See the [values.yaml](src/octo-mesh-schema-provider/values.yaml) file for configuration options.
+Examples are available in the [example's](src/examples) directory.
+
+### Render octo-mesh-schema-provider chart template locally and display the output
+
+```bash
+helm template --namespace octo --values schema-provider-sample.yaml schema-provider ../octo-mesh-schema-provider
+```
