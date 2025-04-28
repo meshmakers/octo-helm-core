@@ -16,9 +16,7 @@ There are several helm charts available in this repository:
 2) octo-mesh-adapter: Mesh Adapters host mesh pipelines and are installed in the same cluster as the core services, but for each tenant.
 3) octo-mesh-crts: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
 4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
-5) octo-mesh-office: This chart contains the OctoMesh Office, which is an Excel add-in that allows users to interact with OctoMesh.
-6) octo-mesh-reporting: This chart contains OctoMesh Reporting, which is a service that provides reporting capabilities for OctoMesh.
-7) octo-mesh-app-template: This chart contains a template for an OctoMesh frontend app.
+5) octo-mesh-app-template: This chart contains a template for an OctoMesh frontend app.
 
 To use the charts, add the repository to your helm configuration:
 
@@ -56,7 +54,7 @@ Create PFX
 openssl pkcs12 -export -out IdentityServer4Auth.pfx -inkey IdentityServer4Auth.key -in IdentityServer4Auth.crt -passin pass:"<password>" -passout pass:"<password>"
 ```
 
-### Create a values file to configure OctoMesh
+### Create a values-file to configure OctoMesh
 See the [values.yaml](src/octo-mesh/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
@@ -90,7 +88,7 @@ helm template --namespace octo --values local-cluster-sample.yaml --set-file ser
 
 OctoMesh Adapter is a service that hosts mesh pipelines and is installed in the same cluster as the core services, but for each tenant. The adapter requires a running MongoDB instance and CRATE DB for stream data.
 
-### Create a values file to configure OctoMesh Adapter
+### Create a values-file to configure OctoMesh Adapter
 See the [values.yaml](src/octo-mesh-adapter/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
@@ -106,37 +104,11 @@ helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ..
 helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
 ```
 
-## Setup OctoMesh Excel Add-in
-
-OctoMesh Excel Add-In is a service that allows users to interact with OctoMesh using Excel. The add-in does not have nay prerequisites, because the connection to OctoMesh is done through Excel.
-
-### Create a values file to configure OctoMesh Office
-See the [values.yaml](src/octo-mesh-office/values.yaml) file for configuration options.
-Examples are available in the [example's](src/examples) directory.
-
-### Render octo-mesh-office chart template locally and display the output
-
-```bash
-helm template --namespace octo --values office-sample.yaml octo-mesh-office ../octo-mesh-office
-```
-
-### Install OctoMesh Excel Add-in
-
-```bash
-helm upgrade --install --namespace octo --create-namespace --values office-values.yaml --set image.tag="0.0.2406.3001" mesh-add-in meshmakers/octo-mesh-office
-```
-
-### Install OctoMesh Adapter
-
-```bash
-helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
-```
-
 ## Setup OctoMesh Frontend App Template
 
 OctoMesh App Template shows the possibilities for the frontend UI provides
 
-### Create a values file to configure app template
+### Create a values-file to configure app template
 See the [values.yaml](src/octo-mesh-app-template/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
@@ -185,22 +157,6 @@ The operator requires the CRDs to be installed, but they are installed by defaul
 ```bash
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set image.tag=0.0.2408.23001-main  --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 ./octo-mesh-communication-operator/
 ```
-
-### Install OctoMesh Reporting
-
-OctoMesh Reporting is a service that provides reporting capabilities for OctoMesh. This chart requires running octo-mesh core services.
-
-### Create a value file to configure OctoMesh Reporting
-See the [values.yaml](src/octo-mesh-reporting/values.yaml) file for configuration options.
-Examples are available in the [example's](src/examples) directory.
-
-
-### Render octo-mesh-reporting chart template locally and display the output
-
-```bash
-helm template --namespace octo --values reporting-sample.yaml octo-mesh-reporting ../octo-mesh-reporting
-```
-
 
 ### Install Schema Provider
 
