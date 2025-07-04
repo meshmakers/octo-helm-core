@@ -26,7 +26,7 @@ stages:
       - job: linux
         displayName: helm build
         pool:
-          name: Gerald-Local-Linux
+          name: meshmakers-ci-agents
         steps:
           - template: update-build-number.yml
           - checkout: self
