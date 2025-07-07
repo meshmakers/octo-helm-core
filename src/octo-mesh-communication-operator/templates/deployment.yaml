@@ -147,7 +147,7 @@ spec:
         secret:
           secretName: {{ printf "%s-webhook-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
       {{- if .Values.secrets.rootCa }}
-      - name: root-ca-volume
+      - name: custom-ca-certs
         secret:
           secretName: {{ printf "%s-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
       - name: updated-ca-certs
@@ -167,4 +167,4 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-      {{- end }}            
+      {{- end }}
