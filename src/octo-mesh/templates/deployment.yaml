@@ -51,12 +51,23 @@ spec:
             - sh
             - -c
             - |
-              # Copy custom CA bundle to ca-certificates directory
-              cp /mounted-certs/root-ca.pem /usr/local/share/ca-certificates/meshmakers-custom-ca.crt
-              # Update CA certificates
+              echo "Installing CA certificates package..."
+              apk add --no-cache ca-certificates
+
+              echo "Creating CA certificates directory..."
+              mkdir -p /usr/local/share/ca-certificates/
+
+              echo "Copying custom CA bundle..."
+              cp /mounted-certs/root-ca.pem /usr/local/share/ca-certificates/mm-custom-ca-certs.crt
+
+              echo "Updating CA certificates..."
               update-ca-certificates
-              # Copy updated bundle to shared volume
-              cp /etc/ssl/certs/ca-certificates.crt /shared-certs/
+
+              echo "Copying updated bundle to shared volume..."
+              cp /etc/ssl/certs/ca-certificates.crt /shared-certs/ca-certificates.crt
+              cp /etc/ssl/certs/ca-cert-* /shared-certs/ 2>/dev/null || true
+
+              echo "✓ CA certificates updated for Alpine"
           volumeMounts:
             - name: custom-ca-certs
               mountPath: /mounted-certs
