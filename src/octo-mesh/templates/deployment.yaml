@@ -51,23 +51,50 @@ spec:
             - sh
             - -c
             - |
+              echo "=== Alpine CA Certificate Setup ==="
               echo "Installing CA certificates package..."
               apk add --no-cache ca-certificates
 
               echo "Creating CA certificates directory..."
               mkdir -p /usr/local/share/ca-certificates/
 
-              echo "Copying custom CA bundle..."
-              cp /mounted-certs/root-ca.pem /usr/local/share/ca-certificates/mm-custom-ca-certs.crt
+              echo "Splitting CA bundle into individual certificates..."
+              cd /usr/local/share/ca-certificates/
+
+              # Split the CA bundle into individual certificates using awk
+              awk '
+              BEGIN { cert_count = 0 }
+              /-----BEGIN CERTIFICATE-----/ {
+              cert_count++
+              filename = sprintf("meshmakers-%02d.crt", cert_count)
+              print "Extracting certificate " cert_count " to " filename
+              }
+              /-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ {
+              if (filename) print > filename
+              }
+              /-----END CERTIFICATE-----/ {
+              close(filename)
+              filename = ""
+              }
+              ' /mounted-certs/root-ca.pem
+
+              echo "Individual certificates created:"
+              ls -la /usr/local/share/ca-certificates/meshmakers-*.crt
 
               echo "Updating CA certificates..."
               update-ca-certificates
 
+              echo "Verifying CA certificate integration..."
+              if [ -f /etc/ssl/certs/ca-certificates.crt ]; then
+              cert_count=$(grep -c "BEGIN CERTIFICATE" /etc/ssl/certs/ca-certificates.crt)
+              echo "✓ Total certificates in bundle: $cert_count"
+              fi
+
               echo "Copying updated bundle to shared volume..."
               cp /etc/ssl/certs/ca-certificates.crt /shared-certs/ca-certificates.crt
-              cp /etc/ssl/certs/ca-cert-* /shared-certs/ 2>/dev/null || true
+              cp -r /etc/ssl/certs/ /shared-certs/
 
-              echo "✓ CA certificates updated for Alpine"
+              echo "✓ CA certificates updated for Alpine successfully"
           volumeMounts:
             - name: custom-ca-certs
               mountPath: /mounted-certs
