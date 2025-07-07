@@ -27,13 +27,73 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.secrets.rootCa }}
+      # InitContainer to update CA certificates
+      initContainers:
+        - name: update-ca-certs
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "=== Alpine CA Certificate Setup ==="
+              echo "Installing CA certificates package..."
+              apk add --no-cache ca-certificates
+
+              echo "Creating CA certificates directory..."
+              mkdir -p /usr/local/share/ca-certificates/
+
+              echo "Splitting CA bundle into individual certificates..."
+              cd /usr/local/share/ca-certificates/
+
+              # Split the CA bundle into individual certificates using awk
+              awk '
+              BEGIN { cert_count = 0 }
+              /-----BEGIN CERTIFICATE-----/ {
+              cert_count++
+              filename = sprintf("meshmakers-%02d.crt", cert_count)
+              print "Extracting certificate " cert_count " to " filename
+              }
+              /-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ {
+              if (filename) print > filename
+              }
+              /-----END CERTIFICATE-----/ {
+              close(filename)
+              filename = ""
+              }
+              ' /mounted-certs/root-ca.pem
+
+              echo "Individual certificates created:"
+              ls -la /usr/local/share/ca-certificates/meshmakers-*.crt
+
+              echo "Updating CA certificates..."
+              update-ca-certificates
+
+              echo "Verifying CA certificate integration..."
+              if [ -f /etc/ssl/certs/ca-certificates.crt ]; then
+              cert_count=$(grep -c "BEGIN CERTIFICATE" /etc/ssl/certs/ca-certificates.crt)
+              echo "✓ Total certificates in bundle: $cert_count"
+              fi
+
+              echo "Copying updated bundle to shared volume..."
+              cp /etc/ssl/certs/ca-certificates.crt /shared-certs/ca-certificates.crt
+              cp -r /etc/ssl/certs/ /shared-certs/
+
+              echo "✓ CA certificates updated for Alpine successfully"
+          volumeMounts:
+            - name: custom-ca-certs
+              mountPath: /mounted-certs
+              readOnly: true
+            - name: updated-ca-certs
+              mountPath: /shared-certs
+      {{- end }}
       containers:
       - name: mesh-adapter
         {{- if .Values.image.privateRegistry }}
         image: "{{ .Values.image.privateRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         {{- else }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        {{- end }}        
+        {{- end }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
           - name: http
@@ -41,7 +101,7 @@ spec:
             protocol: TCP
         env:
           {{- include "octo-mesh.env" . | nindent 8 }}
-        {{- with .Values.livenessProbe}}            
+        {{- with .Values.livenessProbe}}
         livenessProbe:
           {{- toYaml . | nindent 12 }}
         {{- end }}
@@ -55,15 +115,15 @@ spec:
         {{- end }}
         {{- if or .Values.volumeMounts .Values.secrets.rootCa }}
         volumeMounts:
-        {{- end }}        
+        {{- end }}
         {{- with .Values.volumeMounts }}
           {{- toYaml . | nindent 12 }}
         {{- end }}
         {{- if .Values.secrets.rootCa }}
-        - name: root-ca-volume
-          mountPath: /etc/ssl/certs/root-ca.pem
-          subPath: root-ca.pem
-        {{- end }}        
+        - name: updated-ca-certs
+          mountPath: /etc/ssl/certs
+          readOnly: true
+        {{- end }}
       {{- if or .Values.volumes .Values.secrets.rootCa }}
       volumes:
       {{- end }}
@@ -74,7 +134,9 @@ spec:
       - name: root-ca-volume
         secret:
           secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" .) }}
-      {{- end }}      
+      - name: updated-ca-certs
+        emptyDir: {}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
