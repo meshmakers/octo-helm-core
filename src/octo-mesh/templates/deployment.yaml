@@ -42,6 +42,28 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if $global.Values.secrets.rootCa }}
+      # InitContainer to update CA certificates
+      initContainers:
+        - name: update-ca-certs
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              # Copy custom CA bundle to ca-certificates directory
+              cp /mounted-certs/root-ca.pem /usr/local/share/ca-certificates/meshmakers-custom-ca.crt
+              # Update CA certificates
+              update-ca-certificates
+              # Copy updated bundle to shared volume
+              cp /etc/ssl/certs/ca-certificates.crt /shared-certs/
+          volumeMounts:
+            - name: custom-ca-certs
+              mountPath: /mounted-certs
+              readOnly: true
+            - name: updated-ca-certs
+              mountPath: /shared-certs
+      {{- end }}
       containers:
       - name: {{ $key | lower }}
         {{- if $global.Values.imageDefaults.privateRegistry }}
@@ -79,10 +101,9 @@ spec:
           mountPath: /etc/octo-identity
         {{- end }}           
         {{- if $global.Values.secrets.rootCa }}
-        - name: root-ca-volume
-          mountPath: /etc/ssl/certs/root-ca.pem
-          subPath: root-ca.pem
-          readOnly: false
+        - name: updated-ca-certs
+          mountPath: /etc/ssl/certs
+          readOnly: true
         {{- end }}
       {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa }}
       volumes:
@@ -96,9 +117,11 @@ spec:
           secretName: {{ printf "%s-signing-key" (include "octo-mesh.fullname" $global) }}
       {{- end }}
       {{- if $global.Values.secrets.rootCa }}
-      - name: root-ca-volume
+      - name: custom-ca-certs
         secret:
           secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" $global) }}
+      - name: updated-ca-certs
+        emptyDir: {}
       {{- end }}
       {{- with $svc.pod.nodeSelector }}
       nodeSelector:
