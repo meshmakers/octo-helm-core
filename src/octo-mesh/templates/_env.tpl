@@ -1,4 +1,6 @@
 {{- define "octo-mesh.system-env" -}}
+- name: OCTO_SYSTEM__SYSTEMDATABASENAME
+  value: {{ .global.Values.serviceDefaults.systemDatabaseName }}
 - name: OCTO_SYSTEM__DATABASEHOST
   value: {{ .global.Values.clusterDependencies.mongodbHost }}
 - name: OCTO_SYSTEM__DATABASEUSERPASSWORD
