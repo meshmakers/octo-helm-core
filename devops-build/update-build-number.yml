@@ -20,18 +20,34 @@ steps:
       $buildNumberShort = "$major.$minor.$build"
       $buildNumberLong = "$major.$minor.$build.$revision"
       
+      if ($branch.StartsWith("refs/heads/test/")) {
+        Write-host "Branch is test branch"
+        $branchName = '$(Build.SourceBranchName)'
+        $versionString = $branchName.SubString(0, $branchName.IndexOf("-"))
+        $newBranchName = $branchName.SubString($branchName.IndexOf("-") + 1)
+        Write-Host "Version string is $versionString"
+        $versionArray = $versionString.Split(".")
+        $major = [int]$versionArray[0]
+        $minor = [int]$versionArray[1]
+        $buildNumberShort = "$major.$minor.$build"
+        $buildNumberLong = "$major.$minor.$build.$revision"
+        $fullBuildNumber = "$major.$minor.$build.$revision-$newBranchName"
+        Write-Host "Setting build number to $buildNumberLong"
+        Write-Host "##vso[build.updatebuildnumber]$fullBuildNumber"
+      }
+      
       if ($branch.StartsWith("refs/tags/r")) {
+        Write-host "Branch is release branch"
         $branchName = '$(Build.SourceBranchName)'
         $versionString = $branchName.SubString(1)
         $versionArray = $versionString.Split(".")
         $major = [int]$versionArray[0]
         $minor = [int]$versionArray[1]
-        $build = [int]($versionArray[2] -split '-')[0]
+        $build = [int]$versionArray[2]
         $buildNumberShort = "$major.$minor.$build"
         $buildNumberLong = "$major.$minor.$build.0"
         Write-Host "Setting build number to $buildNumberLong"
         Write-Host "##vso[build.updatebuildnumber]$buildNumberLong"
-        Write-Host "##vso[build.addbuildtag]release"
       }
       Write-Host "Setting build number short to '$buildNumberShort', build number long to '$buildNumberLong'"
       Write-Host "##vso[task.setvariable variable=MajorVersion;]$major"

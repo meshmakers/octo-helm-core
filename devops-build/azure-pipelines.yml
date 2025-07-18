@@ -5,6 +5,7 @@ trigger:
   branches:
     include:
       - dev/*
+      - test/*
       - main
   tags:
     exclude:
