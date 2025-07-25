@@ -17,7 +17,7 @@ communicationControllerServiceUri: ""
 publicUri: ""
 
 # The unique instance prefix of the OctoMesh installation.
-instancePrefix: "";
+instancePrefix: ""
 
 secrets:
   databaseUser: ""
