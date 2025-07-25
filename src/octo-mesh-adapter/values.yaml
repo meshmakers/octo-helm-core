@@ -16,6 +16,9 @@ communicationControllerServiceUri: ""
 # The public uri of the adapter
 publicUri: ""
 
+# The unique instance prefix of the OctoMesh installation.
+instancePrefix: "";
+
 secrets:
   databaseUser: ""
   databaseAdmin: ""

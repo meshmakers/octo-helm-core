@@ -56,6 +56,8 @@
         key: identityKeyFile
 - name: OCTO_IDENTITY__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
+- name: OCTO_IDENTITY__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
@@ -68,6 +70,8 @@
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+- name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
@@ -79,6 +83,8 @@
   value: {{ .global.Values.services.bot.publicUri }}
 - name: OCTO_BOT__PUBLICADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+- name: OCTO_BOT__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}
@@ -87,7 +93,9 @@
 - name: OCTO_COMMUNICATIONCONTROLLER__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_COMMUNICATIONCONTROLLER__PUBLICURL
-  value: {{ .global.Values.services.communication.publicUri }}  
+  value: {{ .global.Values.services.communication.publicUri }}
+- name: OCTO_COMMUNICATIONCONTROLLER__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}
@@ -108,6 +116,8 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ADMINPANEL__PUBLICURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
+- name: OCTO_ADMINPANEL__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- else if eq .name "studio" -}}
 {{- $name := "OCTO_REFINERY_STUDIO" }}
 - name: ADMIN_PANEL_URI

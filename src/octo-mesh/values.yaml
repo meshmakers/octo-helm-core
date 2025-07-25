@@ -41,6 +41,8 @@ serviceDefaults:
   type: ClusterIP
   port: 80
   systemDatabaseName: "OctoSystem"
+  # The unique instance prefix of the OctoMesh installation.
+  instancePrefix: ""
 
 ingress:
   enabled: true
