@@ -63,6 +63,10 @@ services:
   identity:
     # Public URI of service
     publicUri: ""
+    # License key for identity services
+    identityServerLicenseKey: ""
+    # License key for AutoMapper
+    autoMapperLicenseKey: ""
     
     signingKey:
       # certificate with private and public key in pfx format, by command arg 
