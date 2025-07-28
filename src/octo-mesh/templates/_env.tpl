@@ -58,7 +58,10 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_IDENTITY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
-
+- name: OCTO_IDENTITY__IdentityServerLicenseKey
+  value: {{ .global.Values.services.identity.identityServerLicenseKey }}
+- name: OCTO_IDENTITY__AutoMapperLicenseKey
+  value: {{ .global.Values.services.identity.autoMapperLicenseKey }}
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
