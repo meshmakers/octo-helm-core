@@ -13,6 +13,9 @@ adapterRtId: ""
 # The communication controller service uri
 communicationControllerServiceUri: ""
 
+# The URI of the reporting service - when possible use the internal service name of kubernetes
+reportingServiceUri: ""
+
 # The public uri of the adapter
 publicUri: ""
 
