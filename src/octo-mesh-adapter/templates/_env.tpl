@@ -55,4 +55,6 @@
   value: "System.Communication/MeshAdapter"              
 - name: OCTO_ADAPTER__ADAPTERRTID
   value: {{ .Values.adapterRtId }}
+- name: OCTO_ADAPTER__REPORTINGSERVICEURL
+  value: {{ .Values.reportingServiceUrl }}
 {{- end }}
