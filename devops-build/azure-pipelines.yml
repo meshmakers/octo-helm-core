@@ -38,11 +38,7 @@ stages:
               knownHostsEntry: '$(SSHKnownHosts)'
               sshPublicKey: '$(SSHPublicKey)'
               sshPassphrase: '$(SSHPassphrase)'
-              sshKeySecureFile: '$(SSHPrivateKeyFile)'     
-          - task: HelmInstaller@1
-            displayName: 'Install Helm'
-            inputs:
-              helmVersionToInstall: 'latest'
+              sshKeySecureFile: '$(SSHPrivateKeyFile)'
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh'
             inputs:
