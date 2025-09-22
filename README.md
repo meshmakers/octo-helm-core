@@ -14,7 +14,7 @@ OctoMesh is at the forefront of data infrastructure innovation, enabling organiz
 There are several helm charts available in this repository:
 1) octo-mesh: The core services of OctoMesh. This is typically installed centrally and supports multiple tenants.
 2) octo-mesh-adapter: Mesh Adapters host mesh pipelines and are installed in the same cluster as the core services, but for each tenant.
-3) octo-mesh-crts: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
+3) octo-mesh-crds: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
 4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
 5) octo-mesh-app-template: This chart contains a template for an OctoMesh frontend app.
 
@@ -126,7 +126,7 @@ helm upgrade --install --namespace octo --create-namespace --values office-value
 
 ## Setup OctoMesh Communication Operator
 
-OctoMesh Communication Operator is responsible for managing adapters on edge clusters. The operator requires octo-mesh-crts to be installed.
+OctoMesh Communication Operator is responsible for managing adapters on edge clusters. The operator requires octo-mesh-crds to be installed.
 
 ### Create a value file to configure OctoMesh Communication Operator
 See the [values.yaml](src/octo-mesh-communication-operator/values.yaml) file for configuration options.
