@@ -66,6 +66,21 @@ Execute the following command to install OctoMesh
 helm upgrade --install --namespace octo --create-namespace --values ./src/examples/aks-cert-manager-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx <releaseName> meshmakers/octo-mesh
 ```
 
+### Enable Data Protection key persistence for Identity Service
+
+By default, ASP.NET Data Protection keys are stored in-memory and lost on pod restart. This causes refresh token invalidation and forces all users to re-authenticate after each redeployment. To persist keys across pod restarts, enable the `dataProtection` option:
+
+```yaml
+services:
+  identity:
+    dataProtection:
+      enabled: true
+      storageSize: "100Mi"
+      storageClass: ""  # optional, uses default storage class if empty
+```
+
+This creates a PersistentVolumeClaim and mounts it at `/var/dpapi-keys` in the identity service container.
+
 Custom root certificates can be added to the secrets using the `--set-file secrets.rootCa=<rootCa.crt>` flag.
 
 ```bash

@@ -1,0 +1,17 @@
+{{- if .Values.services.identity.dataProtection.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "octo-mesh.fullname" . }}-identity-data-protection
+  labels:
+    {{- include "octo-mesh.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.services.identity.dataProtection.storageClass }}
+  storageClassName: {{ .Values.services.identity.dataProtection.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.services.identity.dataProtection.storageSize }}
+{{- end }}

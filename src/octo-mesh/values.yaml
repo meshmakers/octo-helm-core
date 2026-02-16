@@ -67,12 +67,24 @@ services:
     identityServerLicenseKey: ""
     # License key for AutoMapper
     autoMapperLicenseKey: ""
-    
+
     signingKey:
-      # certificate with private and public key in pfx format, by command arg 
+      # certificate with private and public key in pfx format, by command arg
       key: ""
       # password of certificate
       password: ""
+
+    # ASP.NET Data Protection key persistence to survive pod restarts.
+    # When enabled, a PersistentVolumeClaim is created and mounted at /var/dpapi-keys.
+    # This prevents refresh token invalidation and antiforgery token errors after redeployments.
+    # Requires the identity service image to include the corresponding PersistKeysToFileSystem configuration.
+    dataProtection:
+      # set true to create a PVC and mount it for Data Protection key storage
+      enabled: false
+      # size of the PVC (keys are small XML files, 100Mi is more than sufficient)
+      storageSize: "100Mi"
+      # if empty, the default storage class will be used
+      storageClass: ""
     
     # set false to prevent deployment
     deploy: true

@@ -62,6 +62,10 @@
   value: {{ .global.Values.services.identity.identityServerLicenseKey }}
 - name: OCTO_IDENTITY__AutoMapperLicenseKey
   value: {{ .global.Values.services.identity.autoMapperLicenseKey }}
+{{- if .global.Values.services.identity.dataProtection.enabled }}
+- name: OCTO_IDENTITY__DataProtectionKeysPath
+  value: "/var/dpapi-keys"
+{{- end }}
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
