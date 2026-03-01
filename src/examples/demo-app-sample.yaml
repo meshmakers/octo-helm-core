@@ -1,9 +1,9 @@
 
-# This will pass the client id to the template app
-clientId: "octo-template-app"
+# This will pass the client id to the demo app
+clientId: "octo-demo-app"
 
-# The public uri of the adapter
-publicUri: https://template.example.com
+# The public uri of the demo app
+publicUri: https://demoapp.example.com
 # the uri of the admin panel
 adminPanelUri: https://adminpanel.example.com
 

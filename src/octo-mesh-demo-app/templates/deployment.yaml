@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "octo-mesh-app-template.fullname" . }}
+  name: {{ include "octo-mesh-demo-app.fullname" . }}
   labels:
-    {{- include "octo-mesh-app-template.labels" . | nindent 4 }}
+    {{- include "octo-mesh-demo-app.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "octo-mesh-app-template.selectorLabels" . | nindent 6 }}
+      {{- include "octo-mesh-demo-app.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "octo-mesh-app-template.labels" . | nindent 8 }}
+        {{- include "octo-mesh-demo-app.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "octo-mesh-app-template.serviceAccountName" . }}
+      serviceAccountName: {{ include "octo-mesh-demo-app.serviceAccountName" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

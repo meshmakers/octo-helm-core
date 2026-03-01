@@ -16,7 +16,7 @@ There are several helm charts available in this repository:
 2) octo-mesh-adapter: Mesh Adapters host mesh pipelines and are installed in the same cluster as the core services, but for each tenant.
 3) octo-mesh-crds: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
 4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
-5) octo-mesh-app-template: This chart contains a template for an OctoMesh frontend app.
+5) octo-mesh-demo-app: This chart contains the OctoMesh demo app.
 
 To use the charts, add the repository to your helm configuration:
 
@@ -119,18 +119,18 @@ helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ..
 helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
 ```
 
-## Setup OctoMesh Frontend App Template
+## Setup OctoMesh Demo App
 
-OctoMesh App Template shows the possibilities for the frontend UI provides
+OctoMesh Demo App shows the possibilities for the frontend UI provides
 
-### Create a values-file to configure app template
-See the [values.yaml](src/octo-mesh-app-template/values.yaml) file for configuration options.
+### Create a values-file to configure demo app
+See the [values.yaml](src/octo-mesh-demo-app/values.yaml) file for configuration options.
 Examples are available in the [example's](src/examples) directory.
 
-### Render octo-mesh-app-template chart template locally and display the output
+### Render octo-mesh-demo-app chart template locally and display the output
 
 ```bash
-helm template --namespace octo --values template-app-sample.yaml mytemplate ../octo-mesh-app-template
+helm template --namespace octo --values demo-app-sample.yaml mydemoapp ../octo-mesh-demo-app
 ```
 
 ### Install OctoMesh Excel Add-in

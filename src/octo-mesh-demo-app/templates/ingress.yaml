@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "octo-mesh-app-template.fullname" . }}
+  name: {{ include "octo-mesh-demo-app.fullname" . }}
   labels:
-    {{- include "octo-mesh-app-template.labels" . | nindent 4 }}
+    {{- include "octo-mesh-demo-app.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -22,7 +22,7 @@ spec:
   tls:
     - hosts:
         - {{ .Values.publicUri | replace "https://" "" | trimSuffix "/" | quote }}
-      secretName: {{ include "octo-mesh-app-template.fullname" . }}
+      secretName: {{ include "octo-mesh-demo-app.fullname" . }}
   {{- end }}
   rules:
     - host: {{ .Values.publicUri | replace "https://" "" | trimSuffix "/" | quote }}
@@ -32,7 +32,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: {{ include "octo-mesh-app-template.fullname" . }}
+                name: {{ include "octo-mesh-demo-app.fullname" . }}
                 port:
                   number: {{ $.Values.service.port }}
 {{- end }}
