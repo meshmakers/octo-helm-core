@@ -1,6 +1,10 @@
 {{- define "octo-mesh.system-env" -}}
 - name: OCTO_SYSTEM__DATABASEHOST
   value: {{ .Values.clusterDependencies.mongodbHost }}
+{{- if .Values.clusterDependencies.mongodbReplicaSet }}
+- name: OCTO_SYSTEM__REPLICASETNAME
+  value: {{ .Values.clusterDependencies.mongodbReplicaSet }}
+{{- end }}
 - name: OCTO_SYSTEM__DATABASEUSERPASSWORD
   valueFrom:
     secretKeyRef:

@@ -3,6 +3,10 @@
   value: {{ .global.Values.serviceDefaults.systemDatabaseName }}
 - name: OCTO_SYSTEM__DATABASEHOST
   value: {{ .global.Values.clusterDependencies.mongodbHost }}
+{{- if .global.Values.clusterDependencies.mongodbReplicaSet }}
+- name: OCTO_SYSTEM__REPLICASETNAME
+  value: {{ .global.Values.clusterDependencies.mongodbReplicaSet }}
+{{- end }}
 - name: OCTO_SYSTEM__DATABASEUSERPASSWORD
   valueFrom:
     secretKeyRef:
