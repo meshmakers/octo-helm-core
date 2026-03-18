@@ -70,6 +70,10 @@
 - name: OCTO_IDENTITY__DataProtectionKeysPath
   value: "/var/dpapi-keys"
 {{- end }}
+{{- if .global.Values.services.studio.publicUri }}
+- name: OCTO_IDENTITY__RefineryStudioUrl
+  value: {{ .global.Values.services.studio.publicUri }}
+{{- end }}
 {{- else if eq .name "assetRepository" -}}
 {{- $name := "OCTO_ASSETREPOSITORY" }}
 {{ include "octo-mesh.system-env" . }}
