@@ -87,6 +87,12 @@
   value: {{ .global.Values.services.adminPanel.publicUri }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- with .global.Values.services.assetRepository.ckCatalog }}
+- name: OCTO_LocalFileSystemCatalog__IsEnabled
+  value: "{{ .localFileSystemEnabled }}"
+- name: OCTO_PrivateOctoGitHub__IsEnabled
+  value: "{{ .privateGitHubEnabled }}"
+{{- end }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}

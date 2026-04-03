@@ -143,6 +143,12 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: true
+    # CK Model Catalog configuration
+    ckCatalog:
+      # Enable local file system catalog (default: disabled in production)
+      localFileSystemEnabled: false
+      # Enable private GitHub catalog (default: disabled in production)
+      privateGitHubEnabled: false
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
