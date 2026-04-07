@@ -8,6 +8,8 @@ metadata:
     {{- include "octo-mesh.service-labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "octo-mesh.service-selectorLabels" . | nindent 6 }}
