@@ -56,7 +56,7 @@
 - name: OCTO_ADAPTER__COMMUNICATIONCONTROLLERSERVICESURI
   value: {{ .Values.communicationControllerServiceUri }}
 - name: OCTO_ADAPTER__ADAPTERCKTYPEID
-  value: "System.Communication/MeshAdapter"              
+  value: "System.Communication/Adapter"              
 - name: OCTO_ADAPTER__ADAPTERRTID
   value: {{ .Values.adapterRtId }}
 - name: OCTO_ADAPTER__REPORTINGSERVICEURL
