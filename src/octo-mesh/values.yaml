@@ -174,6 +174,9 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because the bot service uses exclusive RabbitMQ queues
+    # that only allow a single connection at a time.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name

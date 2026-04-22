@@ -23,7 +23,7 @@ metadata:
     {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc)  | nindent 4 }}
 spec:
   replicas: {{ $svc.replicaCount }}
-  {{- if and $svc.dataProtection $svc.dataProtection.enabled }}
+  {{- if or (and $svc.dataProtection $svc.dataProtection.enabled) $svc.recreateStrategy }}
   strategy:
     type: Recreate
   {{- end }}
