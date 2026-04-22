@@ -152,14 +152,14 @@ services:
         httpGet:
           path: /healthz/live
           port: http
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 30
         failureThreshold: 3
       readinessProbe:
         httpGet:
           path: /healthz/ready
           port: http
-        initialDelaySeconds: 15
+        initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
       resources: {}
@@ -191,14 +191,14 @@ services:
         httpGet:
           path: /healthz/live
           port: http
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 30
         failureThreshold: 3
       readinessProbe:
         httpGet:
           path: /healthz/ready
           port: http
-        initialDelaySeconds: 15
+        initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
       resources: {}
@@ -230,14 +230,14 @@ services:
         httpGet:
           path: /healthz/live
           port: http
-        initialDelaySeconds: 30
+        initialDelaySeconds: 60
         periodSeconds: 30
         failureThreshold: 3
       readinessProbe:
         httpGet:
           path: /healthz/ready
           port: http
-        initialDelaySeconds: 15
+        initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
       resources: {}
