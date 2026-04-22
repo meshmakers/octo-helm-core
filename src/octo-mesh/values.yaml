@@ -71,6 +71,7 @@ services:
 
     signingKey:
       # certificate with private and public key in pfx format, by command arg
+      # Pass via: --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx
       key: ""
       # password of certificate
       password: ""
