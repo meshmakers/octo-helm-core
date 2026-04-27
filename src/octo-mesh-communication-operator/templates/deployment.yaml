@@ -94,6 +94,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- if .Values.adapterImagePullSecretName }}
+        - name: OPERATOR__IMAGEPULLSECRETNAME
+          value: {{ .Values.adapterImagePullSecretName }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}

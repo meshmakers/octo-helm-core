@@ -40,6 +40,10 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# Name of image pull secret to apply to adapter pods created by the operator.
+# When set, adapter deployments include this secret for pulling container images.
+adapterImagePullSecretName: ""
+
 
 podAnnotations: {}
 podLabels: {}
