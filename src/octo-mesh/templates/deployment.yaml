@@ -120,7 +120,11 @@ spec:
             protocol: TCP
         env:
           {{- include "octo-mesh.env" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
-        {{- with $svc.pod.livenessProbe}}            
+        {{- with $svc.pod.startupProbe}}
+        startupProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with $svc.pod.livenessProbe}}
         livenessProbe:
           {{- toYaml . | nindent 12 }}
         {{- end }}

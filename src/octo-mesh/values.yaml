@@ -103,6 +103,15 @@ services:
     podLabels: {}
     pod:
       port: 80
+      # Startup probe gives backend services time to import CK models and run
+      # per-tenant initialization before liveness/readiness probes take over.
+      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      startupProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        periodSeconds: 5
+        failureThreshold: 60
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -148,6 +157,15 @@ services:
     podLabels: {}
     pod:
       port: 80
+      # Startup probe gives backend services time to import CK models and run
+      # per-tenant initialization before liveness/readiness probes take over.
+      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      startupProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        periodSeconds: 5
+        failureThreshold: 60
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -190,6 +208,15 @@ services:
     podLabels: {}
     pod:
       port: 80
+      # Startup probe gives backend services time to import CK models and run
+      # per-tenant initialization before liveness/readiness probes take over.
+      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      startupProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        periodSeconds: 5
+        failureThreshold: 60
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -229,6 +256,15 @@ services:
     podLabels: {}
     pod:
       port: 80
+      # Startup probe gives backend services time to import CK models and run
+      # per-tenant initialization before liveness/readiness probes take over.
+      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      startupProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        periodSeconds: 5
+        failureThreshold: 60
       livenessProbe:
         httpGet:
           path: /healthz/live
