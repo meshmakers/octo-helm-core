@@ -98,6 +98,18 @@ spec:
         - name: OPERATOR__IMAGEPULLSECRETNAME
           value: {{ .Values.adapterImagePullSecretName }}
         {{- end }}
+        {{- if .Values.operator.autoManagePools }}
+        - name: OPERATOR__BROKERUSER
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-broker" (include "octoMeshCommunicationOperator.fullname" .) }}
+              key: broker-user
+        - name: OPERATOR__BROKERPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-broker" (include "octoMeshCommunicationOperator.fullname" .) }}
+              key: broker-password
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}

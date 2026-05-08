@@ -9,4 +9,13 @@ data:
   KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__KEYPATH: "{{ .Values.configMap.certKeyPath }}"
   KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__PATH: "{{ .Values.configMap.certPath }}"
   KESTREL__ENDPOINTS__HTTPS__URL: "{{ .Values.configMap.kestrelHttpsUrl }}"
+  OPERATOR__AUTOMANAGEPOOLS: "{{ .Values.operator.autoManagePools }}"
+  OPERATOR__COMMUNICATIONCONTROLLERURI: "{{ .Values.operator.communicationControllerUri }}"
+  OPERATOR__POOLNAMESPACE: "{{ .Values.operator.poolNamespace }}"
+  OPERATOR__DEFAULTPOOLNAME: "{{ .Values.operator.defaultPoolName }}"
+  OPERATOR__INSTANCEPREFIX: "{{ .Values.operator.instancePrefix }}"
+  OPERATOR__ADAPTERIGNORECERTIFICATEVALIDATION: "{{ .Values.operator.adapterIgnoreCertificateValidation }}"
+  OPERATOR__BROKERHOST: "{{ .Values.broker.host }}"
+  OPERATOR__BROKERVIRTUALHOST: "{{ .Values.broker.virtualHost }}"
+  OPERATOR__BROKERPORT: "{{ .Values.broker.port }}"
 ---

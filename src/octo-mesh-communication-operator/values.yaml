@@ -44,6 +44,61 @@ fullnameOverride: ""
 # When set, adapter deployments include this secret for pulling container images.
 adapterImagePullSecretName: ""
 
+# === Central operator mode ===
+# Controls whether the operator runs as a "central operator" — i.e. it connects
+# to the Communication Controller via SignalR (/operatorHub) and listens for
+# tenant lifecycle events. When enabled, the operator auto-creates and auto-
+# deletes CommunicationPool CRs and per-tenant broker secrets.
+# When disabled (default), the operator only reconciles CommunicationPool CRs
+# created externally (edge deployment).
+operator:
+  # Master switch for central operator mode. When true,
+  # `operator.communicationControllerUri`, `broker.host`, `broker.username`,
+  # and `broker.password` MUST be set.
+  autoManagePools: false
+
+  # Cluster-internal URI of the Communication Controller. The /operatorHub
+  # SignalR path is appended by the operator. Typical value:
+  # https://octo-mesh-communication-controller-services
+  communicationControllerUri: ""
+
+  # Namespace where auto-created CommunicationPool CRs, per-tenant broker
+  # secrets, and the resulting adapter Deployments/Services are placed. All
+  # artefacts of a managed pool live here. Must exist before installation.
+  poolNamespace: octo
+
+  # Pool name used in auto-created CommunicationPool CRs.
+  defaultPoolName: default
+
+  # Forwarded to adapter pods as OCTO_ADAPTER__INSTANCEPREFIX. Disambiguates
+  # OctoMesh installations that share the same RabbitMQ broker.
+  instancePrefix: ""
+
+  # If true, adapter pods skip TLS certificate validation when connecting to
+  # the Communication Controller. Use only for local/dev clusters.
+  adapterIgnoreCertificateValidation: false
+
+# === RabbitMQ broker for adapter pods ===
+# These connection details are written by the operator into per-tenant
+# `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods
+# consume. Required when `operator.autoManagePools` is true.
+broker:
+  # Hostname of the RabbitMQ broker. In-cluster typically the Service name.
+  host: ""
+
+  # AMQP virtual host. Default "/" works for stock RabbitMQ.
+  virtualHost: "/"
+
+  # AMQP port. 5672 = plain, 5671 = TLS.
+  port: 5672
+
+  # Credentials are rendered into a Helm-managed Kubernetes Secret and
+  # injected into the operator pod via secretKeyRef — they do NOT appear in
+  # the rendered Deployment manifest. In production, override via --set,
+  # External Secrets, or Sealed Secrets.
+  username: ""
+  password: ""
+
 
 podAnnotations: {}
 podLabels: {}
