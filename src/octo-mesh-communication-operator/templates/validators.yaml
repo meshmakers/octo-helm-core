@@ -1,3 +1,5 @@
+{{- include "octoMeshCommunicationOperator.webhookCerts" . -}}
+{{- $certs := index $ "_webhookCerts" -}}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -6,7 +8,7 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    caBundle: {{ .Values.serviceHooks.caCrt | b64enc | quote }}
+    caBundle: {{ $certs.caCrt | b64enc | quote }}
     service:
       name: {{ include "octoMeshCommunicationOperator.fullname" . }}
       path: /validate/v1communicationpoolentity

@@ -1,3 +1,5 @@
+{{- include "octoMeshCommunicationOperator.webhookCerts" . -}}
+{{- $certs := index $ "_webhookCerts" -}}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -6,11 +8,11 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    caBundle: {{ .Values.serviceHooks.caCrt | b64enc | quote }}
+    caBundle: {{ $certs.caCrt | b64enc | quote }}
     service:
       name: {{ include "octoMeshCommunicationOperator.fullname" . }}
       path: /mutate/v1communicationpoolentity
-      namespace: {{ .Release.Namespace }}      
+      namespace: {{ .Release.Namespace }}
   matchPolicy: Exact
   name: mutate.communicationpool.octo-mesh.meshmakers.io.v1alpha1
   rules:
