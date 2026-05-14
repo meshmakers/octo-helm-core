@@ -13,10 +13,13 @@ OctoMesh is at the forefront of data infrastructure innovation, enabling organiz
 
 There are several helm charts available in this repository:
 1) octo-mesh: The core services of OctoMesh. This is typically installed centrally and supports multiple tenants.
-2) octo-mesh-adapter: Mesh Adapters host mesh pipelines and are installed in the same cluster as the core services, but for each tenant.
-3) octo-mesh-crds: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
-4) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
-5) octo-mesh-demo-app: This chart contains the OctoMesh demo app.
+2) octo-mesh-crds: This chart contains all custom resource definitions (CRDs) required by OctoMesh Communication Operator
+3) octo-mesh-communication-operator: This chart contains the OctoMesh Communication Operator, which is responsible for managing adapters on edge clusters.
+4) octo-mesh-demo-app: This chart contains the OctoMesh demo app.
+
+Adapter charts now live in their respective adapter repositories and are published from there:
+- `octo-mesh-adapter` — published by [`octo-mesh-adapter`](https://github.com/meshmakers/octo-mesh-adapter)
+- `octo-eda-adapter` — published by [`octo-adapter-eda`](https://github.com/meshmakers/octo-adapter-eda)
 
 To use the charts, add the repository to your helm configuration:
 
@@ -97,26 +100,6 @@ helm upgrade --install --namespace octo --create-namespace --values rke2-local-v
 
 ```bash
 helm template --namespace octo --values local-cluster-sample.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=rootca.crt octo-mesh ../octo-mesh
-```
-
-## Setup OctoMesh Adapter
-
-OctoMesh Adapter is a service that hosts mesh pipelines and is installed in the same cluster as the core services, but for each tenant. The adapter requires a running MongoDB instance and CRATE DB for stream data.
-
-### Create a values-file to configure OctoMesh Adapter
-See the [values.yaml](src/octo-mesh-adapter/values.yaml) file for configuration options.
-Examples are available in the [example's](src/examples) directory.
-
-### Render octo-mesh-adapter chart template locally and display the output
-
-```bash
-helm template --namespace octo --values adapter-sample.yaml octo-mesh-adapter ../octo-mesh-adapter
-```
-
-### Install OctoMesh Adapter
-
-```bash
-helm upgrade --install --namespace octo --create-namespace --values rke2-local-meshTest-adapter-values.yaml --set-file secrets.rootCa=root-ca-collection.crt --set image.tag="0.0.2406.3001" mesh-test-adapter meshmakers/octo-mesh-adapter
 ```
 
 ## Setup OctoMesh Demo App
