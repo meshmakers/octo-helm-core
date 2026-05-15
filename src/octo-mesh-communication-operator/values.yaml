@@ -78,6 +78,32 @@ operator:
   # the Communication Controller. Use only for local/dev clusters.
   adapterIgnoreCertificateValidation: false
 
+  # Cluster-internal URI of the reporting service. Projected into each
+  # workload's Helm values as `reportingServiceUri`. Leave empty in edge
+  # clusters that do not host a reporting service.
+  reportingServiceUri: ""
+
+  # Cluster-internal service endpoints projected into every deployed
+  # workload's Helm values. Each field is optional — only those that are
+  # set are injected. Edge operators typically leave the cloud-side hosts
+  # empty so per-workload values can supply local equivalents.
+  clusterDependencies:
+    mongodbHost: ""
+    mongodbReplicaSet: ""
+    rabbitMqHost: ""
+    rabbitMqUser: ""
+    streamDataHost: ""
+    streamDataUser: ""
+
+  # Cluster-wide ingress defaults projected into every deployed workload's
+  # Helm values. Per-workload ValuesYaml or structured overrides can still
+  # override individual annotations.
+  ingress:
+    className: ""
+    clusterIssuer: ""
+    # tls: true / false — leave unset to keep the chart default.
+    tls: ""
+
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods

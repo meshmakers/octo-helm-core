@@ -110,6 +110,50 @@ spec:
               name: {{ printf "%s-broker" (include "octoMeshCommunicationOperator.fullname" .) }}
               key: broker-password
         {{- end }}
+        {{- if .Values.operator.reportingServiceUri }}
+        - name: OPERATOR__REPORTINGSERVICEURI
+          value: {{ .Values.operator.reportingServiceUri | quote }}
+        {{- end }}
+        {{- with .Values.operator.clusterDependencies }}
+        {{- if .mongodbHost }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__MONGODBHOST
+          value: {{ .mongodbHost | quote }}
+        {{- end }}
+        {{- if .mongodbReplicaSet }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__MONGODBREPLICASET
+          value: {{ .mongodbReplicaSet | quote }}
+        {{- end }}
+        {{- if .rabbitMqHost }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__RABBITMQHOST
+          value: {{ .rabbitMqHost | quote }}
+        {{- end }}
+        {{- if .rabbitMqUser }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__RABBITMQUSER
+          value: {{ .rabbitMqUser | quote }}
+        {{- end }}
+        {{- if .streamDataHost }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__STREAMDATAHOST
+          value: {{ .streamDataHost | quote }}
+        {{- end }}
+        {{- if .streamDataUser }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__STREAMDATAUSER
+          value: {{ .streamDataUser | quote }}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.operator.ingress }}
+        {{- if .className }}
+        - name: OPERATOR__INGRESS__CLASSNAME
+          value: {{ .className | quote }}
+        {{- end }}
+        {{- if .clusterIssuer }}
+        - name: OPERATOR__INGRESS__CLUSTERISSUER
+          value: {{ .clusterIssuer | quote }}
+        {{- end }}
+        {{- if ne (toString .tls) "" }}
+        - name: OPERATOR__INGRESS__TLS
+          value: {{ .tls | quote }}
+        {{- end }}
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}
