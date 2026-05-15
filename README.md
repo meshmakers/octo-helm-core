@@ -156,6 +156,33 @@ The operator requires the CRDs to be installed, but they are installed by defaul
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set image.tag=0.0.2408.23001-main  --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 ./octo-mesh-communication-operator/
 ```
 
+### Running multiple operators on one cluster (edge devices)
+
+When deploying multiple operator instances onto the same Kubernetes cluster — typically one per target communication controller on an edge device — each instance must be isolated to its own namespace. Otherwise all operators watch every `CommunicationPool` CR cluster-wide and race on reconciliation.
+
+Two values switch the chart from cluster-wide to namespace-scoped mode:
+
+| Value | Default | Namespace-scoped mode |
+|-------|---------|------------------------|
+| `rbac.scope` | `cluster` | `namespace` — emits `Role` + `RoleBinding` in `.Release.Namespace` instead of `ClusterRole` + `ClusterRoleBinding` |
+| `operator.watchNamespace` | _(empty — watch all)_ | namespace name — sets `OPERATOR__WATCHNAMESPACE`, restricting the CR watcher to that namespace |
+
+Example: install one operator per target cluster, each into its own namespace:
+
+```bash
+helm install --namespace octo-mesh-test-2 --create-namespace \
+  --set rbac.scope=namespace \
+  --set operator.watchNamespace=octo-mesh-test-2 \
+  octo-mesh-op-test-2 ./octo-mesh-communication-operator/
+
+helm install --namespace octo-mesh-prod-1 --create-namespace \
+  --set rbac.scope=namespace \
+  --set operator.watchNamespace=octo-mesh-prod-1 \
+  octo-mesh-op-prod-1 ./octo-mesh-communication-operator/
+```
+
+The two operators stay completely isolated — their RBAC reaches only their own namespace, and the watcher only sees `CommunicationPool` CRs in that namespace.
+
 ### Install Schema Provider
 
 Schema Provider is a small container that provides construction kit schema files as a Web API.

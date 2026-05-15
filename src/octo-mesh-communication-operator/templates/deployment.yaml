@@ -98,6 +98,10 @@ spec:
         - name: OPERATOR__IMAGEPULLSECRETNAME
           value: {{ .Values.adapterImagePullSecretName }}
         {{- end }}
+        {{- if .Values.operator.watchNamespace }}
+        - name: OPERATOR__WATCHNAMESPACE
+          value: {{ .Values.operator.watchNamespace | quote }}
+        {{- end }}
         {{- if .Values.operator.autoManagePools }}
         - name: OPERATOR__BROKERUSER
           valueFrom:

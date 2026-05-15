@@ -44,6 +44,20 @@ fullnameOverride: ""
 # When set, adapter deployments include this secret for pulling container images.
 adapterImagePullSecretName: ""
 
+# === RBAC scope ===
+# Controls whether the operator gets cluster-wide or namespace-scoped Kubernetes
+# permissions. Cluster scope is the historical default and matches the previous
+# chart behaviour. Namespace scope is required when running multiple operator
+# instances on the same cluster (e.g. one per target communication controller
+# on an edge device) so that each operator's RBAC stays within its own
+# namespace and they don't compete for the same CommunicationPool CRs. Pair
+# namespace scope with `operator.watchNamespace` so the CR watcher matches the
+# RBAC reach.
+rbac:
+  # "cluster" → ClusterRole + ClusterRoleBinding (default; backward compatible)
+  # "namespace" → Role + RoleBinding scoped to .Release.Namespace
+  scope: cluster
+
 # === Central operator mode ===
 # Controls whether the operator runs as a "central operator" — i.e. it connects
 # to the Communication Controller via SignalR (/operatorHub) and listens for
@@ -56,6 +70,15 @@ operator:
   # `operator.communicationControllerUri`, `broker.host`, `broker.username`,
   # and `broker.password` MUST be set.
   autoManagePools: false
+
+  # Restricts the operator's CR watcher to a single namespace. When empty
+  # (default), the operator watches all namespaces cluster-wide. Set this to
+  # `.Release.Namespace` (or the same namespace value used at install time)
+  # when running multiple operator instances on one cluster — without it, the
+  # KubeOps watcher sees every CommunicationPool CR in the cluster and
+  # multiple operators will fight over the same resources. Typically paired
+  # with `rbac.scope=namespace`.
+  watchNamespace: ""
 
   # Cluster-internal URI of the Communication Controller. The /operatorHub
   # SignalR path is appended by the operator. Typical value:
