@@ -158,6 +158,28 @@ spec:
           value: {{ .tls | quote }}
         {{- end }}
         {{- end }}
+        {{- $clusterSecretName := printf "%s-cluster-secrets" (include "octoMeshCommunicationOperator.fullname" .) }}
+        {{- if .Values.operator.clusterSecrets.mongodbUserPassword }}
+        - name: OPERATOR__CLUSTERSECRETS__MONGODBUSERPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: mongodb-user-password
+        {{- end }}
+        {{- if .Values.operator.clusterSecrets.mongodbAdminPassword }}
+        - name: OPERATOR__CLUSTERSECRETS__MONGODBADMINPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: mongodb-admin-password
+        {{- end }}
+        {{- if .Values.operator.clusterSecrets.streamDataPassword }}
+        - name: OPERATOR__CLUSTERSECRETS__STREAMDATAPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: stream-data-password
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}

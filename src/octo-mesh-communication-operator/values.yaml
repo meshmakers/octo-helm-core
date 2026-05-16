@@ -127,6 +127,18 @@ operator:
     # tls: true / false — leave unset to keep the chart default.
     tls: ""
 
+  # Cluster-side credentials the operator may inject into workloads that
+  # opt in via Adapter.ReceivesClusterSecrets. Each field is optional —
+  # only those that are set get packaged into the chart-owned
+  # `<fullname>-cluster-secrets` Secret and referenced by the operator via
+  # secretKeyRef. The RabbitMQ password reuses the existing `broker.password`
+  # value; everything else lives here. Override these in production via the
+  # deployment pipeline (Vault) rather than by checking values into git.
+  clusterSecrets:
+    mongodbUserPassword: ""
+    mongodbAdminPassword: ""
+    streamDataPassword: ""
+
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods
