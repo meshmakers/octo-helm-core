@@ -21,6 +21,8 @@ rules:
   resources:
   - services
   - secrets
+  - configmaps
+  - serviceaccounts
   verbs:
   - '*'
 - apiGroups:
@@ -28,6 +30,15 @@ rules:
   resources:
   - statefulsets
   - deployments
+  verbs:
+  - '*'
+# Helm-managed adapter / application charts render an Ingress when
+# `.Values.ingress.enabled` is set, so the operator needs to own them in
+# its pool namespace (same scope as Deployment/Service/Secret above).
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
   verbs:
   - '*'
 - apiGroups:
