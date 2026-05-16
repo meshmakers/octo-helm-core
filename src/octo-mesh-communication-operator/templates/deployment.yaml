@@ -118,6 +118,10 @@ spec:
         - name: OPERATOR__REPORTINGSERVICEURI
           value: {{ .Values.operator.reportingServiceUri | quote }}
         {{- end }}
+        {{- if .Values.operator.imageRegistry }}
+        - name: OPERATOR__IMAGEREGISTRY
+          value: {{ .Values.operator.imageRegistry | quote }}
+        {{- end }}
         {{- with .Values.operator.clusterDependencies }}
         {{- if .mongodbHost }}
         - name: OPERATOR__CLUSTERDEPENDENCIES__MONGODBHOST

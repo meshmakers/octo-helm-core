@@ -106,6 +106,12 @@ operator:
   # clusters that do not host a reporting service.
   reportingServiceUri: ""
 
+  # Private container registry the cluster pulls workload images from
+  # (e.g. "docker.mm.cloud"). When set, projected into each workload's
+  # `image.privateRegistry` so the chart renders the image reference as
+  # `{registry}/{repository}:{tag}` instead of pulling from docker.io.
+  imageRegistry: ""
+
   # Cluster-internal service endpoints projected into every deployed
   # workload's Helm values. Each field is optional — only those that are
   # set are injected. Edge operators typically leave the cloud-side hosts
