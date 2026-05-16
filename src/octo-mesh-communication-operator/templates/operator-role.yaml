@@ -30,8 +30,20 @@ rules:
   resources:
   - statefulsets
   - deployments
+  - replicasets
   verbs:
   - '*'
+# Helm's --atomic / --wait flags poll Pod status when waiting for the
+# release to become Ready. Read-only on pods is enough — the actual pod
+# spec is managed indirectly via the Deployment.
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
 # Helm-managed adapter / application charts render an Ingress when
 # `.Values.ingress.enabled` is set, so the operator needs to own them in
 # its pool namespace (same scope as Deployment/Service/Secret above).
