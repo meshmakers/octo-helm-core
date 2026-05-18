@@ -32,6 +32,12 @@
 {{- end }}
 
 {{- define "octo-mesh.streamdata-env" -}}
+# Instance-level kill switch for StreamData. Read by
+# StreamDataInstanceConfiguration (root "StreamData" config section, hence
+# the fixed env-var name without a service prefix). Defaults to false so
+# the feature is opt-in per cluster.
+- name: OCTO_STREAMDATA__ENABLED
+  value: {{ .global.Values.clusterDependencies.streamDataEnabled | quote }}
 - name: {{ printf "%s__STREAMDATAHOST" (upper .name) }}
   value: {{ .global.Values.clusterDependencies.streamDataHost }}
 - name: {{ printf "%s__STREAMDATAUSER" (upper .name) }}
@@ -40,7 +46,7 @@
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
-      key: streamDataPassword     
+      key: streamDataPassword
 {{- end }}
 
 

@@ -29,6 +29,11 @@ clusterDependencies:
   rabbitMqUser: "octo-mq-user"
   streamDataHost: "crate-octo-crate.cratedb.svc.cluster.local"
   streamDataUser: "octo-system"
+  # Instance-level StreamData kill switch (StreamDataInstanceConfiguration.Enabled).
+  # Default false → matches the C# default, feature is opt-in per cluster. Set to
+  # true in clusters that run CrateDB and want tenants to be able to enable
+  # StreamData via the asset-rep StreamData controller.
+  streamDataEnabled: false
 
 externalUris:
   # URI of CrateDB to be used by the services
