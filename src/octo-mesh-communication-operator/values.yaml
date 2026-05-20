@@ -38,7 +38,16 @@ secrets:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: ""
+# Default fullname is `communication-operator` so K8s resource names don't
+# inherit the Helm release name as a prefix. Every operator install lives
+# in its own namespace (Cloud: a single `octo` install; Edge: per-target-
+# cluster `octo-op-{target_cluster}-{instance_prefix}` install — see
+# meshmakers-infrastructure edge-deployment), so the release name is
+# redundant in the resource name. Override to a fixed value here lets two
+# operators on the same cluster coexist as long as they're in different
+# namespaces — which Modell B already guarantees. Override to "" via -f/
+# --set if you want the legacy `{release}-communication-operator` shape.
+fullnameOverride: "communication-operator"
 
 # Name of image pull secret to apply to adapter pods created by the operator.
 # When set, adapter deployments include this secret for pulling container images.
