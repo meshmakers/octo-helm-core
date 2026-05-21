@@ -27,6 +27,10 @@ trigger:
 variables:
   - group: GitSSHGroup
   - group: OctoDefault
+  # Carries HelmChartBuildGhToken — the PAT publish-helm-chart.yml uses
+  # to push the chart to gh-pages / meshmakers.github.io. Same group the
+  # adapter pipelines link.
+  - group: ApiKeys-mm-cloud
   - name: MajorVersion
     value: 0
   - name: MinorVersion
