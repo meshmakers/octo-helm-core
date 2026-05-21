@@ -110,13 +110,13 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
         periodSeconds: 5
-        failureThreshold: 60
+        failureThreshold: 120
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -164,13 +164,13 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
         periodSeconds: 5
-        failureThreshold: 60
+        failureThreshold: 120
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -215,13 +215,13 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
         periodSeconds: 5
-        failureThreshold: 60
+        failureThreshold: 120
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -263,13 +263,13 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 60 * 5s = 300s (5 minutes).
+      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
         periodSeconds: 5
-        failureThreshold: 60
+        failureThreshold: 120
       livenessProbe:
         httpGet:
           path: /healthz/live
