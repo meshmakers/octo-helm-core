@@ -1,5 +1,18 @@
 name: $(MajorVersion).$(MinorVersion).$(date:yyMM).$(DayOfMonth)$(rev:rrr)-$(Build.SourceBranchName)
 
+resources:
+  repositories:
+    # publish-helm-chart.yml template — pushes the packaged chart to
+    # gh-pages (channel=dev) on every main build and to
+    # meshmakers.github.io/charts/ (channel=release) on every r* tag.
+    # Replaces the old Classic Release pipeline whose inline `git push`
+    # ran in detached-HEAD and silently dropped octo-mesh-3.3.99/100.
+    - repository: helmChartBuild
+      type: github
+      name: meshmakers/helm-chart-build
+      endpoint: meshmakers-access-token
+      ref: refs/heads/main
+
 trigger:
   batch: true
   branches:
@@ -18,9 +31,11 @@ variables:
     value: 0
   - name: MinorVersion
     value: 1
-  - name: BuildNumberShort
-    value: '0.1.0'
-    
+  - name: isRelease
+    value: ${{ startsWith(variables['Build.SourceBranch'], 'refs/tags/r') }}
+  - name: isMain
+    value: ${{ eq(variables['Build.SourceBranch'], 'refs/heads/main') }}
+
 stages:
   - stage: Build
     jobs:
@@ -30,6 +45,9 @@ stages:
           name: meshmakers-ci-agents
         steps:
           - template: update-build-number.yml
+          # Sets $(ChartVersion) — 3-segment SemVer derived from
+          # Build.BuildNumber. See helm-chart-build's docs/PUBLISHING.md.
+          - template: ci-templates/derive-chart-version.yml@helmChartBuild
           - checkout: self
             clean: true
             submodules: recursive
@@ -39,46 +57,144 @@ stages:
               sshPublicKey: '$(SSHPublicKey)'
               sshPassphrase: '$(SSHPassphrase)'
               sshKeySecureFile: '$(SSHPrivateKeyFile)'
+
+          # ---- octo-mesh ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh'
-              chartVersion: '$(BuildNumberShort)'
+              chartVersion: '$(ChartVersion)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: dev
+              chartName: octo-mesh
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isMain, true))
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: release
+              chartCategory: platform
+              chartName: octo-mesh
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isRelease, true))
+
+          # ---- octo-mesh-demo-app ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-demo-app'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-demo-app'
-              chartVersion: '$(BuildNumberShort)'
+              chartVersion: '$(ChartVersion)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: dev
+              chartName: octo-mesh-demo-app
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-demo-app-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isMain, true))
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: release
+              chartCategory: platform
+              chartName: octo-mesh-demo-app
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-demo-app-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isRelease, true))
+
+          # ---- octo-mesh-crds ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-crds'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-crds'
-              chartVersion: '$(BuildNumberShort)'
+              chartVersion: '$(ChartVersion)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber)'
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: dev
+              chartName: octo-mesh-crds
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-crds-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isMain, true))
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: release
+              chartCategory: platform
+              chartName: octo-mesh-crds
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-crds-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isRelease, true))
+
+          # ---- octo-mesh-communication-operator ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-communication-operator'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-communication-operator'
-              chartVersion: '$(BuildNumberShort)'
+              chartVersion: '$(ChartVersion)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber) --dependency-update'
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: dev
+              chartName: octo-mesh-communication-operator
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-communication-operator-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isMain, true))
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: release
+              chartCategory: platform
+              chartName: octo-mesh-communication-operator
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-communication-operator-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isRelease, true))
+
+          # ---- octo-mesh-schema-provider ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh-schema-provider'
             inputs:
               command: package
               chartPath: '$(System.DefaultWorkingDirectory)/src/octo-mesh-schema-provider'
-              chartVersion: '$(BuildNumberShort)'
+              chartVersion: '$(ChartVersion)'
               destination: '$(Build.artifactstagingdirectory)'
               arguments: '--app-version $(Build.BuildNumber) --dependency-update'
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: dev
+              chartName: octo-mesh-schema-provider
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-schema-provider-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isMain, true))
+          - template: ci-templates/publish-helm-chart.yml@helmChartBuild
+            parameters:
+              channel: release
+              chartCategory: platform
+              chartName: octo-mesh-schema-provider
+              chartVersion: $(ChartVersion)
+              chartTgzPath: $(Build.artifactstagingdirectory)/octo-mesh-schema-provider-$(ChartVersion).tgz
+              githubTokenVariable: HelmChartBuildGhToken
+              condition: and(succeeded(), eq(variables.isRelease, true))
+
+          # Pipeline artifact retained for deploy-octo-mesh-core-services* —
+          # they read versioninfo.txt from this `local` artifact.
           - task: PowerShell@2
             displayName: 'Create version info file'
             inputs:
@@ -90,5 +206,3 @@ stages:
             displayName: 'Publish Artifact: local'
             inputs:
               ArtifactName: local
- 
-
