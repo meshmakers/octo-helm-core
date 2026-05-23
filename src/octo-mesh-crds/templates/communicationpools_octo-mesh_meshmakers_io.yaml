@@ -26,14 +26,23 @@ spec:
             nullable: false
             properties:
               # The CR is an intent record: "the operator that watches this
-              # namespace should manage pool {poolName} for tenant
-              # {tenantId}". Controller URI, broker host / port / virtualHost,
-              # instancePrefix and cert-validation toggles all live on the
-              # operator instance (OperatorOptions / OPERATOR__* env vars)
-              # and are no longer duplicated on the CR — see the
-              # octo-communication-operator refactor that reduces
-              # V1CommunicationPoolEntitySpec to the two fields below.
+              # namespace should manage pool {poolRtId} for tenant
+              # {tenantId}". poolRtId is the runtime entity id (24-char
+              # lowercase hex) — it drives the derived k8s identifiers
+              # (CR metadata.name, broker secret name) because it is
+              # always RFC 1123 valid. poolName is the user-facing
+              # display name from the CK entity, preserved here so the
+              # spec survives controller-side renames without forcing a
+              # CR rebuild.
+              #
+              # Controller URI, broker host / port / virtualHost,
+              # instancePrefix and cert-validation toggles all live on
+              # the operator instance (OperatorOptions / OPERATOR__* env
+              # vars) and are not duplicated on the CR.
               tenantId:
+                nullable: false
+                type: string
+              poolRtId:
                 nullable: false
                 type: string
               poolName:
