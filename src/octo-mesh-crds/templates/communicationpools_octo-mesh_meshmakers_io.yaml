@@ -2,6 +2,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: communicationpools.octo-mesh.meshmakers.io
+  annotations:
+    # Prevent Helm from ever deleting this CRD as part of an
+    # upgrade-removes-resource diff. Without this, an unrelated Helm
+    # release that previously bundled the CRD (e.g. the operator
+    # chart in pre-2026-05 deployments) can wipe it on its next
+    # upgrade when its own subchart drops the CRD. The standalone
+    # `octo-mesh-crds` release is the sole owner; `keep` makes that
+    # ownership truly authoritative.
+    "helm.sh/resource-policy": keep
 spec:
   group: octo-mesh.meshmakers.io
   names:
