@@ -15,6 +15,16 @@ webhooks:
       namespace: {{ .Release.Namespace }}
   matchPolicy: Exact
   name: validate.communicationpool.octo-mesh.meshmakers.io.v1alpha1
+  # Scope the webhook to the operator's own release namespace so multiple
+  # operator instances on the same cluster (one per target controller) do
+  # not all validate every CommunicationPool CR cluster-wide. Without this
+  # selector the webhooks compose with logical AND — a version-mismatched
+  # operator could block CRs intended for another operator. The label
+  # `kubernetes.io/metadata.name` is auto-applied to every namespace by
+  # the apiserver since K8s 1.21, so no extra labeling is required.
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: {{ .Release.Namespace }}
   rules:
   - apiGroups:
     - octo-mesh.meshmakers.io
@@ -22,6 +32,7 @@ webhooks:
     - v1alpha1
     operations:
     - CREATE
+    - UPDATE
     resources:
     - communicationpools
   sideEffects: None

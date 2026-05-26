@@ -27,27 +27,23 @@ spec:
             properties:
               # The CR is an intent record: "the operator that watches this
               # namespace should manage pool {poolRtId} for tenant
-              # {tenantId}". poolRtId is the runtime entity id (24-char
-              # lowercase hex) — it drives the derived k8s identifiers
-              # (CR metadata.name, broker secret name) because it is
-              # always RFC 1123 valid. poolName is the user-facing
-              # display name from the CK entity, preserved here so the
-              # spec survives controller-side renames without forcing a
-              # CR rebuild.
-              #
-              # Controller URI, broker host / port / virtualHost,
-              # instancePrefix and cert-validation toggles all live on
-              # the operator instance (OperatorOptions / OPERATOR__* env
-              # vars) and are not duplicated on the CR.
+              # {tenantId}". Controller URI, broker host / port / virtualHost,
+              # instancePrefix and cert-validation toggles all live on the
+              # operator instance (OperatorOptions / OPERATOR__* env vars)
+              # and are not duplicated on the CR. The pool's user-facing
+              # display name lives on the controller's RtPool.Name attribute
+              # (visible in Studio) and is not carried on the CR.
               tenantId:
                 nullable: false
                 type: string
               poolRtId:
                 nullable: false
                 type: string
-              poolName:
-                nullable: false
-                type: string
+                description: "24-character lowercase hex MongoDB ObjectId of the controller-side RtPool entity. Canonical pool identity."
+                pattern: "^[a-f0-9]{24}$"
+            required:
+              - tenantId
+              - poolRtId
             type: object
         type: object
     served: true
