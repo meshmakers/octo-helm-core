@@ -58,6 +58,17 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     # set to prevent "upstream sent too big header while reading response header from upstream"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    # Emit CORS headers on EVERY response — including the default error pages
+    # nginx-ingress generates when an upstream is briefly unavailable (e.g.
+    # during a rolling redeploy of identity-services). Without this, the SPA
+    # at studio.* sees a misleading "No 'Access-Control-Allow-Origin' header"
+    # CORS error instead of the actual 502/503, masking the real cause and
+    # preventing proper retry handling on the client. The `always` flag makes
+    # OpenResty's more_set_headers directive apply to error responses too.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Access-Control-Allow-Origin: $http_origin" always;
+      more_set_headers "Access-Control-Allow-Credentials: true" always;
+      more_set_headers "Vary: Origin" always;
   tls: false
   tlsExtra: []
 #  tlsExtra:
