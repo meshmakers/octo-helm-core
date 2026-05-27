@@ -31,6 +31,21 @@
       key: rabbitmq     
 {{- end }}
 
+{{- define "octo-mesh.blueprints-env" -}}
+# Variables surfaced to the blueprint runner via IBlueprintVariableProvider.
+# - ${octo.version}: chart appVersion → blueprints can pin Mesh-Adapter ChartVersion
+#                    etc. to the current release without manual bumps.
+# - ${octo.environment}: dev/test/staging/production gate for `requires:` blocks.
+# - ${octo.systemTenantId}: kept in sync with serviceDefaults.systemDatabaseName so
+#                          ${octo.isSystemTenant} matches the runtime's system tenant.
+- name: OCTO_BLUEPRINTS__OCTOVERSION
+  value: {{ .global.Chart.AppVersion | quote }}
+- name: OCTO_BLUEPRINTS__ENVIRONMENT
+  value: {{ .global.Values.serviceDefaults.environment | quote }}
+- name: OCTO_BLUEPRINTS__SYSTEMTENANTID
+  value: {{ .global.Values.serviceDefaults.systemDatabaseName | quote }}
+{{- end }}
+
 {{- define "octo-mesh.streamdata-env" -}}
 # Instance-level kill switch for StreamData. Read by
 # StreamDataInstanceConfiguration (root "StreamData" config section, hence
@@ -85,6 +100,7 @@
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
 {{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
 - name: OCTO_ASSETREPOSITORY__AUTHORITY
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
@@ -116,7 +132,8 @@
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}
 {{ include "octo-mesh.system-env" . }}
-{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
 - name: OCTO_COMMUNICATIONCONTROLLER__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_COMMUNICATIONCONTROLLER__PUBLICURL
@@ -126,7 +143,8 @@
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}
-{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
 - name: OCTO_ADMINPANEL__CRATEDBADMINURL
   value: {{ .global.Values.externalUris.crateDb }}
 - name: OCTO_ADMINPANEL__GRAFANAURL

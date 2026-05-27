@@ -49,6 +49,11 @@ serviceDefaults:
   systemDatabaseName: "OctoSystem"
   # The unique instance prefix of the OctoMesh installation.
   instancePrefix: ""
+  # Deployment environment used by the blueprint runner. Surfaced to seed-data /
+  # requires: blocks as ${octo.environment}. Conventional values: dev, test,
+  # staging, production. Override per cluster in values.yaml; defaults to dev so
+  # local helm-install renders never accidentally produce production semantics.
+  environment: "dev"
 
 ingress:
   enabled: true
