@@ -21,8 +21,8 @@ trigger:
       - test/*
       - main
   tags:
-    exclude:
-      - '*'
+    include:
+      - 'r*'
 
 variables:
   - group: GitSSHGroup
