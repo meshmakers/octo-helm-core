@@ -262,6 +262,16 @@ services:
   communication:
     # Public URI of service
     publicUri: ""
+    # Named public base domains exposed to workloads via the {{domain.NAME}}
+    # template syntax in their Hostname attribute. Resolved at deploy time by
+    # the Communication Controller (CommunicationControllerOptions.Domains) so
+    # workloads stay portable across clusters. Each map key is surfaced as
+    # OCTO_COMMUNICATIONCONTROLLER__DOMAINS__<KEY> and the value as the env-var
+    # value. Override per cluster — leave empty here so a fresh helm install
+    # without per-cluster overrides simply has no named domains (workloads with
+    # literal hostnames keep working; workloads that reference a non-configured
+    # domain fail fast at Deploy time with an actionable error).
+    domains: {}
     # set false to prevent deployment
     deploy: true
     # when set, the service will be deployed with the given full name

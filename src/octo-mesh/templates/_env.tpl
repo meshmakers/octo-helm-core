@@ -140,6 +140,19 @@
   value: {{ .global.Values.services.communication.publicUri }}
 - name: OCTO_COMMUNICATIONCONTROLLER__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- /*
+Named public base domains. Each entry in services.communication.domains is
+projected as OCTO_COMMUNICATIONCONTROLLER__DOMAINS__<KEY>; .NET configuration
+binding turns it back into a Dictionary<string,string> on
+CommunicationControllerOptions.Domains. KEY is uppercased so the rendered env
+var matches the .NET binding convention; the resolver itself is
+case-insensitive on lookup so blueprint authors can still write
+{{domain.default}} in lowercase.
+*/}}
+{{- range $key, $value := .global.Values.services.communication.domains }}
+- name: OCTO_COMMUNICATIONCONTROLLER__DOMAINS__{{ upper $key }}
+  value: {{ $value | quote }}
+{{- end }}
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}
