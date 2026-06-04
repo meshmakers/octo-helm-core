@@ -263,14 +263,21 @@ services:
     # Public URI of service
     publicUri: ""
     # Named public base domains exposed to workloads via the {{domain.NAME}}
-    # template syntax in their Hostname attribute. Resolved at deploy time by
-    # the Communication Controller (CommunicationControllerOptions.Domains) so
-    # workloads stay portable across clusters. Each map key is surfaced as
+    # template syntax in their Hostname, non-secret ValueOverride.Value and
+    # ValuesYaml. Resolved at deploy time by the Communication Controller
+    # (CommunicationControllerOptions.Domains) so workloads stay portable
+    # across clusters. Each map key is surfaced as
     # OCTO_COMMUNICATIONCONTROLLER__DOMAINS__<KEY> and the value as the env-var
     # value. Override per cluster — leave empty here so a fresh helm install
     # without per-cluster overrides simply has no named domains (workloads with
     # literal hostnames keep working; workloads that reference a non-configured
     # domain fail fast at Deploy time with an actionable error).
+    #
+    # Companion families ({{service.NAME}}, {{context.tenantId}}) are wired
+    # automatically: service URLs are derived from services.<name>.publicUri
+    # (semantic key "authority" maps to services.identity.publicUri; other
+    # keys mirror the helm-section name) and the tenantId is injected per
+    # deploy. No values.yaml entries needed for those two families.
     domains: {}
     # set false to prevent deployment
     deploy: true

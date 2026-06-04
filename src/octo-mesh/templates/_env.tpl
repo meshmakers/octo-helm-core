@@ -153,6 +153,29 @@ case-insensitive on lookup so blueprint authors can still write
 - name: OCTO_COMMUNICATIONCONTROLLER__DOMAINS__{{ upper $key }}
   value: {{ $value | quote }}
 {{- end }}
+{{- /*
+Named public service URIs surfaced as {{service.NAME}} placeholders in
+workload Hostname / ValueOverride.Value / ValuesYaml. The semantic key
+"authority" maps to the Identity Service publicUri; other keys mirror the
+helm-section name. .NET configuration binding turns OCTO_…__SERVICEURLS__<KEY>
+back into a Dictionary<string,string> on CommunicationControllerOptions.ServiceUrls.
+Lookup is case-insensitive so blueprint authors can write {{service.authority}}
+in lowercase regardless of env-var casing.
+*/}}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__AUTHORITY
+  value: {{ .global.Values.services.identity.publicUri | quote }}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__ASSETREPOSITORY
+  value: {{ .global.Values.services.assetRepository.publicUri | quote }}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__BOT
+  value: {{ .global.Values.services.bot.publicUri | quote }}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__COMMUNICATION
+  value: {{ .global.Values.services.communication.publicUri | quote }}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__ADMINPANEL
+  value: {{ .global.Values.services.adminPanel.publicUri | quote }}
+{{- if .global.Values.services.studio.publicUri }}
+- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__STUDIO
+  value: {{ .global.Values.services.studio.publicUri | quote }}
+{{- end }}
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}
