@@ -20,9 +20,6 @@ trigger:
       - dev/*
       - test/*
       - main
-  tags:
-    include:
-      - 'r*'
 
 variables:
   - group: GitSSHGroup
