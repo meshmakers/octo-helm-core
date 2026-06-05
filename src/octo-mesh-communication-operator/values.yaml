@@ -195,16 +195,19 @@ service:
   port: 443
 
 resources:
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # The operator forks the helm CLI for every workload deploy. helm parses the
+  # full chart index (hundreds of versions), renders templates, and talks to
+  # the apiserver — together with the .NET host's working set this routinely
+  # exceeds the scaffold-default 128Mi and the container gets OOM-killed
+  # (exitCode 137) mid-deploy, then restarts and retries the same event in a
+  # loop. 512Mi gives helm + index parsing comfortable headroom on every
+  # cluster size.
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 500m
+    memory: 512Mi
   requests:
     cpu: 100m
-    memory: 64Mi
+    memory: 256Mi
 
 livenessProbe:
   httpGet:
