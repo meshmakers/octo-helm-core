@@ -205,6 +205,15 @@ in lowercase regardless of env-var casing.
   value: {{ .global.Values.services.adminPanel.publicUri }}
 - name: APP_URI
   value: {{ .global.Values.services.studio.publicUri }}
+{{- else if eq .name "aiServices" -}}
+{{- $name := "OCTO_AISERVICES" }}
+{{ include "octo-mesh.system-env" . }}
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
+- name: OCTO_AISERVICES__AUTHORITY
+  value: {{ .global.Values.services.identity.publicUri }}
+- name: OCTO_AISERVICES__PUBLICURL
+  value: {{ .global.Values.services.aiServices.publicUri }}
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}

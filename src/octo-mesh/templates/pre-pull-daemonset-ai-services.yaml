@@ -1,0 +1,78 @@
+{{- /*
+  Image-Pre-Pull DaemonSet for octo-mesh-ai-services (#4115 Phase F).
+  KEDA scales the AI services deployment to zero between sessions
+  (ADR-23, concept doc §10), and a cold start that has to pull the
+  ~500 MB worker image from the registry can take 30s+ on a slow
+  cluster. This DaemonSet runs one pod per node whose only job is to
+  hold the image in the node's container cache so kubelet finds it
+  locally on the next scale-up — cold-start drops to <15s.
+
+  Standard pattern: a tiny init-container does nothing, the main
+  container sleeps forever. The IMAGE PULL itself is the work; once
+  the kubelet has pulled the image to satisfy the pod spec, it stays
+  in the node cache until garbage collected. Resources are minimal —
+  the pod consumes ~0 CPU and a few MB of RAM.
+
+  Conditional on services.aiServices.prePull.enabled. Disabled by
+  default because clusters without KEDA scale-to-zero gain no benefit
+  from holding the image warm.
+*/}}
+{{- $svc := index .Values.services "aiServices" | default dict }}
+{{- if and $svc.deploy (and (hasKey $svc "prePull") $svc.prePull.enabled) }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "octo-mesh.service-fullname" (dict "global" . "name" "aiServices" "svc" $svc) }}-pre-pull
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" . "name" "aiServices" "svc" $svc) | nindent 4 }}
+    app.kubernetes.io/component: image-pre-pull
+spec:
+  selector:
+    matchLabels:
+      {{- include "octo-mesh.service-selectorLabels" (dict "global" . "name" "aiServices" "svc" $svc) | nindent 6 }}
+      app.kubernetes.io/component: image-pre-pull
+  template:
+    metadata:
+      labels:
+        {{- include "octo-mesh.service-selectorLabels" (dict "global" . "name" "aiServices" "svc" $svc) | nindent 8 }}
+        app.kubernetes.io/component: image-pre-pull
+    spec:
+      {{- with .Values.imageDefaults.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Stop pulling on tainted/specialised nodes — production GPU nodes,
+      # storage nodes, etc. Tenants who want the image cached on those
+      # nodes too can override the tolerations.
+      tolerations:
+        {{- with $svc.prePull.tolerations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $svc.prePull.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # The init container does the actual image pull as a side effect of
+      # being scheduled. The main container then sleeps so the pod stays
+      # Running and kubelet doesn't garbage-collect the cached image
+      # for the duration of its scheduling on this node.
+      initContainers:
+        - name: pre-pull
+          image: {{ if .Values.imageDefaults.privateRegistry }}{{ .Values.imageDefaults.privateRegistry }}/{{ end }}{{ $svc.image.repository }}:{{ $svc.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: {{ .Values.imageDefaults.pullPolicy }}
+          command: ["/bin/true"]
+      containers:
+        - name: pause
+          # Minimal pause container — same image the kubelet uses for the
+          # pod sandbox. Holds the pod Running with negligible resource
+          # consumption. The actual AI services image stays in the node
+          # cache because the initContainer pulled it.
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              cpu: 10m
+              memory: 16Mi
+{{- end }}

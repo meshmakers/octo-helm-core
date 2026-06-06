@@ -401,3 +401,81 @@ services:
       nodeSelector: { }
       tolerations: [ ]
       affinity: { }
+
+  # OctoMesh AI Adapter — agent-based engineering host. Phase 1 ships as the
+  # single image that also hosts the Claude Code CLI worker subprocess; the
+  # split into a separate octo-mesh-ai-worker image lands when subprocess
+  # management moves to Kubernetes exec. Default deploy=false because the
+  # service is new and the cluster operator opts into KEDA scale-to-zero
+  # + image pre-pull explicitly.
+  aiServices:
+    # Public URI of service
+    publicUri: ""
+    # set false to prevent deployment
+    deploy: false
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "ai-services"
+    image:
+      repository: meshmakers/octo-mesh-ai-services
+      # Overrides the image tag whose default is the chart appVersion.
+      # In production set to `:stable`; canary tenants pin `:canary`. See
+      # docs/deployment/worker-image.md in octo-ai-services for the tag
+      # promotion runbook.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      livenessProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /healthz/ready
+          port: http
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        failureThreshold: 3
+      resources: {}
+      volumes: [ ]
+      volumeMounts: [ ]
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+
+    # KEDA ScaledObject (#4115 Phase F). Off by default — turn on once
+    # the cluster has KEDA installed and the tenant deployment model is
+    # decided (single-deployment global scale vs per-tenant pods).
+    keda:
+      enabled: false
+      pollingIntervalSeconds: 30
+      cooldownPeriodSeconds: 300
+      minReplicaCount: 0
+      maxReplicaCount: 5
+      # Tenant slug whose active-sessions count drives the scale signal.
+      # Single-deployment Phase 1: set to a representative tenant or the
+      # placeholder string the adapter's metric endpoint treats as
+      # "aggregate". Per-tenant deployments override per release.
+      tenant: "default"
+      # Target sessions-per-replica. Defaults to the Phase-1
+      # AiQuotaLimit.ConcurrentJobs (2) so a tenant hitting its
+      # ConcurrentJobs cap triggers a scale-up.
+      targetValue: "2"
+
+    # Image-Pre-Pull DaemonSet (#4115 Phase F). Off by default — only
+    # useful when keda.enabled scales to zero, otherwise the running
+    # replica already holds the image on its node.
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      # Default tolerations keep pre-pull off tainted/specialised nodes
+      # (GPU, storage). Override per cluster if those nodes should also
+      # warm the image.
+      tolerations: [ ]

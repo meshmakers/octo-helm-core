@@ -1,0 +1,42 @@
+{{- /*
+  KEDA ScaledObject for octo-mesh-ai-services (#4115 Phase F).
+  Polls the adapter's custom metric endpoint and scales replicas on the
+  AiAgentSession count. Conditional on services.aiServices.keda.enabled
+  so a cluster without KEDA installed (or a Phase-1 transition that
+  doesn't yet split worker pods) can leave it off.
+
+  Phase-1 single deployment: targetValue tracks the SUM of active
+  sessions across all tenants — set scaledObject.tenant to a placeholder
+  that the adapter accepts ("default") and let the metric endpoint
+  aggregate. When the worker pod splits per-tenant (post-Phase-1), this
+  template will be templated per tenant and each ScaledObject targets
+  its own tenant's metric.
+*/}}
+{{- $svc := index .Values.services "aiServices" | default dict }}
+{{- if and $svc.deploy (and (hasKey $svc "keda") $svc.keda.enabled) }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "octo-mesh.service-fullname" (dict "global" . "name" "aiServices" "svc" $svc) }}
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" . "name" "aiServices" "svc" $svc) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "octo-mesh.service-fullname" (dict "global" . "name" "aiServices" "svc" $svc) }}
+  pollingInterval: {{ $svc.keda.pollingIntervalSeconds | default 30 }}
+  cooldownPeriod: {{ $svc.keda.cooldownPeriodSeconds | default 300 }}
+  minReplicaCount: {{ $svc.keda.minReplicaCount | default 0 }}
+  maxReplicaCount: {{ $svc.keda.maxReplicaCount | default 5 }}
+  triggers:
+    - type: metrics-api
+      metadata:
+        # KEDA's metrics-api scaler reads JSON; we hit the adapter's
+        # /metrics/keda/active-sessions endpoint (#4115 Phase E) and pick
+        # the `total` field as the scale signal.
+        url: "http://{{ include "octo-mesh.service-fullname" (dict "global" . "name" "aiServices" "svc" $svc) }}:{{ $svc.pod.port }}/metrics/keda/active-sessions?tenant={{ $svc.keda.tenant | default "default" }}"
+        valueLocation: "total"
+        # targetValue is the number of active sessions one replica should
+        # handle. Defaults to AiQuotaLimit.ConcurrentJobs (2 in Phase 1)
+        # so a tenant that hits its ConcurrentJobs cap triggers a scale-up.
+        targetValue: {{ $svc.keda.targetValue | default "2" | quote }}
+{{- end }}
