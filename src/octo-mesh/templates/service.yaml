@@ -7,6 +7,32 @@ metadata:
   name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc)  }}
   labels:
     {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc)  | nindent 4 }}
+  {{- /*
+    Service-level annotations the consuming chart may layer on top of the
+    OctoMesh selector labels. Two sources, merged here so the rendered
+    metadata stays compact:
+
+    - $svc.serviceAnnotations — generic per-service map for ad-hoc cases
+      (Linkerd injection toggles, Prometheus scrape config, etc.).
+    - $svc.tailscale.enabled — issue #4126. When true, emit the operator's
+      well-known annotations so the Tailscale Operator claims this Service
+      with the configured hostname. tailnet name and ACL fall back to the
+      operator's defaults.
+  */}}
+  {{- $extraAnnotations := dict }}
+  {{- if hasKey $svc "serviceAnnotations" }}
+  {{- $extraAnnotations = merge $extraAnnotations $svc.serviceAnnotations }}
+  {{- end }}
+  {{- if and (hasKey $svc "tailscale") $svc.tailscale.enabled }}
+  {{- $tsAnnotations := dict "tailscale.com/expose" "true" "tailscale.com/hostname" ($svc.tailscale.hostname | default $key) }}
+  {{- $extraAnnotations = merge $extraAnnotations $tsAnnotations }}
+  {{- end }}
+  {{- if gt (len $extraAnnotations) 0 }}
+  annotations:
+    {{- range $k, $v := $extraAnnotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
 spec:
   type: {{ $.Values.serviceDefaults.type }}
   ports:

@@ -486,6 +486,19 @@ services:
       # the check — NetworkPolicy is the load-bearing safeguard.
       internalMetricsKey: ""
 
+    # Tailscale Operator integration (#4126, ADR-22). When enabled, the
+    # chart annotates the ai-services Service with the operator's
+    # well-known headers so the Tailscale Operator claims the Service
+    # under the given hostname. Concept §6/§10 plans the per-tenant
+    # `tenant-{slug}-ai.ts.net` identity on the worker pod (Phase 2);
+    # the adapter-side annotation here lets a Phase-1 deployment already
+    # expose the adapter REST surface over Tailscale for the bastion CLI.
+    tailscale:
+      enabled: false
+      # Hostname the Tailscale Operator registers in the tailnet. Phase-1
+      # default tracks the chart key; per-tenant deployments override.
+      hostname: ""
+
     # Image-Pre-Pull DaemonSet (#4115 Phase F, #4125). Off by default —
     # only useful when keda.enabled scales to zero, otherwise the running
     # replica already holds the image on its node.
