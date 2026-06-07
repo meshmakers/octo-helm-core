@@ -186,7 +186,9 @@ in lowercase regardless of env-var casing.
 - name: OCTO_ADMINPANEL__GRAFANAURL
   value: {{ .global.Values.externalUris.grafana }}
 - name: OCTO_ADMINPANEL__MESHADAPTERURL
-  value: {{ .global.Values.externalUris.meshAdapter }}  
+  value: {{ .global.Values.externalUris.meshAdapter }}
+- name: OCTO_ADMINPANEL__AISERVICESURL
+  value: {{ .global.Values.services.aiServices.publicUri }}
 - name: OCTO_ADMINPANEL__ASSETSERVICEURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ADMINPANEL__BOTSERVICEURL
