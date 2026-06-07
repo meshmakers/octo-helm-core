@@ -462,19 +462,41 @@ services:
       # Tenant slug whose active-sessions count drives the scale signal.
       # Single-deployment Phase 1: set to a representative tenant or the
       # placeholder string the adapter's metric endpoint treats as
-      # "aggregate". Per-tenant deployments override per release.
+      # "aggregate". For per-tenant fan-out use `tenants` (below) instead;
+      # `tenant` is the fallback when `tenants` is empty.
       tenant: "default"
+      # Per-tenant fan-out (#4125). When non-empty, the chart emits one
+      # ScaledObject per entry instead of the single global one. Each
+      # entry: { name: "tenant-a", targetValue: "2" }. `targetValue` is
+      # optional and falls back to the global `targetValue` when omitted
+      # so a homogeneous fleet only needs the slug list.
+      tenants: [ ]
       # Target sessions-per-replica. Defaults to the Phase-1
       # AiQuotaLimit.ConcurrentJobs (2) so a tenant hitting its
       # ConcurrentJobs cap triggers a scale-up.
       targetValue: "2"
+      # Path on the adapter that KEDA scrapes. Default points at the
+      # hardened /internal/metrics route added in #4125; the legacy
+      # /metrics/keda/active-sessions alias still resolves so existing
+      # clusters can migrate without a chart change.
+      metricPath: "/internal/metrics/active-sessions"
+      # Optional shared-key value the ScaledObject sends as the
+      # X-Internal-Metrics-Key header. When set, the adapter requires
+      # the same value via `octo__InternalMetricsKey` env. Empty disables
+      # the check — NetworkPolicy is the load-bearing safeguard.
+      internalMetricsKey: ""
 
-    # Image-Pre-Pull DaemonSet (#4115 Phase F). Off by default — only
-    # useful when keda.enabled scales to zero, otherwise the running
+    # Image-Pre-Pull DaemonSet (#4115 Phase F, #4125). Off by default —
+    # only useful when keda.enabled scales to zero, otherwise the running
     # replica already holds the image on its node.
     prePull:
       enabled: false
-      nodeSelector: { }
+      # Default to nodes labeled `node-role=ai-worker` so an opt-in
+      # cluster just labels the worker-class nodes (#4125); override to
+      # {} to pre-pull on every node, or to a different selector to
+      # target a custom node group (GPU pool, etc.).
+      nodeSelector:
+        node-role: ai-worker
       # Default tolerations keep pre-pull off tainted/specialised nodes
       # (GPU, storage). Override per cluster if those nodes should also
       # warm the image.
