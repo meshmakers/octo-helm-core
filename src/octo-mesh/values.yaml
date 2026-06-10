@@ -163,6 +163,9 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because the service consumes exclusive RabbitMQ
+    # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
+    recreateStrategy: true
     # CK Model Catalog configuration
     ckCatalog:
       # Enable local file system catalog (default: disabled in production)
@@ -285,6 +288,9 @@ services:
     domains: {}
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because the service consumes exclusive RabbitMQ
+    # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -333,6 +339,9 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because the service consumes exclusive RabbitMQ
+    # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -417,6 +426,9 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: false
+    # Use Recreate strategy because the service consumes exclusive RabbitMQ
+    # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
