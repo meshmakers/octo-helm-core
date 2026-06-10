@@ -137,6 +137,20 @@
 - name: OCTO_COMMUNICATIONCONTROLLER__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /*
+AES-256-GCM master key for IWorkloadEncryptionService. Emitted only when
+secrets.communicationInstanceSecretKey is set so unconfigured clusters
+keep starting (CommunicationControllerOptions doc: empty is tolerated at
+startup, every encrypt/decrypt call then throws a clear config error).
+Provisioned per cluster via Vault — see octo-mesh-deployment/docs/VAULT-SETUP.md.
+*/}}
+{{- if .global.Values.secrets.communicationInstanceSecretKey }}
+- name: OCTO_COMMUNICATIONCONTROLLER__INSTANCESECRETKEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
+      key: communicationInstanceSecretKey
+{{- end }}
+{{- /*
 Named public base domains. Each entry in services.communication.domains is
 projected as OCTO_COMMUNICATIONCONTROLLER__DOMAINS__<KEY>; .NET configuration
 binding turns it back into a Dictionary<string,string> on

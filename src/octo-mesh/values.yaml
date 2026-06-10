@@ -19,6 +19,16 @@ secrets:
   databaseAdmin: ""
   streamDataPassword: ""
   rabbitmq: ""
+  # Base64-encoded 32-byte AES-256-GCM master key for the Communication
+  # Controller's IWorkloadEncryptionService (CommunicationControllerOptions.
+  # InstanceSecretKey). Generate ONCE per cluster (`openssl rand -base64 32`)
+  # and never rotate — rotating invalidates every encrypted Secret-flagged
+  # ValueOverride.Value and every HelmRepositoryConfiguration.Password
+  # already persisted on this instance. Empty = encryption service stays
+  # disabled (chart emits neither the env var nor the secret key); deploys
+  # that touch secret-flagged data then fail with a clear configuration
+  # error at runtime, while deploys that do not touch them keep working.
+  communicationInstanceSecretKey: ""
   # content of the root ca certificate chain
   rootCa: ""
 
