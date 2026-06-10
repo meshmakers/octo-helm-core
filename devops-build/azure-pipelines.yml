@@ -195,9 +195,15 @@ stages:
               condition: and(succeeded(), eq(variables.isRelease, true))
 
           # Pipeline artifact retained for deploy-octo-mesh-core-services* —
-          # they read versioninfo.txt from this `local` artifact.
+          # they read versioninfo.txt from this `local` artifact. Restricted to
+          # the builds those deploy pipelines may consume (main / 0.2-* / r-tags):
+          # ADO resolves a non-triggering pipeline resource to the LATEST build
+          # with artifacts regardless of branch, so a PR or dev/* build that
+          # publishes `local` can be deployed verbatim (incident 2026-06-10:
+          # unmerged PR chart on test-2 + instancePrefix "merge" split-brain).
           - task: PowerShell@2
             displayName: 'Create version info file'
+            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), startsWith(variables['Build.SourceBranch'], 'refs/heads/0.2')))
             inputs:
               targetType: 'inline'
               script: |
@@ -205,5 +211,6 @@ stages:
                 Set-Content $(build.artifactstagingdirectory)/versioninfo.txt $(Build.BuildNumber)
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Artifact: local'
+            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), startsWith(variables['Build.SourceBranch'], 'refs/heads/0.2')))
             inputs:
               ArtifactName: local
