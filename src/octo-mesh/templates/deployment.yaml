@@ -140,7 +140,7 @@ spec:
         volumeMounts:
         {{- end }}
         {{- with $svc.pod.volumeMounts }}
-          {{- toYaml . | nindent 12 }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if $svc.signingKey }}
         - name: signin-key-volume
@@ -155,7 +155,7 @@ spec:
       volumes:
       {{- end }}
       {{- with $svc.pod.volumes }}
-        {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- if $svc.signingKey }}
       - name: signin-key-volume
