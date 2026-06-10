@@ -87,10 +87,6 @@
   value: {{ .global.Values.services.identity.identityServerLicenseKey }}
 - name: OCTO_IDENTITY__AutoMapperLicenseKey
   value: {{ .global.Values.services.identity.autoMapperLicenseKey }}
-{{- if .global.Values.services.identity.dataProtection.enabled }}
-- name: OCTO_IDENTITY__DataProtectionKeysPath
-  value: "/var/dpapi-keys"
-{{- end }}
 {{- if .global.Values.services.studio.publicUri }}
 - name: OCTO_IDENTITY__RefineryStudioUrl
   value: {{ .global.Values.services.studio.publicUri }}
