@@ -23,7 +23,7 @@ metadata:
     {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc)  | nindent 4 }}
 spec:
   replicas: {{ $svc.replicaCount }}
-  {{- if or (and $svc.dataProtection $svc.dataProtection.enabled) $svc.recreateStrategy }}
+  {{- if $svc.recreateStrategy }}
   strategy:
     type: Recreate
   {{- end }}
@@ -136,40 +136,31 @@ spec:
         resources:
           {{- toYaml . | nindent 12 }}
         {{- end }}
-        {{- if or $svc.signingKey $svc.pod.volumeMounts $global.Values.secrets.rootCa (and $svc.dataProtection $svc.dataProtection.enabled) }}
+        {{- if or $svc.signingKey $svc.pod.volumeMounts $global.Values.secrets.rootCa }}
         volumeMounts:
         {{- end }}
         {{- with $svc.pod.volumeMounts }}
-          {{- toYaml . | nindent 12 }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if $svc.signingKey }}
         - name: signin-key-volume
           mountPath: /etc/octo-identity
-        {{- end }}
-        {{- if and $svc.dataProtection $svc.dataProtection.enabled }}
-        - name: data-protection-keys
-          mountPath: /var/dpapi-keys
         {{- end }}
         {{- if $global.Values.secrets.rootCa }}
         - name: updated-ca-certs
           mountPath: /etc/ssl/certs
           readOnly: true
         {{- end }}
-      {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa (and $svc.dataProtection $svc.dataProtection.enabled) }}
+      {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa }}
       volumes:
       {{- end }}
       {{- with $svc.pod.volumes }}
-        {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- if $svc.signingKey }}
       - name: signin-key-volume
         secret:
           secretName: {{ printf "%s-signing-key" (include "octo-mesh.fullname" $global) }}
-      {{- end }}
-      {{- if and $svc.dataProtection $svc.dataProtection.enabled }}
-      - name: data-protection-keys
-        persistentVolumeClaim:
-          claimName: {{ printf "%s-identity-data-protection" (include "octo-mesh.fullname" $global) }}
       {{- end }}
       {{- if $global.Values.secrets.rootCa }}
       - name: custom-ca-certs
