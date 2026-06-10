@@ -109,6 +109,12 @@ services:
 
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because the identity service uses exclusive RabbitMQ queues
+    # that only allow a single connection at a time. With RollingUpdate the new pod
+    # cannot declare the queue while the old pod still holds it (RESOURCE_LOCKED),
+    # and the old pod is never torn down because the new one never reaches Ready —
+    # the rollout deadlocks until the old pod is manually deleted.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
