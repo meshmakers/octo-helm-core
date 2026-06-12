@@ -334,6 +334,49 @@ services:
       tolerations: [ ]
       affinity: { }
 
+  # Tenant-scoped configuration discovery service. Phase 1 of the
+  # octo-platform-services initiative — hosts the `_configuration` endpoint
+  # previously served by adminPanel. No broker, no MongoDB, no blueprints,
+  # so RollingUpdate is fine (no recreateStrategy).
+  platformServices:
+    # Public URI of service (e.g. https://platform.example.octo-mesh.com)
+    publicUri: ""
+    # set false to prevent deployment
+    deploy: true
+    # when set, the service will be deployed with the given full name
+    fullnameOverride: ""
+    # the service will be deployed with the given name and chart name
+    nameOverride: "platform-services"
+    image:
+      repository: meshmakers/octo-mesh-platform-services
+      # Overrides the image tag whose default is the chart appVersion.
+      tag: ""
+    replicaCount: 1
+    podAnnotations: {}
+    podLabels: {}
+    pod:
+      port: 80
+      livenessProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        initialDelaySeconds: 15
+        periodSeconds: 30
+        failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /healthz/ready
+          port: http
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        failureThreshold: 3
+      resources: {}
+      volumes: [ ]
+      volumeMounts: [ ]
+      nodeSelector: { }
+      tolerations: [ ]
+      affinity: { }
+
   adminPanel:
     # Public URI of service
     publicUri: ""

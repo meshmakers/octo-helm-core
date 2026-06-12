@@ -186,6 +186,43 @@ in lowercase regardless of env-var casing.
 - name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__STUDIO
   value: {{ .global.Values.services.studio.publicUri | quote }}
 {{- end }}
+{{- else if eq .name "platformServices" -}}
+{{- /*
+Phase 1 of the platform-services initiative — wire-compatible replacement
+for the admin-panel `_configuration` endpoint. Only URL discovery; no
+broker, no MongoDB, no blueprints.
+*/}}
+- name: OCTO_PLATFORMSERVICES__CRATEDBADMINURL
+  value: {{ .global.Values.externalUris.crateDb }}
+- name: OCTO_PLATFORMSERVICES__GRAFANAURL
+  value: {{ .global.Values.externalUris.grafana }}
+- name: OCTO_PLATFORMSERVICES__MESHADAPTERURL
+  value: {{ .global.Values.externalUris.meshAdapter }}
+- name: OCTO_PLATFORMSERVICES__AISERVICESURL
+  value: {{ .global.Values.services.aiServices.publicUri }}
+- name: OCTO_PLATFORMSERVICES__ASSETSERVICEURL
+  value: {{ .global.Values.services.assetRepository.publicUri }}
+- name: OCTO_PLATFORMSERVICES__BOTSERVICEURL
+  value: {{ .global.Values.services.bot.publicUri }}
+- name: OCTO_PLATFORMSERVICES__COMMUNICATIONSERVICEURL
+  value: {{ .global.Values.services.communication.publicUri }}
+{{- /*
+ReportingServiceUrl is intentionally NOT wired here: octo-report-services
+lives in helm-pro (octo-mesh-reporting chart) and is not part of the core
+chart's value tree. Matches the legacy admin-panel behaviour where the
+`reportingServices` DTO field was never overridden from helm either (no
+external consumer reads it today). Operators who want a real value can set
+OCTO_PLATFORMSERVICES__REPORTINGSERVICEURL via podAnnotations / a
+PodExtra-style override; the field stays in the DTO for backwards
+compatibility.
+*/}}
+- name: OCTO_PLATFORMSERVICES__AUTHORITYURL
+  value: {{ .global.Values.services.identity.publicUri }}
+- name: OCTO_PLATFORMSERVICES__ADMINPANELURL
+  value: {{ .global.Values.services.adminPanel.publicUri }}
+- name: OCTO_PLATFORMSERVICES__SYSTEMTENANTID
+  value: {{ .global.Values.serviceDefaults.systemDatabaseName | quote }}
+
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
 {{ include "octo-mesh.system-env" . }}

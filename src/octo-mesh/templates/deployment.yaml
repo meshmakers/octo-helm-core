@@ -11,6 +11,9 @@
 {{- if .Values.services.adminPanel.deploy -}}
 {{- include "checkMandatoryValue" (dict "name" "services.adminPanel.publicUri" "value" .Values.services.adminPanel.publicUri) }}
 {{- end }}
+{{- if .Values.services.platformServices.deploy -}}
+{{- include "checkMandatoryValue" (dict "name" "services.platformServices.publicUri" "value" .Values.services.platformServices.publicUri) }}
+{{- end }}
 
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
