@@ -220,8 +220,15 @@ compatibility.
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_PLATFORMSERVICES__ADMINPANELURL
   value: {{ .global.Values.services.adminPanel.publicUri }}
-- name: OCTO_PLATFORMSERVICES__SYSTEMTENANTID
-  value: {{ .global.Values.serviceDefaults.systemDatabaseName | quote }}
+{{- /*
+SYSTEMTENANTID is intentionally NOT sourced from serviceDefaults.systemDatabaseName
+here: the DB name is PascalCase ("OctoSystem") but external consumers
+(Refinery Studio, Office, PowerBI) read this field as the lowercase
+tenant-id path segment (e.g. /octosystem/_configuration) — the URL is
+case-sensitive in the ASP.NET routing on the consumer side. The legacy
+admin-panel never overrode this from helm either; both services rely on
+the lowercase "octosystem" appsettings default.
+*/}}
 
 {{- else if eq .name "adminPanel" -}}
 {{- $name := "OCTO_ADMINPANEL" }}
