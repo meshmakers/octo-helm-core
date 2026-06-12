@@ -258,22 +258,26 @@ the lowercase "octosystem" appsettings default.
 {{- else if eq .name "studio" -}}
 {{- $name := "OCTO_REFINERY_STUDIO" }}
 {{- /*
-ADMIN_PANEL_URI is consumed by the studio Docker entrypoint to template
-/assets/config.json's `adminUri`, which AppConfigurationService then
-hits at `${adminUri}octosystem/_configuration` for service discovery.
+Phase 1 of the octo-platform-services initiative — the studio Docker
+entrypoint templates BOTH `platformUri` (new) and `adminUri` (legacy)
+into /assets/config.json from the env vars below. The configuration
+loader (AppConfigurationService) prefers `platformUri` over `adminUri`,
+so new studio builds hit platform-services and older builds (or any
+configs baked into Office add-ins / PowerBI connectors) keep working
+via the legacy field.
 
-Phase 1 of the octo-platform-services initiative replaces the legacy
-admin-panel _configuration endpoint with the new platform-services
-backend. Prefer platformServices.publicUri when it is configured for
-this cluster; otherwise fall back to adminPanel.publicUri so clusters
-that have not yet deployed platformServices keep working.
+Both env vars resolve to the same URL during the transition: the
+platform-services public URI when configured for this cluster, else
+the legacy admin-panel URI as a fallback so clusters that have not
+yet deployed platformServices keep working. In Phase 4 (admin-panel
+retirement) ADMIN_PANEL_URI and the `adminUri` field will be removed
+and only PLATFORM_URI / `platformUri` will remain.
 */}}
+{{- $configEndpointUri := default .global.Values.services.adminPanel.publicUri .global.Values.services.platformServices.publicUri }}
+- name: PLATFORM_URI
+  value: {{ $configEndpointUri }}
 - name: ADMIN_PANEL_URI
-  {{- if .global.Values.services.platformServices.publicUri }}
-  value: {{ .global.Values.services.platformServices.publicUri }}
-  {{- else }}
-  value: {{ .global.Values.services.adminPanel.publicUri }}
-  {{- end }}
+  value: {{ $configEndpointUri }}
 - name: APP_URI
   value: {{ .global.Values.services.studio.publicUri }}
 {{- else if eq .name "aiServices" -}}
