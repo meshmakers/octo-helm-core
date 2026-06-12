@@ -257,8 +257,23 @@ the lowercase "octosystem" appsettings default.
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- else if eq .name "studio" -}}
 {{- $name := "OCTO_REFINERY_STUDIO" }}
+{{- /*
+ADMIN_PANEL_URI is consumed by the studio Docker entrypoint to template
+/assets/config.json's `adminUri`, which AppConfigurationService then
+hits at `${adminUri}octosystem/_configuration` for service discovery.
+
+Phase 1 of the octo-platform-services initiative replaces the legacy
+admin-panel _configuration endpoint with the new platform-services
+backend. Prefer platformServices.publicUri when it is configured for
+this cluster; otherwise fall back to adminPanel.publicUri so clusters
+that have not yet deployed platformServices keep working.
+*/}}
 - name: ADMIN_PANEL_URI
+  {{- if .global.Values.services.platformServices.publicUri }}
+  value: {{ .global.Values.services.platformServices.publicUri }}
+  {{- else }}
   value: {{ .global.Values.services.adminPanel.publicUri }}
+  {{- end }}
 - name: APP_URI
   value: {{ .global.Values.services.studio.publicUri }}
 {{- else if eq .name "aiServices" -}}
