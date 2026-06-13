@@ -189,9 +189,14 @@ in lowercase regardless of env-var casing.
 {{- else if eq .name "platformServices" -}}
 {{- /*
 Phase 1 of the platform-services initiative — wire-compatible replacement
-for the admin-panel `_configuration` endpoint. Only URL discovery; no
-broker, no MongoDB, no blueprints.
+for the admin-panel `_configuration` endpoint. Phase 2 Step 6 adds the
+system-tenant observability API (/system/v1/tenants, /blueprints/.../coverage,
+/services/.../drift), which needs MongoDB to enumerate tenants and read
+blueprint installations + schema-version config rows. The broker is still
+intentionally NOT wired — platform-services doesn't publish or consume
+event-hub messages.
 */}}
+{{ include "octo-mesh.system-env" . }}
 - name: OCTO_PLATFORMSERVICES__CRATEDBADMINURL
   value: {{ .global.Values.externalUris.crateDb }}
 - name: OCTO_PLATFORMSERVICES__GRAFANAURL
