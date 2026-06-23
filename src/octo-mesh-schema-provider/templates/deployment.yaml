@@ -131,7 +131,7 @@ spec:
       {{- if .Values.secrets.rootCa }}
       - name: custom-ca-certs
         secret:
-          secretName: {{ printf "%s-ca" (include "octo-mesh-reporting.fullname" .) }}
+          secretName: {{ printf "%s-ca" (include "octo-mesh-schema-provider.fullname" .) }}
       - name: updated-ca-certs
         emptyDir: {}
       {{- end }}
