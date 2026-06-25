@@ -115,7 +115,8 @@
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
 {{ include "octo-mesh.system-env" . }}
-{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}  
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.streamdata-env" (dict "global" .global "name" $name) }}
 - name: OCTO_BOT__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_BOT__PUBLICURL
