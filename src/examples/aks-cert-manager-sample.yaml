@@ -29,6 +29,10 @@ services:
     publicUri: https://bots.example.com
   communication:
     publicUri: https://communication.example.com
-  adminPanel: 
-    publicUri: https://adminpanel.example.com
-  
+  # The legacy admin-panel is retired — new clusters do not deploy it.
+  adminPanel:
+    deploy: false
+  platformServices:
+    # Owns the _configuration endpoint + the System.UI service-managed blueprints.
+    # publicUri is mandatory while deploy is true (the chart default).
+    publicUri: https://platform.example.com

@@ -101,8 +101,6 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
-- name: OCTO_ASSETREPOSITORY__PUBLICADMINPANELURL
-  value: {{ .global.Values.services.adminPanel.publicUri }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- with .global.Values.services.assetRepository.ckCatalog }}
@@ -121,8 +119,6 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_BOT__PUBLICURL
   value: {{ .global.Values.services.bot.publicUri }}
-- name: OCTO_BOT__PUBLICADMINPANELURL
-  value: {{ .global.Values.services.adminPanel.publicUri }}
 - name: OCTO_BOT__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 
@@ -181,23 +177,31 @@ in lowercase regardless of env-var casing.
   value: {{ .global.Values.services.bot.publicUri | quote }}
 - name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__COMMUNICATION
   value: {{ .global.Values.services.communication.publicUri | quote }}
-- name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__ADMINPANEL
-  value: {{ .global.Values.services.adminPanel.publicUri | quote }}
 {{- if .global.Values.services.studio.publicUri }}
 - name: OCTO_COMMUNICATIONCONTROLLER__SERVICEURLS__STUDIO
   value: {{ .global.Values.services.studio.publicUri | quote }}
 {{- end }}
 {{- else if eq .name "platformServices" -}}
+{{- $name := "OCTO_PLATFORMSERVICES" }}
 {{- /*
-Phase 1 of the platform-services initiative — wire-compatible replacement
-for the admin-panel `_configuration` endpoint. Phase 2 Step 6 adds the
-system-tenant observability API (/system/v1/tenants, /blueprints/.../coverage,
-/services/.../drift), which needs MongoDB to enumerate tenants and read
-blueprint installations + schema-version config rows. The broker is still
-intentionally NOT wired — platform-services doesn't publish or consume
-event-hub messages.
+Phase 4 of the platform-services initiative — platform-services now OWNS the
+System.UI CK model + the System.UI.* / System.TenantMode service-managed
+blueprints (moved from admin-panel). It therefore needs three pieces of env
+(it used to need only MongoDB for the Phase-2 observability API):
+  - system-env (MongoDB): observability API + blueprint apply.
+  - broker-env: it runs the distribution-event-hub tenant-lifecycle host
+    (PosCreateTenant / PosUpdateTenant) to seed the blueprints on tenant
+    create / attach / restore. Its UniqueServiceAddress is "PlatformServices",
+    distinct from admin-panel's, so the exclusive queues never collide while
+    both are deployed during the sunset window.
+  - blueprints-env: ${octo.environment(Mode)} / ${octo.isSystemTenant} drive
+    the cockpit `requires:` gates and the TenantMode seed.
 */}}
 {{ include "octo-mesh.system-env" . }}
+{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
+- name: OCTO_PLATFORMSERVICES__INSTANCEPREFIX
+  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 - name: OCTO_PLATFORMSERVICES__CRATEDBADMINURL
   value: {{ .global.Values.externalUris.crateDb }}
 - name: OCTO_PLATFORMSERVICES__GRAFANAURL
@@ -224,8 +228,11 @@ compatibility.
 */}}
 - name: OCTO_PLATFORMSERVICES__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
-- name: OCTO_PLATFORMSERVICES__ADMINPANELURL
-  value: {{ .global.Values.services.adminPanel.publicUri }}
+{{- /*
+ADMINPANELURL is no longer wired: Phase 4 dropped the redirectUri /
+postLogoutRedirectUri fields (and the AdminPanelUrl option) from the
+_configuration DTO, so platform-services no longer needs the admin-panel URL.
+*/}}
 {{- /*
 SYSTEMTENANTID is intentionally NOT sourced from serviceDefaults.systemDatabaseName
 here: the DB name is PascalCase ("OctoSystem") but external consumers
@@ -236,50 +243,17 @@ admin-panel never overrode this from helm either; both services rely on
 the lowercase "octosystem" appsettings default.
 */}}
 
-{{- else if eq .name "adminPanel" -}}
-{{- $name := "OCTO_ADMINPANEL" }}
-{{ include "octo-mesh.system-env" . }}
-{{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
-{{ include "octo-mesh.blueprints-env" . }}
-- name: OCTO_ADMINPANEL__CRATEDBADMINURL
-  value: {{ .global.Values.externalUris.crateDb }}
-- name: OCTO_ADMINPANEL__GRAFANAURL
-  value: {{ .global.Values.externalUris.grafana }}
-- name: OCTO_ADMINPANEL__MESHADAPTERURL
-  value: {{ .global.Values.externalUris.meshAdapter }}
-- name: OCTO_ADMINPANEL__AISERVICESURL
-  value: {{ .global.Values.services.aiServices.publicUri }}
-- name: OCTO_ADMINPANEL__ASSETSERVICEURL
-  value: {{ .global.Values.services.assetRepository.publicUri }}
-- name: OCTO_ADMINPANEL__BOTSERVICEURL
-  value: {{ .global.Values.services.bot.publicUri }}
-- name: OCTO_ADMINPANEL__COMMUNICATIONSERVICEURL
-  value: {{ .global.Values.services.communication.publicUri }}      
-- name: OCTO_ADMINPANEL__AUTHORITYURL
-  value: {{ .global.Values.services.identity.publicUri }}
-- name: OCTO_ADMINPANEL__PUBLICURL
-  value: {{ .global.Values.services.adminPanel.publicUri }}
-- name: OCTO_ADMINPANEL__INSTANCEPREFIX
-  value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- else if eq .name "studio" -}}
 {{- $name := "OCTO_REFINERY_STUDIO" }}
 {{- /*
-Phase 1 of the octo-platform-services initiative — the studio Docker
-entrypoint templates BOTH `platformUri` (new) and `adminUri` (legacy)
-into /assets/config.json from the env vars below. The configuration
-loader (AppConfigurationService) prefers `platformUri` over `adminUri`,
-so new studio builds hit platform-services and older builds (or any
-configs baked into Office add-ins / PowerBI connectors) keep working
-via the legacy field.
-
-Both env vars resolve to the same URL during the transition: the
-platform-services public URI when configured for this cluster, else
-the legacy admin-panel URI as a fallback so clusters that have not
-yet deployed platformServices keep working. In Phase 4 (admin-panel
-retirement) ADMIN_PANEL_URI and the `adminUri` field will be removed
-and only PLATFORM_URI / `platformUri` will remain.
+The studio Docker entrypoint templates BOTH `platformUri` (new) and `adminUri`
+(legacy) into /assets/config.json from the env vars below. The configuration
+loader (AppConfigurationService) prefers `platformUri`; `adminUri` is kept only
+so studio builds / Office add-ins / PowerBI connectors baked against the old
+field name keep resolving. Both now point at platform-services — admin-panel was
+retired in Phase 4, so there is no admin-panel fallback any more.
 */}}
-{{- $configEndpointUri := default .global.Values.services.adminPanel.publicUri .global.Values.services.platformServices.publicUri }}
+{{- $configEndpointUri := .global.Values.services.platformServices.publicUri }}
 - name: PLATFORM_URI
   value: {{ $configEndpointUri }}
 - name: ADMIN_PANEL_URI

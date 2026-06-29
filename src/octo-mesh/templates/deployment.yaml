@@ -8,9 +8,6 @@
 {{- if .Values.services.communication.deploy -}}
 {{- include "checkMandatoryValue" (dict "name" "services.communication.publicUri" "value" .Values.services.communication.publicUri) }}
 {{- end }}
-{{- if .Values.services.adminPanel.deploy -}}
-{{- include "checkMandatoryValue" (dict "name" "services.adminPanel.publicUri" "value" .Values.services.adminPanel.publicUri) }}
-{{- end }}
 {{- if .Values.services.platformServices.deploy -}}
 {{- include "checkMandatoryValue" (dict "name" "services.platformServices.publicUri" "value" .Values.services.platformServices.publicUri) }}
 {{- end }}

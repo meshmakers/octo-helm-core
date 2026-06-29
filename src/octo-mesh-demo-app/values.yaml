@@ -11,8 +11,10 @@ clientId: "octo-demo-app"
 # The public uri of the add-in
 publicUri: "https://localhost:4200"
 
-# the uri of the admin panel
-adminPanelUri: "https://localhost:5005"
+# URI of the _configuration discovery endpoint — served by platform-services since
+# Phase 4 (admin-panel retired). Still wired through the legacy ADMIN_PANEL_URI env var
+# the demo-app reads; renaming the value + env var is a separate demo-app frontend task.
+adminPanelUri: "https://localhost:5024"
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:

@@ -343,6 +343,11 @@ services:
     publicUri: ""
     # set false to prevent deployment
     deploy: true
+    # Use Recreate strategy because, since Phase 4, the service runs the
+    # distribution-event-hub tenant-lifecycle host (it owns the System.UI
+    # service-managed blueprints) and consumes exclusive RabbitMQ queues;
+    # RollingUpdate deadlocks on RESOURCE_LOCKED. Same as adminPanel / identity.
+    recreateStrategy: true
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -377,47 +382,9 @@ services:
       tolerations: [ ]
       affinity: { }
 
-  adminPanel:
-    # Public URI of service
-    publicUri: ""
-    # set false to prevent deployment
-    deploy: true
-    # Use Recreate strategy because the service consumes exclusive RabbitMQ
-    # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
-    recreateStrategy: true
-    # when set, the service will be deployed with the given full name
-    fullnameOverride: ""
-    # the service will be deployed with the given name and chart name
-    nameOverride: "adminpanel"
-    image:
-      repository: meshmakers/octo-mesh-adminpanel
-      # Overrides the image tag whose default is the chart appVersion.
-      tag: ""
-    replicaCount: 1
-    podAnnotations: {}
-    podLabels: {}
-    pod:
-      port: 80
-      livenessProbe:
-        httpGet:
-          path: /healthz/live
-          port: http
-        initialDelaySeconds: 15
-        periodSeconds: 30
-        failureThreshold: 3
-      readinessProbe:
-        httpGet:
-          path: /healthz/ready
-          port: http
-        initialDelaySeconds: 10
-        periodSeconds: 10
-        failureThreshold: 3
-      resources: {}
-      volumes: [ ]
-      volumeMounts: [ ]
-      nodeSelector: { }
-      tolerations: [ ]
-      affinity: { }
+  # adminPanel was retired in Phase 4 (AB#4261) — the System.UI CK model + blueprints
+  # and the _configuration endpoint moved to platformServices. The service block was
+  # removed from the chart; nothing deploys octo-mesh-adminpanel any more.
 
   studio:
     # Public URI of service

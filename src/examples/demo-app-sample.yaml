@@ -4,8 +4,9 @@ clientId: "octo-demo-app"
 
 # The public uri of the demo app
 publicUri: https://demoapp.example.com
-# the uri of the admin panel
-adminPanelUri: https://adminpanel.example.com
+# URI of the _configuration discovery endpoint — served by platform-services
+# (admin-panel was retired in Phase 4). Wired through the legacy ADMIN_PANEL_URI env var.
+adminPanelUri: https://platform.example.com
 
 image:
   privateRegistry: <registry url>
