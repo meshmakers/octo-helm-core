@@ -119,6 +119,10 @@
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_BOT__PUBLICURL
   value: {{ .global.Values.services.bot.publicUri }}
+{{- if .global.Values.services.studio.publicUri }}
+- name: OCTO_BOT__PUBLICREFINERYSTUDIOURL
+  value: {{ .global.Values.services.studio.publicUri }}
+{{- end }}
 - name: OCTO_BOT__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 
