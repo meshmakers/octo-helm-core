@@ -264,6 +264,26 @@ retired in Phase 4, so there is no admin-panel fallback any more.
   value: {{ $configEndpointUri }}
 - name: APP_URI
   value: {{ .global.Values.services.studio.publicUri }}
+{{- /*
+Dash0 OpenTelemetry (browser RUM). Per-environment opt-in: only emitted when an
+endpoint is configured, so environments without Dash0 activated get no DASH0_*
+vars and the studio's telemetry init stays a no-op. The entrypoint templates
+these into /assets/config.json; the auth token is a secret (secretKeyRef), the
+endpoint/dataset/environment are non-secret plain values.
+*/}}
+{{- if .global.Values.services.studio.dash0.endpoint }}
+- name: DASH0_ENDPOINT
+  value: {{ .global.Values.services.studio.dash0.endpoint | quote }}
+- name: DASH0_DATASET
+  value: {{ .global.Values.services.studio.dash0.dataset | default "" | quote }}
+- name: DASH0_ENVIRONMENT
+  value: {{ .global.Values.services.studio.dash0.environment | default "" | quote }}
+- name: DASH0_AUTH_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
+      key: dash0WebAuthToken
+{{- end }}
 {{- else if eq .name "aiServices" -}}
 {{- $name := "OCTO_AISERVICES" }}
 {{ include "octo-mesh.system-env" . }}

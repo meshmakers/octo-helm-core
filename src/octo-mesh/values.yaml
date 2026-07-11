@@ -29,6 +29,10 @@ secrets:
   # that touch secret-flagged data then fail with a clear configuration
   # error at runtime, while deploys that do not touch them keep working.
   communicationInstanceSecretKey: ""
+  # Dash0 browser-RUM ingest auth token (form "auth_..."), Ingesting permission
+  # only. Empty = the studio's DASH0_AUTH_TOKEN secret key is not emitted; pair
+  # with services.studio.dash0.endpoint. Sourced from Vault at deploy time.
+  dash0WebAuthToken: ""
   # content of the root ca certificate chain
   rootCa: ""
 
@@ -389,6 +393,18 @@ services:
   studio:
     # Public URI of service
     publicUri: ""
+    # Dash0 OpenTelemetry (browser RUM). Per-environment opt-in: leave endpoint
+    # empty to disable — the chart then emits no DASH0_* env vars and the studio's
+    # telemetry init stays a no-op. Set endpoint (and provide the auth token via
+    # secrets.dash0WebAuthToken) only for clusters where Dash0 is activated.
+    dash0:
+      # OTLP HTTP base URL, excluding the /v1/* prefix (the web SDK appends it),
+      # e.g. https://ingress.europe-west4.gcp.dash0.com
+      endpoint: ""
+      # Dash0 dataset (can also be encoded in the auth token)
+      dataset: ""
+      # deployment.environment.name resource attribute (e.g. test-2)
+      environment: ""
     # set false to prevent deployment
     deploy: false
     # when set, the service will be deployed with the given full name
