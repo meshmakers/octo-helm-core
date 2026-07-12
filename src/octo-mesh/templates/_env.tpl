@@ -38,12 +38,28 @@
 # - ${octo.environment}: dev/test/staging/production gate for `requires:` blocks.
 # - ${octo.systemTenantId}: kept in sync with serviceDefaults.systemDatabaseName so
 #                          ${octo.isSystemTenant} matches the runtime's system tenant.
+# - ${octo.scheme}/${octo.domain}: per-cluster URL composition inputs for
+#   ${octo.scheme}://<slug>.${octo.domain} (e.g. ${octo.mcp.publicUrl} in the
+#   System.Identity.Bootstrap seed). Explicit serviceDefaults.scheme/.domain win;
+#   otherwise both are derived from services.identity.publicUri (scheme verbatim,
+#   domain = host minus its first label: https://connect.test-2.mm.cloud →
+#   test-2.mm.cloud). Leaving them empty seeds half-composed URLs ("/") into
+#   blueprint-managed entities — the AB#4338 invalid_target failure on test-2.
+{{- $identityUrl := urlParse (default "" .global.Values.services.identity.publicUri) }}
+{{- $derivedDomain := "" }}
+{{- if $identityUrl.host }}
+{{- $derivedDomain = (splitList "." $identityUrl.host) | rest | join "." }}
+{{- end }}
 - name: OCTO_BLUEPRINTS__OCTOVERSION
   value: {{ .global.Chart.AppVersion | quote }}
 - name: OCTO_BLUEPRINTS__ENVIRONMENT
   value: {{ .global.Values.serviceDefaults.environment | quote }}
 - name: OCTO_BLUEPRINTS__SYSTEMTENANTID
   value: {{ .global.Values.serviceDefaults.systemDatabaseName | quote }}
+- name: OCTO_BLUEPRINTS__SCHEME
+  value: {{ .global.Values.serviceDefaults.scheme | default ($identityUrl.scheme | default "https") | quote }}
+- name: OCTO_BLUEPRINTS__DOMAIN
+  value: {{ .global.Values.serviceDefaults.domain | default $derivedDomain | quote }}
 {{- end }}
 
 {{- define "octo-mesh.streamdata-env" -}}
@@ -72,6 +88,7 @@
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
 {{ include "octo-mesh.broker-env" (dict "global" .global "name" $name) }}
+{{ include "octo-mesh.blueprints-env" . }}
 - name: OCTO_IDENTITY__KeyFilePath
   value: "/etc/octo-identity/IdentityServer4Auth.pfx"
 - name: OCTO_IDENTITY__KEYFILEPASSWORD

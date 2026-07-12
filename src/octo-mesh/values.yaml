@@ -68,6 +68,15 @@ serviceDefaults:
   # staging, production. Override per cluster in values.yaml; defaults to dev so
   # local helm-install renders never accidentally produce production semantics.
   environment: "dev"
+  # URL composition inputs for the blueprint runner: ${octo.scheme}://<slug>.${octo.domain}
+  # (e.g. ${octo.mcp.publicUrl} used by the System.Identity.Bootstrap seed for the mcpApi
+  # ApiResource Name and the MCP client URIs). When left empty, both are DERIVED from
+  # services.identity.publicUri (scheme verbatim; domain = host minus its first label,
+  # e.g. https://connect.test-2.mm.cloud -> test-2.mm.cloud), which matches the
+  # <service>.<domain> host convention on all clusters. Set explicitly only when a
+  # cluster deviates from that convention.
+  scheme: ""
+  domain: ""
 
 ingress:
   enabled: true
