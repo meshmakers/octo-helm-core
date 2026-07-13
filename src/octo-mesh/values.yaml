@@ -164,7 +164,14 @@ services:
         initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -221,7 +228,14 @@ services:
         initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -272,7 +286,14 @@ services:
         initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 2Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -340,7 +361,14 @@ services:
         initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -388,7 +416,14 @@ services:
         initialDelaySeconds: 30
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -443,7 +478,14 @@ services:
         initialDelaySeconds: 10
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 128Mi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
@@ -494,7 +536,14 @@ services:
         initialDelaySeconds: 15
         periodSeconds: 10
         failureThreshold: 3
-      resources: {}
+      # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
+      # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 2Gi
       volumes: [ ]
       volumeMounts: [ ]
       nodeSelector: { }
