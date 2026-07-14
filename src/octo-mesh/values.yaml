@@ -56,6 +56,14 @@ externalUris:
   grafana: ""
   # URI of the mesh adapter to be used by the services
   meshAdapter: ""
+  # Public URI of the MCP service (octo-mcp chart, deployed separately).
+  # Surfaced by platform-services as the `mcpServices` _configuration field.
+  # When left empty it is DERIVED as <scheme>://mcp.<domain> using the same
+  # scheme/domain resolution as the blueprint runner (serviceDefaults.scheme/
+  # .domain win, else derived from services.identity.publicUri) — this matches
+  # ${octo.mcp.publicUrl} and the mcp.<domain> host convention on all clusters.
+  # Set explicitly only when a cluster deviates from that convention.
+  mcp: ""
   
 serviceDefaults:
   type: ClusterIP

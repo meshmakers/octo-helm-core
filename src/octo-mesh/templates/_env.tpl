@@ -238,6 +238,27 @@ blueprints (moved from admin-panel). It therefore needs three pieces of env
 - name: OCTO_PLATFORMSERVICES__COMMUNICATIONSERVICEURL
   value: {{ .global.Values.services.communication.publicUri }}
 {{- /*
+McpServiceUrl feeds the `mcpServices` _configuration field (Studio's
+Development→Swagger→McpServices link). The MCP service ships in its own
+chart, so the core value tree has no services.mcp block — an explicit
+externalUris.mcp wins, otherwise the URL is composed as
+<scheme>://mcp.<domain> with the same scheme/domain resolution as
+blueprints-env, matching ${octo.mcp.publicUrl} and the mcp.<domain> host
+convention on all clusters.
+*/}}
+{{- $mcpIdentityUrl := urlParse (default "" .global.Values.services.identity.publicUri) }}
+{{- $mcpDerivedDomain := "" }}
+{{- if $mcpIdentityUrl.host }}
+{{- $mcpDerivedDomain = (splitList "." $mcpIdentityUrl.host) | rest | join "." }}
+{{- end }}
+{{- $mcpScheme := .global.Values.serviceDefaults.scheme | default ($mcpIdentityUrl.scheme | default "https") }}
+{{- $mcpDomain := .global.Values.serviceDefaults.domain | default $mcpDerivedDomain }}
+{{- $mcpUrl := .global.Values.externalUris.mcp | default (ternary (printf "%s://mcp.%s" $mcpScheme $mcpDomain) "" (ne $mcpDomain "")) }}
+{{- if $mcpUrl }}
+- name: OCTO_PLATFORMSERVICES__MCPSERVICEURL
+  value: {{ $mcpUrl | quote }}
+{{- end }}
+{{- /*
 ReportingServiceUrl is intentionally NOT wired here: octo-report-services
 lives in helm-pro (octo-mesh-reporting chart) and is not part of the core
 chart's value tree. Matches the legacy admin-panel behaviour where the
