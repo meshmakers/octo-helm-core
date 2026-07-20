@@ -141,6 +141,14 @@ operator:
     clusterIssuer: ""
     # tls: true / false — leave unset to keep the chart default.
     tls: ""
+    # Additional annotations projected into every workload's
+    # ingress.annotations (merged with the cluster-issuer annotation).
+    # Keys may contain dots/slashes — the chart binds them as indexed
+    # OPERATOR__INGRESS__ANNOTATIONS__n__NAME/__VALUE env pairs.
+    # Example:
+    #   annotations:
+    #     nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    annotations: {}
 
   # Cluster-side credentials the operator may inject into workloads that
   # opt in via Adapter.ReceivesClusterSecrets. Each field is optional —
