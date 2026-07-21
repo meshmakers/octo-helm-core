@@ -127,6 +127,24 @@ spec:
               name: {{ printf "%s-broker" (include "octoMeshCommunicationOperator.fullname" .) }}
               key: broker-password
         {{- end }}
+        {{- /*
+        AB#4417: forward the operator's own root CA PEM back into its
+        process so it can, in turn, project it as `secrets.rootCa` into
+        every workload it Helm-installs (WorkloadReconciler.AppendClusterSecrets).
+        Without this, the operator pod trusts secrets.rootCa via the
+        trust-splice initContainer + /etc/ssl/certs mount below, but has
+        no way to read back the original PEM to hand to workloads. The
+        `{fullname}-ca` Secret already holds the exact PEM at `root-ca.pem`
+        (see templates/secret.yaml) — reuse it here via secretKeyRef
+        rather than mounting a second copy of the volume.
+        */}}
+        {{- if .Values.secrets.rootCa }}
+        - name: OPERATOR__ROOTCACERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: {{ printf "%s-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
+              key: root-ca.pem
+        {{- end }}
         {{- if .Values.operator.reportingServiceUri }}
         - name: OPERATOR__REPORTINGSERVICEURI
           value: {{ .Values.operator.reportingServiceUri | quote }}
