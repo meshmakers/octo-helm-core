@@ -91,7 +91,7 @@
 # injector honours an explicit OTEL_SERVICE_NAME over that label default
 # (verified on test-2). Value matches the app.kubernetes.io/service label.
 - name: OTEL_SERVICE_NAME
-  value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) }}
+  value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) | quote }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
