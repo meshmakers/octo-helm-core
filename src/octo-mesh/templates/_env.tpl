@@ -84,6 +84,14 @@
 {{- define "octo-mesh.env" -}}
 - name: ASPNETCORE_URLS
   value: "http://+:80"
+# Distinct OpenTelemetry service.name per workload. Without this the Dash0
+# auto-instrumentation derives service.name from the app.kubernetes.io/name
+# label, which is identical ("octo-mesh") for every service in this release —
+# so all services collapse into a single node in the Dash0 service map. The
+# injector honours an explicit OTEL_SERVICE_NAME over that label default
+# (verified on test-2). Value matches the app.kubernetes.io/service label.
+- name: OTEL_SERVICE_NAME
+  value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
