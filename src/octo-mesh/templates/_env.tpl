@@ -92,28 +92,6 @@
 # (verified on test-2). Value matches the app.kubernetes.io/service label.
 - name: OTEL_SERVICE_NAME
   value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) | quote }}
-{{- if and .global.Values.serviceDefaults.dash0DotnetProfiler (ne .name "identity") }}
-# TEMPORARY Dash0 .NET auto-instrumentation workaround (serviceDefaults.dash0DotnetProfiler).
-# Services with a direct `dotnet X.dll` entrypoint run dotnet as PID 1, so the Dash0
-# LD_PRELOAD injector never activates the CLR profiler (no child execve to intercept).
-# Set the CORECLR profiler env directly to load the Dash0-provided agent at startup.
-# identity is excluded — it already gets instrumented via its run.sh wrapper, and
-# setting these again could double-register the startup hook. Paths are provided by
-# the Dash0 operator's instrumentation init container; the durable fix is a
-# shell-wrapper entrypoint per image (then this block is removed).
-- name: CORECLR_ENABLE_PROFILING
-  value: "1"
-- name: CORECLR_PROFILER
-  value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-- name: CORECLR_PROFILER_PATH
-  value: "/__otel_auto_instrumentation/agents/dotnet/glibc/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
-- name: DOTNET_ADDITIONAL_DEPS
-  value: "/__otel_auto_instrumentation/agents/dotnet/glibc/AdditionalDeps"
-- name: DOTNET_STARTUP_HOOKS
-  value: "/__otel_auto_instrumentation/agents/dotnet/glibc/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
-- name: OTEL_DOTNET_AUTO_HOME
-  value: "/__otel_auto_instrumentation/agents/dotnet/glibc"
-{{- end }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
