@@ -85,17 +85,6 @@ serviceDefaults:
   # cluster deviates from that convention.
   scheme: ""
   domain: ""
-  # TEMPORARY workaround for Dash0 .NET auto-instrumentation. The Dash0 LD_PRELOAD
-  # injector (libotelinject) only activates the CLR profiler for a dotnet process it
-  # intercepts via execve — i.e. a process launched as a CHILD of the container's
-  # PID 1. Services whose ENTRYPOINT execs `dotnet X.dll` directly (all except
-  # identity, which goes through run.sh) run dotnet as PID 1, so the profiler is
-  # never injected and they emit no traces. When true, the chart sets the CORECLR
-  # profiler env directly so the runtime loads the Dash0-provided agent at startup.
-  # Enable ONLY on clusters where the Dash0 operator injects /__otel_auto_instrumentation
-  # (the agent paths, incl. the linux-x64 arch segment, are hardcoded). The durable
-  # fix is a shell-wrapper ENTRYPOINT per service image; remove this flag afterwards.
-  dash0DotnetProfiler: false
 
 ingress:
   enabled: true
