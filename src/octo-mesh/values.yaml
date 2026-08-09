@@ -410,6 +410,17 @@ services:
     podLabels: {}
     pod:
       port: 80
+      # Startup probe gives the service time to run CK model upgrade/migration
+      # across all tenants (Phase 4 tenant-lifecycle host) before liveness takes
+      # over — without it, liveness kills the pod after ~75s while startup can
+      # exceed 90s, causing a CrashLoopBackOff that never binds the port.
+      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      startupProbe:
+        httpGet:
+          path: /healthz/live
+          port: http
+        periodSeconds: 5
+        failureThreshold: 120
       livenessProbe:
         httpGet:
           path: /healthz/live
