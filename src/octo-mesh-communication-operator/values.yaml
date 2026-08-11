@@ -115,6 +115,14 @@ operator:
   # clusters that do not host a reporting service.
   reportingServiceUri: ""
 
+  # Public URI of the identity service issuing the access tokens that secured
+  # trigger nodes accept. Projected into each workload's Helm values as
+  # `authUri`. Use the public issuer address, not a cluster-internal service
+  # name — the adapter treats it as the expected issuer of the token, not just
+  # as an address to fetch signing keys from. Leave empty in clusters whose
+  # workloads expose no secured routes.
+  authUri: ""
+
   # Private container registry the cluster pulls workload images from
   # (e.g. "docker.mm.cloud"). When set, projected into each workload's
   # `image.privateRegistry` so the chart renders the image reference as

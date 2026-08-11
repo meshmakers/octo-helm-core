@@ -149,6 +149,10 @@ spec:
         - name: OPERATOR__REPORTINGSERVICEURI
           value: {{ .Values.operator.reportingServiceUri | quote }}
         {{- end }}
+        {{- if .Values.operator.authUri }}
+        - name: OPERATOR__AUTHURI
+          value: {{ .Values.operator.authUri | quote }}
+        {{- end }}
         {{- if .Values.operator.imageRegistry }}
         - name: OPERATOR__IMAGEREGISTRY
           value: {{ .Values.operator.imageRegistry | quote }}
