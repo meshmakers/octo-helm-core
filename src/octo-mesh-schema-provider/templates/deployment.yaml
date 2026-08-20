@@ -36,6 +36,11 @@ spec:
             - sh
             - -c
             - |
+              # AB#4498: fail hard when any step fails (e.g. 'apk add' without
+              # cluster DNS/egress on a cold start) so kubelet retries the init
+              # container instead of starting the service with a CA bundle that
+              # lacks the custom root CA.
+              set -e
               echo "=== Alpine CA Certificate Setup ==="
               echo "Installing CA certificates package..."
               apk add --no-cache ca-certificates
