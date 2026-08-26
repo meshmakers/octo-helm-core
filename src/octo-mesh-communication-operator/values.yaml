@@ -218,11 +218,17 @@ resources:
   # (exitCode 137) mid-deploy, then restarts and retries the same event in a
   # loop. 512Mi gives helm + index parsing comfortable headroom on every
   # cluster size.
+  # CPU is just as load-bearing as memory (AB#4876 rollout, 2026-08-26): a
+  # single helm dry-run/upgrade of the 3.4.x adapter chart burns several CPU
+  # minutes, and a throttled operator stretches it to 20–35 min wall-clock per
+  # tenant — a fleet rollout then outlives every CD verify window. 1 full core
+  # keeps one helm invocation unthrottled; the deploy queue is sequential, so
+  # there is never more than one.
   limits:
-    cpu: 500m
+    cpu: 1000m
     memory: 512Mi
   requests:
-    cpu: 100m
+    cpu: 200m
     memory: 256Mi
 
 livenessProbe:
