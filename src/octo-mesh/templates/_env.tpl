@@ -171,6 +171,17 @@
 - name: OCTO_COMMUNICATIONCONTROLLER__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /*
+AB#4923 HTTP activator. Only half of the wiring lives here: what actually routes
+traffic is the adapter Ingress annotation
+nginx.ingress.kubernetes.io/default-backend, which the communication operator
+projects onto every workload (OPERATOR__INGRESS__ANNOTATIONS__n__*) and which
+must name this service. Enabling the flag without that annotation is inert.
+*/}}
+{{- if .global.Values.services.communication.activatorEnabled }}
+- name: OCTO_COMMUNICATIONCONTROLLER__ACTIVATORENABLED
+  value: "true"
+{{- end }}
+{{- /*
 AES-256-GCM master key for IWorkloadEncryptionService. Emitted only when
 secrets.communicationInstanceSecretKey is set so unconfigured clusters
 keep starting (CommunicationControllerOptions doc: empty is tolerated at

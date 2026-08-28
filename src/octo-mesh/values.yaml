@@ -333,6 +333,14 @@ services:
     # keys mirror the helm-section name) and the tenantId is injected per
     # deploy. No values.yaml entries needed for those two families.
     domains: {}
+    # HTTP activator (AB#4923): holds a request for a hibernated on-demand workload
+    # while it wakes, then forwards it, instead of the ingress answering 502/503.
+    # Requires the companion ingress annotation on the workloads — the communication
+    # operator must project nginx.ingress.kubernetes.io/default-backend naming THIS
+    # service (plus a proxy-read-timeout above the wake budget, since the cluster
+    # default of 60s cuts the hold short). Without that annotation nothing routes
+    # here and the flag does nothing.
+    activatorEnabled: false
     # set false to prevent deployment
     deploy: true
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
