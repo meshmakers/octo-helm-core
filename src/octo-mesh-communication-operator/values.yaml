@@ -140,6 +140,13 @@ operator:
     rabbitMqUser: ""
     streamDataHost: ""
     streamDataUser: ""
+    # Instance isolation (Epic AB#4944). Both are forwarded into every deployed
+    # workload's values and must mirror what the core services run with — a workload
+    # resolves its tenant through the system database, and writes stream data into the
+    # prefixed CrateDB schema. Leave empty on a single-instance cluster: the workloads
+    # then keep the compiled-in "OctoSystem" and the unprefixed schema names.
+    systemDatabaseName: ""
+    streamDataSchemaInstancePrefix: ""
 
   # Cluster-wide ingress defaults projected into every deployed workload's
   # Helm values. Per-workload ValuesYaml or structured overrides can still
