@@ -48,6 +48,11 @@ clusterDependencies:
   # true in clusters that run CrateDB and want tenants to be able to enable
   # StreamData via the asset-rep StreamData controller.
   streamDataEnabled: false
+  # CrateDB schema instance prefix (AB#4946, Epic AB#4944). Empty (default) keeps the
+  # un-prefixed legacy schema naming - existing instances must never set it. A parallel
+  # instance sharing the cluster's CrateDB sets e.g. "dev" so its tenant schemas become
+  # dev_{tenantId}. Deliberately separate from serviceDefaults.instancePrefix (RabbitMQ).
+  streamDataSchemaInstancePrefix: ""
 
 externalUris:
   # URI of CrateDB to be used by the services

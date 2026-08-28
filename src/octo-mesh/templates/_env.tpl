@@ -69,6 +69,14 @@
 # the feature is opt-in per cluster.
 - name: OCTO_STREAMDATA__ENABLED
   value: {{ .global.Values.clusterDependencies.streamDataEnabled | quote }}
+{{- if .global.Values.clusterDependencies.streamDataSchemaInstancePrefix }}
+# CrateDB schema instance prefix (AB#4946, Epic AB#4944): a second OctoMesh instance sharing
+# the cluster's CrateDB names its tenant schemas {prefix}_{tenantId}. Same root "StreamData"
+# section as the kill switch above, so the env-var name is fixed across services. Emitted only
+# when set — existing instances keep their un-prefixed schemas.
+- name: OCTO_STREAMDATA__SCHEMAINSTANCEPREFIX
+  value: {{ .global.Values.clusterDependencies.streamDataSchemaInstancePrefix | quote }}
+{{- end }}
 - name: {{ printf "%s__STREAMDATAHOST" (upper .name) }}
   value: {{ .global.Values.clusterDependencies.streamDataHost }}
 - name: {{ printf "%s__STREAMDATAUSER" (upper .name) }}
