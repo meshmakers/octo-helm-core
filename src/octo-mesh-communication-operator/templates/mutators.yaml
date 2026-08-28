@@ -15,6 +15,13 @@ webhooks:
       namespace: {{ .Release.Namespace }}
   matchPolicy: Exact
   name: mutate.communicationpool.octo-mesh.meshmakers.io.v1alpha1
+  # Scope the webhook to the operator's own release namespace — same rationale
+  # as in validators.yaml (multiple operator instances on one cluster must not
+  # mutate/block each other's CommunicationPool CRs; AB#4947 second-instance
+  # lane). kubernetes.io/metadata.name is apiserver-applied since K8s 1.21.
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: {{ .Release.Namespace }}
   rules:
   - apiGroups:
     - octo-mesh.meshmakers.io
