@@ -11,6 +11,9 @@ data:
   KESTREL__ENDPOINTS__HTTPS__URL: "{{ .Values.configMap.kestrelHttpsUrl }}"
   OPERATOR__AUTOMANAGEPOOLS: "{{ .Values.operator.autoManagePools }}"
   OPERATOR__COMMUNICATIONCONTROLLERURI: "{{ .Values.operator.communicationControllerUri }}"
+  {{- if .Values.operator.workloadCommunicationControllerUri }}
+  OPERATOR__WORKLOADCOMMUNICATIONCONTROLLERURI: "{{ .Values.operator.workloadCommunicationControllerUri }}"
+  {{- end }}
   OPERATOR__POOLNAMESPACE: "{{ .Values.operator.poolNamespace }}"
   OPERATOR__DEFAULTPOOLNAME: "{{ .Values.operator.defaultPoolName }}"
   OPERATOR__INSTANCEPREFIX: "{{ .Values.operator.instancePrefix }}"

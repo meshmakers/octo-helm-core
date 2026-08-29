@@ -101,6 +101,14 @@ operator:
   # https://octo-mesh-communication-controller-services
   communicationControllerUri: ""
 
+  # Controller URI projected into the Helm values of every deployed workload. Empty
+  # (default) projects communicationControllerUri, which is correct wherever operator
+  # and workloads resolve the same name the same way. Set it when the operator needs
+  # an address the workloads cannot use - observed on local kind clusters, where the
+  # operator reaches a host-run controller through a name only it can be given, and
+  # every adapter then sits at Unregistered while the operator looks healthy (AB#4967).
+  workloadCommunicationControllerUri: ""
+
   # Namespace where auto-created CommunicationPool CRs, per-tenant broker
   # secrets, and the resulting adapter Deployments/Services are placed. All
   # artefacts of a managed pool live here. Must exist before installation.
