@@ -28,6 +28,17 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.hostAliases }}
+      # Extra /etc/hosts entries for the operator pod. Needed when the
+      # Communication Controller is only reachable at an address the cluster
+      # cannot resolve, or — the local-kind case — reachable at an address the
+      # controller's TLS certificate does not name: the operator validates that
+      # certificate like any other client, and there is no bypass for its own
+      # hub connection. Mapping the certificate's hostname onto the reachable
+      # address satisfies both at once.
+      hostAliases:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.secrets.rootCa }}
       # InitContainer to update CA certificates
       initContainers:

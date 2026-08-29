@@ -37,6 +37,13 @@ secrets:
   rootCa: ""
 
 imagePullSecrets: []
+
+# Extra /etc/hosts entries for the operator pod, e.g.
+#   - ip: 192.168.65.254
+#     hostnames: [mac.local]
+# Used where the controller is reachable at an address its TLS certificate does
+# not name (typical for a local kind cluster talking to a host-run controller).
+hostAliases: []
 nameOverride: ""
 # Default fullname is `communication-operator` so K8s resource names don't
 # inherit the Helm release name as a prefix. Every operator install lives
