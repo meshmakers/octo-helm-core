@@ -36,6 +36,9 @@ variables:
     value: ${{ startsWith(variables['Build.SourceBranch'], 'refs/tags/r') }}
   - name: isMain
     value: ${{ eq(variables['Build.SourceBranch'], 'refs/heads/main') }}
+  # Long-lived branch lines (test/0.2-dev). Matches the naming other repos use.
+  - name: isTest
+    value: ${{ startsWith(variables['Build.SourceBranch'], 'refs/heads/test') }}
 
 stages:
   - stage: Build
@@ -201,9 +204,15 @@ stages:
           # with artifacts regardless of branch, so a PR or dev/* build that
           # publishes `local` can be deployed verbatim (incident 2026-06-10:
           # unmerged PR chart on test-2 + instancePrefix "merge" split-brain).
+          # AB#4948: the branch clause used to read
+          # startsWith('refs/heads/0.2'), which never matched the actual branch
+          # name (test/0.2-dev) — so a 0.2 build published no artifact at all.
+          # The test-2 dev lane does not depend on it (it checks this repo out
+          # and `helm package`s the charts itself), but the condition should say
+          # what it means.
           - task: PowerShell@2
             displayName: 'Create version info file'
-            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), startsWith(variables['Build.SourceBranch'], 'refs/heads/0.2')))
+            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), eq(variables.isTest, true)))
             inputs:
               targetType: 'inline'
               script: |
@@ -211,6 +220,6 @@ stages:
                 Set-Content $(build.artifactstagingdirectory)/versioninfo.txt $(Build.BuildNumber)
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Artifact: local'
-            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), startsWith(variables['Build.SourceBranch'], 'refs/heads/0.2')))
+            condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isRelease, true), eq(variables.isTest, true)))
             inputs:
               ArtifactName: local
