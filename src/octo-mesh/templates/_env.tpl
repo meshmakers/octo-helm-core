@@ -295,7 +295,7 @@ empty `reportingServices` _configuration field, which consumers read as
 in Refinery Studio keys its Reporting row on this.
 */}}
 - name: OCTO_PLATFORMSERVICES__REPORTINGSERVICEURL
-  value: {{ .global.Values.externalUris.reporting }}
+  value: {{ .global.Values.externalUris.reporting | quote }}
 - name: OCTO_PLATFORMSERVICES__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 {{- /*
