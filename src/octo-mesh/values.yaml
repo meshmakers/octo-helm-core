@@ -69,6 +69,12 @@ externalUris:
   # ${octo.mcp.publicUrl} and the mcp.<domain> host convention on all clusters.
   # Set explicitly only when a cluster deviates from that convention.
   mcp: ""
+  # Public URI of the reporting service (octo-mesh-reporting chart in helm-pro,
+  # deployed separately). Surfaced by platform-services as the `reportingServices`
+  # _configuration field; must match the octo-mesh-reporting chart's publicUri.
+  # Leave empty on installations without reporting — consumers read an empty
+  # field as "service not part of this installation" (AB#4884).
+  reporting: ""
   
 serviceDefaults:
   type: ClusterIP

@@ -286,15 +286,16 @@ convention on all clusters.
   value: {{ $mcpUrl | quote }}
 {{- end }}
 {{- /*
-ReportingServiceUrl is intentionally NOT wired here: octo-report-services
-lives in helm-pro (octo-mesh-reporting chart) and is not part of the core
-chart's value tree. Matches the legacy admin-panel behaviour where the
-`reportingServices` DTO field was never overridden from helm either (no
-external consumer reads it today). Operators who want a real value can set
-OCTO_PLATFORMSERVICES__REPORTINGSERVICEURL via podAnnotations / a
-PodExtra-style override; the field stays in the DTO for backwards
-compatibility.
+Reporting ships in helm-pro (octo-mesh-reporting chart), so the core value
+tree has no services.reporting block — the public URL is announced via
+externalUris.reporting, like the other separately-deployed endpoints above.
+Emitted unconditionally: an empty value makes platform-services serve an
+empty `reportingServices` _configuration field, which consumers read as
+"service not part of this installation" (AB#4884). The Tenant Features panel
+in Refinery Studio keys its Reporting row on this.
 */}}
+- name: OCTO_PLATFORMSERVICES__REPORTINGSERVICEURL
+  value: {{ .global.Values.externalUris.reporting | quote }}
 - name: OCTO_PLATFORMSERVICES__AUTHORITYURL
   value: {{ .global.Values.services.identity.publicUri }}
 {{- /*
