@@ -136,11 +136,72 @@
   value: {{ .global.Values.services.assetRepository.publicUri }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- /*
+AB#5139 lane-scoped catalogs. The private CK catalog
+(PrivateOctoGitHub) and the private blueprint catalog
+(PrivateOctoGitHubBlueprints) both default in the engine to the shared
+main-lane repositories (construction-kit-libraries-build /
+blueprint-libraries-build, branch main). A pre-release instance that runs
+next to a main-lane instance therefore installs main-lane content. The
+repository coordinates below let ONE installation redirect its private
+catalogs at a lane-private repository.
+
+Every coordinate is emitted ONLY when the value is non-empty: an empty
+value is "keep the engine default", and an emitted-but-empty variable
+would OVERRIDE that default with nothing (a catalog pointed at owner ""/
+repo "" fails to refresh). So guard with `with` on each individual value
+— never with `default`, which would materialise a value.
+
+There is no OCTO_PrivateOctoGitHubBlueprints__IsEnabled on purpose.
+Unlike the CK side, a blueprint catalog cannot be disabled by
+configuration at all: BlueprintCatalogOptions has no IsEnabled property
+and GitHubBlueprintCatalog hard-codes its enabled flags. Emitting such a
+variable would bind to nothing and silently do nothing — only the
+repository coordinates below are actually configurable.
+*/}}
 {{- with .global.Values.services.assetRepository.ckCatalog }}
 - name: OCTO_LocalFileSystemCatalog__IsEnabled
   value: "{{ .localFileSystemEnabled }}"
 - name: OCTO_PrivateOctoGitHub__IsEnabled
   value: "{{ .privateGitHubEnabled }}"
+{{- with .privateGitHub }}
+{{- with .repositoryOwner }}
+- name: OCTO_PrivateOctoGitHub__GitHubRepositoryOwner
+  value: {{ . | quote }}
+{{- end }}
+{{- with .repositoryName }}
+- name: OCTO_PrivateOctoGitHub__GitHubRepositoryName
+  value: {{ . | quote }}
+{{- end }}
+{{- with .repositoryBranch }}
+- name: OCTO_PrivateOctoGitHub__GitHubRepositoryBranch
+  value: {{ . | quote }}
+{{- end }}
+{{- with .pagesUri }}
+- name: OCTO_PrivateOctoGitHub__GitHubPagesUri
+  value: {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- with .global.Values.services.assetRepository.blueprintCatalog }}
+{{- with .privateGitHub }}
+{{- with .repositoryOwner }}
+- name: OCTO_PrivateOctoGitHubBlueprints__GitHubRepositoryOwner
+  value: {{ . | quote }}
+{{- end }}
+{{- with .repositoryName }}
+- name: OCTO_PrivateOctoGitHubBlueprints__GitHubRepositoryName
+  value: {{ . | quote }}
+{{- end }}
+{{- with .repositoryBranch }}
+- name: OCTO_PrivateOctoGitHubBlueprints__GitHubRepositoryBranch
+  value: {{ . | quote }}
+{{- end }}
+{{- with .pagesUri }}
+- name: OCTO_PrivateOctoGitHubBlueprints__GitHubPagesUri
+  value: {{ . | quote }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{- else if eq .name "bot" -}}
