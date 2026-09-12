@@ -211,6 +211,41 @@ services:
       localFileSystemEnabled: false
       # Enable private GitHub catalog (default: disabled in production)
       privateGitHubEnabled: false
+      # AB#5139 — lane-scoped private CK catalog. Every installation reads the
+      # SAME private catalog by default (meshmakers/construction-kit-libraries-build,
+      # branch main), so a pre-release instance running alongside a main-lane
+      # instance seeds main-lane CK models. Setting these coordinates points ONE
+      # installation at its own catalog repository instead.
+      # EMPTY STRING MEANS "keep the engine's built-in default" — the template
+      # emits each variable only when it is non-empty. Never make the template
+      # materialise a value here (no `| default ""` that reaches the env block):
+      # an emitted-but-empty OCTO_PrivateOctoGitHub__GitHubRepositoryName wins
+      # over the engine default and silently points the catalog at nothing.
+      privateGitHub:
+        # GitHub organisation / user, e.g. "meshmakers".
+        repositoryOwner: ""
+        # Repository holding the CK catalog, e.g. "octo-catalog-dev".
+        repositoryName: ""
+        # Branch the catalog is read from, e.g. "main".
+        repositoryBranch: ""
+        # GitHub Pages base URI the catalog content is served from,
+        # e.g. "https://meshmakers.github.io/octo-catalog-dev/".
+        pagesUri: ""
+    # Blueprint Catalog configuration (AB#5139). Same lane-scoping as ckCatalog
+    # above, for the private blueprint catalog (engine default:
+    # meshmakers/blueprint-libraries-build, branch main).
+    # NOTE: there is deliberately no enable/disable switch here. Unlike the CK
+    # side, blueprint catalogs cannot be turned off by configuration at all —
+    # BlueprintCatalogOptions carries no IsEnabled property, and
+    # GitHubBlueprintCatalog hard-codes its enabled flags in the constructor.
+    # Only the repository coordinates below are configurable.
+    # Empty string means "keep the engine's built-in default" — see ckCatalog.
+    blueprintCatalog:
+      privateGitHub:
+        repositoryOwner: ""
+        repositoryName: ""
+        repositoryBranch: ""
+        pagesUri: ""
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
