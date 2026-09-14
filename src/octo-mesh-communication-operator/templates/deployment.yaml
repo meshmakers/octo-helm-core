@@ -169,6 +169,10 @@ spec:
         - name: OPERATOR__AUTHURI
           value: {{ .Values.operator.authUri | quote }}
         {{- end }}
+        {{- range $i, $issuer := .Values.operator.additionalValidIssuers }}
+        - name: OPERATOR__ADDITIONALVALIDISSUERS__{{ $i }}
+          value: {{ $issuer | quote }}
+        {{- end }}
         {{- if .Values.operator.imageRegistry }}
         - name: OPERATOR__IMAGEREGISTRY
           value: {{ .Values.operator.imageRegistry | quote }}

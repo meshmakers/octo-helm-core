@@ -121,8 +121,11 @@ operator:
   # OctoMesh installations that share the same RabbitMQ broker.
   instancePrefix: ""
 
-  # If true, adapter pods skip TLS certificate validation when connecting to
-  # the Communication Controller. Use only for local/dev clusters.
+  # NOTE: currently a no-op (AB#5232 audit) — the option is bound into the
+  # operator but never projected into any workload, and no workload chart has
+  # an ignoreCertificateValidation value. Workload trust is delivered via
+  # secrets.rootCa (projected into every workload) instead. Kept only so
+  # existing values files keep rendering.
   adapterIgnoreCertificateValidation: false
 
   # Cluster-internal URI of the reporting service. Projected into each
@@ -137,6 +140,21 @@ operator:
   # as an address to fetch signing keys from. Leave empty in clusters whose
   # workloads expose no secured routes.
   authUri: ""
+
+  # Additional token issuer values every deployed workload accepts on top of
+  # authUri (split-horizon setups, AB#5232). Rendered as indexed
+  # OPERATOR__ADDITIONALVALIDISSUERS__<n> env vars; the operator projects the
+  # list into each workload's Helm values as `additionalValidIssuers`, which
+  # the adapter chart turns into OCTO_ADAPTER__ADDITIONALVALIDISSUERS__<n>.
+  # Only the issuer STRING comparison is widened — signing keys still come
+  # from authUri's discovery document. Canonical use: the local kind dev
+  # cluster, where adapters reach identity via
+  # https://host.docker.internal:5003 while host-side callers mint tokens via
+  # https://localhost:5003/.
+  # Example:
+  #   additionalValidIssuers:
+  #     - https://localhost:5003/
+  additionalValidIssuers: []
 
   # Private container registry the cluster pulls workload images from
   # (e.g. "docker.mm.cloud"). When set, projected into each workload's
