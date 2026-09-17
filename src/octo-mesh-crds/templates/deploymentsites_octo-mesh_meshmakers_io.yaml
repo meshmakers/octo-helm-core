@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: communicationpools.octo-mesh.meshmakers.io
+  name: deploymentsites.octo-mesh.meshmakers.io
   annotations:
     # Prevent Helm from ever deleting this CRD as part of an
     # upgrade-removes-resource diff. Without this, an unrelated Helm
@@ -14,13 +14,13 @@ metadata:
 spec:
   group: octo-mesh.meshmakers.io
   names:
-    kind: CommunicationPool
-    listKind: CommunicationPoolList
-    plural: communicationpools
-    singular: communicationpool
+    kind: DeploymentSite
+    listKind: DeploymentSiteList
+    plural: deploymentsites
+    singular: deploymentsite
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - name: v1
     schema:
       openAPIV3Schema:
         properties:
@@ -35,24 +35,24 @@ spec:
             nullable: false
             properties:
               # The CR is an intent record: "the operator that watches this
-              # namespace should manage pool {poolRtId} for tenant
+              # namespace should manage deployment site {deploymentSiteRtId} for tenant
               # {tenantId}". Controller URI, broker host / port / virtualHost,
               # instancePrefix and cert-validation toggles all live on the
               # operator instance (OperatorOptions / OPERATOR__* env vars)
-              # and are not duplicated on the CR. The pool's user-facing
-              # display name lives on the controller's RtPool.Name attribute
+              # and are not duplicated on the CR. The deployment site's user-facing
+              # display name lives on the controller's RtDeploymentSite.Name attribute
               # (visible in Studio) and is not carried on the CR.
               tenantId:
                 nullable: false
                 type: string
-              poolRtId:
+              deploymentSiteRtId:
                 nullable: false
                 type: string
-                description: "24-character lowercase hex MongoDB ObjectId of the controller-side RtPool entity. Canonical pool identity."
+                description: "24-character lowercase hex MongoDB ObjectId of the controller-side RtDeploymentSite entity. Canonical deployment site identity."
                 pattern: "^[a-f0-9]{24}$"
             required:
               - tenantId
-              - poolRtId
+              - deploymentSiteRtId
             type: object
         type: object
     served: true

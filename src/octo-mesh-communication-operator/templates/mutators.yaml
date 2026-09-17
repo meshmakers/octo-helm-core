@@ -11,13 +11,13 @@ webhooks:
     caBundle: {{ $certs.caCrt | b64enc | quote }}
     service:
       name: {{ include "octoMeshCommunicationOperator.fullname" . }}
-      path: /mutate/v1communicationpoolentity
+      path: /mutate/v1deploymentsiteentity
       namespace: {{ .Release.Namespace }}
   matchPolicy: Exact
-  name: mutate.communicationpool.octo-mesh.meshmakers.io.v1alpha1
+  name: mutate.deploymentsite.octo-mesh.meshmakers.io.v1
   # Scope the webhook to the operator's own release namespace — same rationale
   # as in validators.yaml (multiple operator instances on one cluster must not
-  # mutate/block each other's CommunicationPool CRs; AB#4947 second-instance
+  # mutate/block each other's DeploymentSite CRs; AB#4947 second-instance
   # lane). kubernetes.io/metadata.name is apiserver-applied since K8s 1.21.
   namespaceSelector:
     matchLabels:
@@ -26,9 +26,9 @@ webhooks:
   - apiGroups:
     - octo-mesh.meshmakers.io
     apiVersions:
-    - v1alpha1
+    - v1
     operations:
     - CREATE
     resources:
-    - communicationpools
+    - deploymentsites
   sideEffects: None

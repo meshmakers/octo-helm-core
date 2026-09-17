@@ -120,11 +120,11 @@ spec:
         {{- end }}
         {{- /*
         Broker credentials env vars. Previously gated by
-        operator.autoManagePools — but the operator needs the broker
+        operator.autoManageDeploymentSites — but the operator needs the broker
         password in BOTH modes:
-          - central (autoManagePools=true): for the per-tenant
+          - central (autoManageDeploymentSites=true): for the per-tenant
             <tenant>-<pool>-octo-mesh-connection secret it manages
-          - edge (autoManagePools=false): for AppendClusterSecrets,
+          - edge (autoManageDeploymentSites=false): for AppendClusterSecrets,
             which injects secrets.rabbitmq into adapter Helm releases
             from OperatorOptions.BrokerPassword
         Render whenever both username + password are supplied; the

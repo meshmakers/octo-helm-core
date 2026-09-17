@@ -143,7 +143,7 @@ helm install --namespace octo-operator-system --values ./examples/operator-sampl
 
 ### Running multiple operators on one cluster (edge devices)
 
-When deploying multiple operator instances onto the same Kubernetes cluster — typically one per target communication controller on an edge device — each instance must be isolated to its own namespace. Otherwise all operators watch every `CommunicationPool` CR cluster-wide and race on reconciliation.
+When deploying multiple operator instances onto the same Kubernetes cluster — typically one per target communication controller on an edge device — each instance must be isolated to its own namespace. Otherwise all operators watch every `DeploymentSite` CR cluster-wide and race on reconciliation.
 
 Two values switch the chart from cluster-wide to namespace-scoped mode:
 
@@ -166,7 +166,7 @@ helm install --namespace octo-mesh-prod-1 --create-namespace \
   octo-mesh-op-prod-1 ./octo-mesh-communication-operator/
 ```
 
-The two operators stay completely isolated — their RBAC reaches only their own namespace, and the watcher only sees `CommunicationPool` CRs in that namespace.
+The two operators stay completely isolated — their RBAC reaches only their own namespace, and the watcher only sees `DeploymentSite` CRs in that namespace.
 
 ### Install Schema Provider
 

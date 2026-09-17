@@ -13,7 +13,7 @@ rules:
 - apiGroups:
   - octo-mesh.meshmakers.io
   resources:
-  - communicationpools
+  - deploymentsites
   verbs:
   - '*'
 - apiGroups:
@@ -71,7 +71,7 @@ rules:
 - apiGroups:
   - octo-mesh.meshmakers.io
   resources:
-  - communicationpools/status
+  - deploymentsites/status
   verbs:
   - get
   - update

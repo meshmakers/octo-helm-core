@@ -66,7 +66,7 @@ adapterImagePullSecretName: ""
 # chart behaviour. Namespace scope is required when running multiple operator
 # instances on the same cluster (e.g. one per target communication controller
 # on an edge device) so that each operator's RBAC stays within its own
-# namespace and they don't compete for the same CommunicationPool CRs. Pair
+# namespace and they don't compete for the same DeploymentSite CRs. Pair
 # namespace scope with `operator.watchNamespace` so the CR watcher matches the
 # RBAC reach.
 rbac:
@@ -78,20 +78,20 @@ rbac:
 # Controls whether the operator runs as a "central operator" — i.e. it connects
 # to the Communication Controller via SignalR (/operatorHub) and listens for
 # tenant lifecycle events. When enabled, the operator auto-creates and auto-
-# deletes CommunicationPool CRs and per-tenant broker secrets.
-# When disabled (default), the operator only reconciles CommunicationPool CRs
+# deletes DeploymentSite CRs and per-tenant broker secrets.
+# When disabled (default), the operator only reconciles DeploymentSite CRs
 # created externally (edge deployment).
 operator:
   # Master switch for central operator mode. When true,
   # `operator.communicationControllerUri`, `broker.host`, `broker.username`,
   # and `broker.password` MUST be set.
-  autoManagePools: false
+  autoManageDeploymentSites: false
 
   # Restricts the operator's CR watcher to a single namespace. When empty
   # (default), the operator watches all namespaces cluster-wide. Set this to
   # `.Release.Namespace` (or the same namespace value used at install time)
   # when running multiple operator instances on one cluster — without it, the
-  # KubeOps watcher sees every CommunicationPool CR in the cluster and
+  # KubeOps watcher sees every DeploymentSite CR in the cluster and
   # multiple operators will fight over the same resources. Typically paired
   # with `rbac.scope=namespace`.
   watchNamespace: ""
@@ -109,13 +109,13 @@ operator:
   # every adapter then sits at Unregistered while the operator looks healthy (AB#4967).
   workloadCommunicationControllerUri: ""
 
-  # Namespace where auto-created CommunicationPool CRs, per-tenant broker
+  # Namespace where auto-created DeploymentSite CRs, per-tenant broker
   # secrets, and the resulting adapter Deployments/Services are placed. All
   # artefacts of a managed pool live here. Must exist before installation.
-  poolNamespace: octo
+  deploymentSiteNamespace: octo
 
-  # Pool name used in auto-created CommunicationPool CRs.
-  defaultPoolName: default
+  # Deployment site name used in auto-created DeploymentSite CRs.
+  defaultDeploymentSiteName: default
 
   # Forwarded to adapter pods as OCTO_ADAPTER__INSTANCEPREFIX. Disambiguates
   # OctoMesh installations that share the same RabbitMQ broker.
@@ -213,7 +213,7 @@ operator:
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods
-# consume. Required when `operator.autoManagePools` is true.
+# consume. Required when `operator.autoManageDeploymentSites` is true.
 broker:
   # Hostname of the RabbitMQ broker. In-cluster typically the Service name.
   host: ""

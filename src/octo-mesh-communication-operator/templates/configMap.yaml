@@ -9,13 +9,13 @@ data:
   KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__KEYPATH: "{{ .Values.configMap.certKeyPath }}"
   KESTREL__ENDPOINTS__HTTPS__CERTIFICATE__PATH: "{{ .Values.configMap.certPath }}"
   KESTREL__ENDPOINTS__HTTPS__URL: "{{ .Values.configMap.kestrelHttpsUrl }}"
-  OPERATOR__AUTOMANAGEPOOLS: "{{ .Values.operator.autoManagePools }}"
+  OPERATOR__AUTOMANAGEDEPLOYMENTSITES: "{{ .Values.operator.autoManageDeploymentSites }}"
   OPERATOR__COMMUNICATIONCONTROLLERURI: "{{ .Values.operator.communicationControllerUri }}"
   {{- if .Values.operator.workloadCommunicationControllerUri }}
   OPERATOR__WORKLOADCOMMUNICATIONCONTROLLERURI: "{{ .Values.operator.workloadCommunicationControllerUri }}"
   {{- end }}
-  OPERATOR__POOLNAMESPACE: "{{ .Values.operator.poolNamespace }}"
-  OPERATOR__DEFAULTPOOLNAME: "{{ .Values.operator.defaultPoolName }}"
+  OPERATOR__DEPLOYMENTSITENAMESPACE: "{{ .Values.operator.deploymentSiteNamespace }}"
+  OPERATOR__DEFAULTDEPLOYMENTSITENAME: "{{ .Values.operator.defaultDeploymentSiteName }}"
   OPERATOR__INSTANCEPREFIX: "{{ .Values.operator.instancePrefix }}"
   OPERATOR__ADAPTERIGNORECERTIFICATEVALIDATION: "{{ .Values.operator.adapterIgnoreCertificateValidation }}"
   OPERATOR__BROKERHOST: "{{ .Values.broker.host }}"
