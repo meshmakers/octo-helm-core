@@ -121,11 +121,17 @@ operator:
   # OctoMesh installations that share the same RabbitMQ broker.
   instancePrefix: ""
 
-  # NOTE: currently a no-op (AB#5232 audit) — the option is bound into the
-  # operator but never projected into any workload, and no workload chart has
-  # an ignoreCertificateValidation value. Workload trust is delivered via
-  # secrets.rootCa (projected into every workload) instead. Kept only so
-  # existing values files keep rendering.
+  # 🔴 Turns OFF TLS certificate validation in every workload pod this operator
+  # deploys. Was a no-op from 2026-05-13 to AB#5303 — the projection was deleted
+  # with AdapterReconciler and no workload chart had a value to project into;
+  # both halves exist again since AB#5303, so setting this now really does stop
+  # every adapter and pool member in the cluster from checking certificates.
+  #
+  # Prefer secrets.rootCa above: it is projected into every workload as well, and
+  # the workload charts mount it and run update-ca-certificates, so a private CA
+  # is TRUSTED rather than ignored. This switch is for development clusters whose
+  # certificate has no CA to trust in the first place; the adapter SDK refuses it
+  # outright when ASPNETCORE_ENVIRONMENT says Production.
   adapterIgnoreCertificateValidation: false
 
   # Cluster-internal URI of the reporting service. Projected into each
