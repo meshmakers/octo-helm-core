@@ -210,6 +210,25 @@ operator:
     mongodbAdminPassword: ""
     streamDataPassword: ""
 
+  # IronOCR licence key (AB#5449), projected by the operator as the
+  # secret-flagged value override `secrets.ironOcrLicenseKey` into the workloads
+  # whose chart reads it — today only `octo-mesh-adapter`, which hosts the
+  # `PdfOcrExtraction@1` node. One licence covers the whole estate, so it lives
+  # cluster-side here rather than per workload, the same way `broker.password`
+  # does. Set it in production via the deployment pipeline (Vault), never by
+  # checking a value into git.
+  #
+  # Deliberately NOT under `clusterSecrets`: that block is gated on the
+  # workload's `ReceivesClusterSecrets` opt-in, which means "this adapter talks
+  # to the cluster's data stores" and says nothing about OCR. The operator gates
+  # this one on the chart name instead.
+  #
+  # Empty is a supported state: an adapter deployed without the key starts
+  # normally and fails only when a document actually needs OCR, naming the
+  # setting. Before AB#5449 the key was a literal in the adapter's source, so
+  # every rotation was a code change and every clone carried a live key.
+  ironOcrLicenseKey: ""
+
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods

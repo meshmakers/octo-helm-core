@@ -255,6 +255,20 @@ spec:
               name: {{ $clusterSecretName }}
               key: stream-data-password
         {{- end }}
+        {{/*
+          AB#5449 — IronOCR licence key. Maps onto OperatorOptions.IronOcrLicenseKey
+          (top level, NOT under ClusterSecrets), which the operator projects as the
+          secret-flagged value override `secrets.ironOcrLicenseKey` into the charts
+          that declare it. Omitted when unset: an adapter without the key starts
+          normally and fails only when a document actually needs OCR.
+        */}}
+        {{- if .Values.operator.ironOcrLicenseKey }}
+        - name: OPERATOR__IRONOCRLICENSEKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: ironocr-license-key
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}
