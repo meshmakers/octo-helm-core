@@ -269,6 +269,35 @@ spec:
               name: {{ $clusterSecretName }}
               key: ironocr-license-key
         {{- end }}
+        {{/*
+          Dash0 browser RUM. The three non-secret values are plain env — they are
+          visible in the page's network traffic anyway — and reach every workload
+          through the operator's context-values layer. The token follows the
+          IronOCR pattern: secretKeyRef here, chart-gated injection in the
+          operator. Each is emitted only when set, so a cluster without Dash0
+          renders exactly what it rendered before.
+        */}}
+        {{- with .Values.operator.dash0 }}
+        {{- if .endpoint }}
+        - name: OPERATOR__DASH0__ENDPOINT
+          value: {{ .endpoint | quote }}
+        {{- end }}
+        {{- if .dataset }}
+        - name: OPERATOR__DASH0__DATASET
+          value: {{ .dataset | quote }}
+        {{- end }}
+        {{- if .environment }}
+        - name: OPERATOR__DASH0__ENVIRONMENT
+          value: {{ .environment | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.operator.dash0.webAuthToken }}
+        - name: OPERATOR__DASH0WEBAUTHTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: dash0-web-auth-token
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}

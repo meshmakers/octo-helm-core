@@ -229,6 +229,32 @@ operator:
   # every rotation was a code change and every clone carried a live key.
   ironOcrLicenseKey: ""
 
+  # Dash0 browser RUM (OpenTelemetry) for the frontends this operator rolls out
+  # as tenant workloads: meshmakers-app, energy-community-app and the four
+  # landing pages. The non-secret half below is projected into EVERY workload's
+  # context values; the ingest token is gated on the chart name, exactly like
+  # ironOcrLicenseKey above, so only the frontend charts receive it.
+  #
+  # Per-environment opt-in: leave `endpoint` empty and the operator emits no
+  # dash0 values at all, which the apps read as "Dash0 is not activated here"
+  # and skip SDK initialisation. Nothing else changes.
+  #
+  # ⚠️ `webAuthToken` must be created with the Ingesting permission ONLY. It is
+  # served to every visitor inside the page and is readable in any dev-tools
+  # session — handling it as a secret here keeps it out of rendered manifests
+  # and tenant databases, it does not make the value confidential. Set it from
+  # Vault via the deployment pipeline, never by checking a value into git.
+  dash0:
+    # OTLP/HTTP ingress base URL, excluding the /v1/* prefix (the web SDK
+    # appends it), e.g. https://ingress.europe-west4.gcp.dash0.com
+    endpoint: ""
+    # Dash0 dataset (can also be encoded in the auth token), e.g. "prod-1".
+    dataset: ""
+    # Reported as deployment.environment; conventionally the cluster name, so
+    # RUM and backend telemetry from one cluster group together.
+    environment: ""
+    webAuthToken: ""
+
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods

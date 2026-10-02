@@ -100,6 +100,16 @@
 # (verified on test-2). Value matches the app.kubernetes.io/service label.
 - name: OTEL_SERVICE_NAME
   value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) | quote }}
+# Our own ActivitySources, declared to the injected .NET auto-instrumentation.
+# The services also subscribe to these in Meshmakers.Octo.Services.Observability,
+# which is what makes the Activities exist at all — but that in-process
+# TracerProvider deliberately has no exporter in the cluster (a second exporter
+# would duplicate every HTTP span the injector already sends). Naming the
+# sources here is what gets the spans OUT, through the injector's provider.
+# Harmless on a service that never emits on them: an unknown source name costs
+# one idle listener.
+- name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+  value: "Meshmakers.Octo.StreamData,Meshmakers.Octo.StreamData.Crate"
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
