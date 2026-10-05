@@ -110,6 +110,20 @@
 # one idle listener.
 - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
   value: "Meshmakers.Octo.StreamData,Meshmakers.Octo.StreamData.Crate"
+{{- /*
+  AB#5478 section 2.3: nlog.config takes the log level from the environment
+  instead of having it pinned in the repository. Both are omitted unless set, and
+  nlog.config then falls back to Info. See values.yaml for why a one-off
+  investigation is better served by DiagnosticsService than by these.
+*/}}
+{{- if .global.Values.logLevel }}
+- name: OCTO_LOG_LEVEL
+  value: {{ .global.Values.logLevel | quote }}
+{{- end }}
+{{- if .global.Values.logLevelRoot }}
+- name: OCTO_LOG_LEVEL_ROOT
+  value: {{ .global.Values.logLevelRoot | quote }}
+{{- end }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}

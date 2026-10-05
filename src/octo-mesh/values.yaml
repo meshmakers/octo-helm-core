@@ -8,6 +8,23 @@ nameOverride: ""
 # Override for tag version of images
 appVersion: ""
 
+# Log level, per deployment instead of per commit (AB#5478 section 2.3).
+#
+# nlog.config reads OCTO_LOG_LEVEL for Meshmakers.* and OCTO_LOG_LEVEL_ROOT for
+# everything else, both defaulting to Info when unset -- so leaving these empty is
+# the normal case and omits the variables entirely.
+#
+# Raising the level here costs a pod restart. For a one-off investigation prefer
+# DiagnosticsService.ReconfigureLogLevelAsync, which changes a RUNNING service's
+# level through the API without a redeploy and can target a single logger pattern.
+#
+# Note what a Debug level now implies: once a service emits JSON, the
+# spam-filter-drop-debug-logs rule actually matches it, so the records are dropped
+# at Dash0's ingestion rather than stored. Raising the level alone will not make
+# them visible -- the filter has to be narrowed too.
+logLevel: ""
+logLevelRoot: ""
+
 imageDefaults:
   pullPolicy: IfNotPresent
   imagePullSecrets: []
