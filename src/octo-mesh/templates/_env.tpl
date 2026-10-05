@@ -17,6 +17,32 @@
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
       key: databaseAdmin          
+{{- /*
+SECRET attribute key ring (AB#5536). Part of system-env so EVERY engine host in
+this chart gets it — the engine binds SecretEncryption:* in AddRuntimeEngine().
+Values live in the backend Secret; see "octo-mesh.secretEncryption" in
+_helpers.tpl for how the ring is derived from the instance secret.
+*/}}
+{{- $fullname := include "octo-mesh.fullname" .global }}
+{{- $ring := fromJson (include "octo-mesh.secretEncryption" .global) }}
+{{- range $kid, $_ := $ring.keys }}
+- name: OCTO_SECRETENCRYPTION__KEYS__{{ $kid }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" $fullname }}
+      key: {{ printf "secretEncryptionKey-%s" $kid }}
+{{- end }}
+{{- if $ring.keys }}
+- name: OCTO_SECRETENCRYPTION__ACTIVEKEYID
+  value: {{ $ring.activeKeyId | quote }}
+{{- end }}
+{{- if $ring.legacyV1Key }}
+- name: OCTO_SECRETENCRYPTION__LEGACYV1KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" $fullname }}
+      key: communicationInstanceSecretKey
+{{- end }}
 {{- end }}
 
 {{- define "octo-mesh.broker-env" -}}

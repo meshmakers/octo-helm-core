@@ -45,7 +45,28 @@ secrets:
   # disabled (chart emits neither the env var nor the secret key); deploys
   # that touch secret-flagged data then fail with a clear configuration
   # error at runtime, while deploys that do not touch them keep working.
+  #
+  # AB#5536: the same key is also key `k1` of the SECRET attribute key ring
+  # (SecretEncryption:Keys:k1, ActiveKeyId=k1) and the legacy `enc:v1` key
+  # (SecretEncryption:LegacyV1Key). Every engine host (identity, asset repo,
+  # bot, communication, platform services, AI) receives the ring through the
+  # shared system-env block — no additional value is required. Losing this key
+  # means every SECRET value must be re-entered; back it up (Vault + Keeper).
   communicationInstanceSecretKey: ""
+  # OPTIONAL SECRET key ring override, for key rotation only (AB#5536).
+  # Empty (default) = the ring is derived: { k1: communicationInstanceSecretKey }.
+  # Non-empty = the map REPLACES the derived ring, so list every key that must
+  # still decrypt existing values, e.g. during a rotation:
+  #   secretEncryptionKeys:
+  #     k1: <communicationInstanceSecretKey>   # still needed until the re-protect sweep ran
+  #     k2: <new key, openssl rand -base64 32>
+  #   secretEncryptionActiveKeyId: k2
+  # Key ids: 1-32 lowercase letters/digits. Values: base64, 32 bytes (validated).
+  # LegacyV1Key always stays communicationInstanceSecretKey. Procedure:
+  # octo-mesh-deployment/docs/VAULT-SETUP.md.
+  secretEncryptionKeys: {}
+  # Active key id for new SECRET values. Empty = "k1". Must name a key of the ring.
+  secretEncryptionActiveKeyId: ""
   # Dash0 browser-RUM ingest auth token (form "auth_..."), Ingesting permission
   # only. Empty = the studio's DASH0_AUTH_TOKEN secret key is not emitted; pair
   # with services.studio.dash0.endpoint. Sourced from Vault at deploy time.

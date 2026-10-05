@@ -81,6 +81,20 @@ It is also possible to set the image tag for the services using the `--set servi
 helm upgrade --install --namespace octo --create-namespace --values rke2-local-values.yaml --set-file services.identity.signingKey.key=IdentityServer4Auth.pfx --set-file secrets.rootCa=root-ca-collection.crt --set services.identity.image.tag="0.0.2406.3001" octo-mesh meshmakers/octo-mesh
 ```
 
+### SECRET attribute key ring (AB#5536)
+
+Every engine-hosting service of the `octo-mesh` chart (identity, asset repository, bot, communication controller, platform services, AI services) receives the key ring for the `SECRET` attribute value type through the shared `octo-mesh.system-env` block:
+
+| Environment variable | Configuration key | Source |
+|---|---|---|
+| `OCTO_SECRETENCRYPTION__KEYS__<kid>` (one per key, e.g. `..._KEYS__k1`) | `SecretEncryption:Keys:<kid>` | backend Secret, key `secretEncryptionKey-<kid>` |
+| `OCTO_SECRETENCRYPTION__ACTIVEKEYID` | `SecretEncryption:ActiveKeyId` | plain value |
+| `OCTO_SECRETENCRYPTION__LEGACYV1KEY` | `SecretEncryption:LegacyV1Key` | backend Secret, key `communicationInstanceSecretKey` |
+
+No new value is required: by default the existing `secrets.communicationInstanceSecretKey` is key `k1` (active) and the legacy `enc:v1` key. For a key rotation set `secrets.secretEncryptionKeys` (replaces the derived ring — list `k1` too while it is still needed) and `secrets.secretEncryptionActiveKeyId`; the procedure is in `octo-mesh-deployment/docs/VAULT-SETUP.md`. The key id keeps its case in the variable name, so it matches the `enc:v2:<kid>:` header the engine writes.
+
+Workloads deployed by the communication operator receive the same ring when their Adapter has `ReceivesClusterSecrets=true`; set `operator.clusterSecrets.instanceSecretKey` on the operator chart to the same value (optional override: `operator.clusterSecrets.secretEncryptionKeys` / `secretEncryptionActiveKeyId`).
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash

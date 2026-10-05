@@ -209,6 +209,21 @@ operator:
     mongodbUserPassword: ""
     mongodbAdminPassword: ""
     streamDataPassword: ""
+    # SECRET attribute key ring (AB#5536), injected into workloads with
+    # ReceivesClusterSecrets=true as `secrets.secretEncryption.*` (the mesh
+    # adapter renders OCTO_SECRETENCRYPTION__* from it). Set instanceSecretKey
+    # to the SAME value as the core chart's secrets.communicationInstanceSecretKey
+    # (Vault `instance_secret_key`): it becomes key `k1` (active) and the legacy
+    # `enc:v1` key. Empty = no key ring is injected; adapters then start, but
+    # writing or reading a SECRET attribute fails with a configuration error.
+    instanceSecretKey: ""
+    # OPTIONAL rotation override — a non-empty map REPLACES the derived
+    # { k1: instanceSecretKey } ring, so list every key still needed to decrypt
+    # (see octo-mesh-deployment/docs/VAULT-SETUP.md). Key ids: 1-32 lowercase
+    # letters/digits; values: base64, 32 bytes (validated at render time).
+    secretEncryptionKeys: {}
+    # Active key id for new SECRET values. Empty = "k1".
+    secretEncryptionActiveKeyId: ""
 
   # IronOCR licence key (AB#5449), projected by the operator as the
   # secret-flagged value override `secrets.ironOcrLicenseKey` into the workloads
