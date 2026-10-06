@@ -391,6 +391,84 @@ services:
       nodeSelector: { }
       tolerations: [ ]
       affinity: { }
+    # AB#5560 durable storage for the bot's artifacts: pre-sweep secret dumps (AB#5539), tenant dumps and
+    # restore staging (concept octo-construction-kit-engine/docs/secret-sweep-dump-storage.md). Every block
+    # below is off by default, and the chart then renders exactly what it rendered before.
+    #
+    # persistence: one PVC for the bot, mounted at mountPath. Interim fallback until the cluster has an
+    # object store, and the FileSystem backend of artifactStorage. With persistence enabled the bot gets
+    #   OCTO_BOT__SECRETSWEEP__BACKUPSTORAGEPATH = <mountPath>/secret-backups
+    # and, unless artifactStorage.provider names an object store,
+    #   OCTO_ARTIFACTSTORAGE__PROVIDER = FileSystem, OCTO_ARTIFACTSTORAGE__FILESYSTEM__ROOTPATH = <mountPath>/artifacts
+    # ReadWriteOnce only works with replicaCount 1 and recreateStrategy (the bot's defaults). Keep the PVC out
+    # of volume-snapshot / Velero / DR backups: the dumps are secret material with a 7-day retention.
+    persistence:
+      enabled: false
+      # empty = the cluster's default StorageClass
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      # use an existing claim instead of creating <bot-fullname>-data
+      existingClaim: ""
+      mountPath: /data/octo-bot
+    # scratch: transient working space for mongodump, tus uploads and downloads, so large files hit a
+    # size-limited volume instead of the container's writable layer. Mounted at mountPath (default /tmp, where
+    # the bot keeps its temp, tus and dump directories today). Exceeding sizeLimit evicts the pod instead of
+    # filling the node disk. Set ephemeralVolume.enabled to back it with a generic ephemeral volume
+    # (a PVC that lives as long as the pod) so it never touches the node's disk at all.
+    scratch:
+      enabled: false
+      mountPath: /tmp
+      sizeLimit: 20Gi
+      # "" (node disk) or "Memory" (tmpfs, counts against the memory limit)
+      medium: ""
+      ephemeralVolume:
+        enabled: false
+        storageClass: ""
+        size: 20Gi
+    # artifactStorage: the platform artifact store (AB#5561), env OCTO_ARTIFACTSTORAGE__*.
+    # Keys are <instancePrefix>/<category>/<tenantId>/<file> with categories presweep, tenant-dumps and
+    # restore-staging. Credentials are only ever referenced from an existing Secret, never put in values.
+    # Retention is app-side (Bot:SecretSweep:BackupRetentionDays = 7, Bot:FileRetentionHours); bucket or
+    # container lifecycle rules are the backstop and are set up by the infrastructure, not by this chart.
+    artifactStorage:
+      # "" = no store configured (FileSystem on the PVC when persistence.enabled), or FileSystem | S3 | AzureBlob
+      provider: ""
+      # separates several OctoMesh instances sharing one bucket/container; empty = the helm release name
+      instancePrefix: ""
+      fileSystem:
+        # empty = <persistence.mountPath>/artifacts
+        rootPath: ""
+      s3:
+        # endpoint for S3-compatible stores (Hetzner Object Storage, Exoscale SOS); empty = AWS
+        serviceUrl: ""
+        region: ""
+        bucket: ""
+        forcePathStyle: false
+        # "" or AES256 (SSE-S3)
+        serverSideEncryption: ""
+        # Secret holding the access key pair; empty = the AWS SDK default credential chain
+        existingSecret: ""
+        accessKeyIdKey: accessKeyId
+        secretAccessKeyKey: secretAccessKey
+      azureBlob:
+        # https://<account>.blob.core.windows.net; required with useManagedIdentity or accountKeyKey
+        accountUrl: ""
+        container: ""
+        # DefaultAzureCredential, i.e. AKS workload identity: needs serviceAccount (create or name) and
+        # workloadIdentityClientId; the pod gets the label azure.workload.identity/use=true
+        useManagedIdentity: false
+        workloadIdentityClientId: ""
+        # Secret with either a connection string or an account key (set exactly one of the two key names)
+        existingSecret: ""
+        connectionStringKey: ""
+        accountKeyKey: ""
+    # service account for the bot pod. Not rendered by default (the pod keeps the namespace's default account).
+    serviceAccount:
+      create: false
+      # name of the account to create or use; empty with create=true = the bot's full name
+      name: ""
+      annotations: {}
 
   communication:
     # Public URI of service

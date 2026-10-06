@@ -269,6 +269,8 @@ repository coordinates below are actually configurable.
 {{- end }}
 - name: OCTO_BOT__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- /* AB#5560 PVC / artifact store; renders nothing with the defaults. */}}
+{{- include "octo-mesh.bot-storage-env" . }}
 
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}

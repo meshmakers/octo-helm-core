@@ -15,6 +15,15 @@
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
 {{ if $svc.deploy -}}
+{{- /* AB#5560 optional per-service storage and identity; all off by default. */}}
+{{- $ctx := dict "global" $global "name" $key "svc" $svc }}
+{{- $persistenceEnabled := dig "persistence" "enabled" false $svc }}
+{{- $scratchEnabled := dig "scratch" "enabled" false $svc }}
+{{- $serviceAccountName := include "octo-mesh.service-serviceAccountName" $ctx }}
+{{- $workloadIdentity := and (eq (include "octo-mesh.bot-artifactProvider" $ctx) "AzureBlob") (dig "artifactStorage" "azureBlob" "useManagedIdentity" false $svc) }}
+{{- if and $persistenceEnabled (eq (dig "persistence" "accessMode" "ReadWriteOnce" $svc) "ReadWriteOnce") (or (gt (int $svc.replicaCount) 1) (not $svc.recreateStrategy)) }}
+{{- fail (printf "services.%s.persistence with accessMode ReadWriteOnce needs replicaCount 1 and recreateStrategy true." $key) }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -41,7 +50,13 @@ spec:
         {{- with $svc.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if $workloadIdentity }}
+        azure.workload.identity/use: "true"
+        {{- end }}
     spec:
+      {{- with $serviceAccountName }}
+      serviceAccountName: {{ . }}
+      {{- end }}
       {{- with $global.Values.imageDefaults.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -141,7 +156,7 @@ spec:
         resources:
           {{- toYaml . | nindent 12 }}
         {{- end }}
-        {{- if or $svc.signingKey $svc.pod.volumeMounts $global.Values.secrets.rootCa }}
+        {{- if or $svc.signingKey $svc.pod.volumeMounts $global.Values.secrets.rootCa $persistenceEnabled $scratchEnabled }}
         volumeMounts:
         {{- end }}
         {{- with $svc.pod.volumeMounts }}
@@ -156,7 +171,15 @@ spec:
           mountPath: /etc/ssl/certs
           readOnly: true
         {{- end }}
-      {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa }}
+        {{- if $persistenceEnabled }}
+        - name: data
+          mountPath: {{ $svc.persistence.mountPath }}
+        {{- end }}
+        {{- if $scratchEnabled }}
+        - name: scratch
+          mountPath: {{ $svc.scratch.mountPath | default "/tmp" }}
+        {{- end }}
+      {{- if or $svc.signingKey $svc.pod.volumes $global.Values.secrets.rootCa $persistenceEnabled $scratchEnabled }}
       volumes:
       {{- end }}
       {{- with $svc.pod.volumes }}
@@ -173,6 +196,38 @@ spec:
           secretName: {{ printf "%s-ca" (include "octo-mesh.fullname" $global) }}
       - name: updated-ca-certs
         emptyDir: {}
+      {{- end }}
+      {{- if $persistenceEnabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ include "octo-mesh.service-persistenceClaimName" $ctx }}
+      {{- end }}
+      {{- if $scratchEnabled }}
+      - name: scratch
+        {{- if dig "scratch" "ephemeralVolume" "enabled" false $svc }}
+        ephemeral:
+          volumeClaimTemplate:
+            metadata:
+              labels:
+                {{- include "octo-mesh.service-selectorLabels" $ctx | nindent 16 }}
+            spec:
+              accessModes:
+                - ReadWriteOnce
+              {{- with $svc.scratch.ephemeralVolume.storageClass }}
+              storageClassName: {{ . | quote }}
+              {{- end }}
+              resources:
+                requests:
+                  storage: {{ $svc.scratch.ephemeralVolume.size | default "20Gi" }}
+        {{- else }}
+        emptyDir:
+          {{- with $svc.scratch.medium }}
+          medium: {{ . }}
+          {{- end }}
+          {{- with $svc.scratch.sizeLimit }}
+          sizeLimit: {{ . }}
+          {{- end }}
+        {{- end }}
       {{- end }}
       {{- with $svc.pod.nodeSelector }}
       nodeSelector:

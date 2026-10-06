@@ -95,6 +95,20 @@ No new value is required: by default the existing `secrets.communicationInstance
 
 Workloads deployed by the communication operator receive the same ring when their Adapter has `ReceivesClusterSecrets=true`; set `operator.clusterSecrets.instanceSecretKey` on the operator chart to the same value (optional override: `operator.clusterSecrets.secretEncryptionKeys` / `secretEncryptionActiveKeyId`).
 
+### Bot persistence and artifact storage (AB#5560)
+
+The bot keeps pre-sweep secret dumps, tenant dumps and restore uploads. Without configuration they live in the container's temp directory and are lost on every restart. Three optional blocks under `services.bot` change that; all are off by default and the chart then renders exactly as before.
+
+| Value | Effect |
+|---|---|
+| `persistence.enabled` (+ `storageClass`, `accessMode` = `ReadWriteOnce`, `size` = `10Gi`, `existingClaim`, `mountPath` = `/data/octo-bot`) | PVC `<release>-bot-services-data` (or the existing claim) mounted at `mountPath`; sets `OCTO_BOT__SECRETSWEEP__BACKUPSTORAGEPATH=<mountPath>/secret-backups` and, unless an object store is configured, `OCTO_ARTIFACTSTORAGE__PROVIDER=FileSystem` with `OCTO_ARTIFACTSTORAGE__FILESYSTEM__ROOTPATH=<mountPath>/artifacts`. `ReadWriteOnce` requires `replicaCount: 1` and `recreateStrategy: true` (render fails otherwise). |
+| `scratch.enabled` (+ `mountPath` = `/tmp`, `sizeLimit` = `20Gi`, `medium`, `ephemeralVolume.{enabled,storageClass,size}`) | `emptyDir` with `sizeLimit` (or a generic ephemeral volume) for mongodump output, tus uploads and downloads, so large files do not fill the node disk. |
+| `artifactStorage.provider` = `FileSystem` \| `S3` \| `AzureBlob` | `OCTO_ARTIFACTSTORAGE__*` for the platform artifact store (AB#5561): `INSTANCEPREFIX` (default: release name), `S3__{SERVICEURL,REGION,BUCKET,FORCEPATHSTYLE,SERVERSIDEENCRYPTION}`, `AZUREBLOB__{ACCOUNTURL,CONTAINER,USEMANAGEDIDENTITY}`. |
+
+Credentials are only referenced from an existing Secret, never put into values: `s3.existingSecret` with `accessKeyIdKey` / `secretAccessKeyKey` (defaults `accessKeyId` / `secretAccessKey`; without a Secret the AWS SDK default chain applies), `azureBlob.existingSecret` with exactly one of `connectionStringKey` / `accountKeyKey`. For AKS workload identity set `azureBlob.useManagedIdentity: true`, `azureBlob.workloadIdentityClientId` and `services.bot.serviceAccount.create: true` (or `serviceAccount.name` of an existing, federated account); the pod gets the label `azure.workload.identity/use: "true"` and the created ServiceAccount the `azure.workload.identity/client-id` annotation.
+
+Retention stays in the application (`Bot:SecretSweep:BackupRetentionDays` = 7, `Bot:FileRetentionHours`); bucket/container lifecycle rules are the backstop and belong to the infrastructure. Keep the PVC out of volume snapshots and DR backups. Concept: `octo-construction-kit-engine/docs/secret-sweep-dump-storage.md`.
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash

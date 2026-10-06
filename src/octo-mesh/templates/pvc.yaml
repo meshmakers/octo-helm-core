@@ -1,0 +1,26 @@
+{{- /*
+AB#5560 PVC for services.<svc>.persistence (today only the bot uses it, for pre-sweep dumps and the
+FileSystem artifact store). Not rendered unless persistence.enabled and no existingClaim is given.
+*/}}
+{{- $global := . -}}
+{{- range $key, $svc := .Values.services }}
+{{- if and $svc.deploy (dig "persistence" "enabled" false $svc) (not (dig "persistence" "existingClaim" "" $svc)) }}
+{{- $ctx := dict "global" $global "name" $key "svc" $svc }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "octo-mesh.service-persistenceClaimName" $ctx }}
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" $ctx | nindent 4 }}
+spec:
+  accessModes:
+    - {{ $svc.persistence.accessMode | default "ReadWriteOnce" }}
+  {{- with $svc.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $svc.persistence.size | default "10Gi" }}
+{{- end }}
+{{- end }}
