@@ -17,6 +17,32 @@
     secretKeyRef:
       name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
       key: databaseAdmin          
+{{- /*
+SECRET attribute key ring (AB#5536). Part of system-env so EVERY engine host in
+this chart gets it — the engine binds SecretEncryption:* in AddRuntimeEngine().
+Values live in the backend Secret; see "octo-mesh.secretEncryption" in
+_helpers.tpl for how the ring is derived from the instance secret.
+*/}}
+{{- $fullname := include "octo-mesh.fullname" .global }}
+{{- $ring := fromJson (include "octo-mesh.secretEncryption" .global) }}
+{{- range $kid, $_ := $ring.keys }}
+- name: OCTO_SECRETENCRYPTION__KEYS__{{ $kid }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" $fullname }}
+      key: {{ printf "secretEncryptionKey-%s" $kid }}
+{{- end }}
+{{- if $ring.keys }}
+- name: OCTO_SECRETENCRYPTION__ACTIVEKEYID
+  value: {{ $ring.activeKeyId | quote }}
+{{- end }}
+{{- if $ring.legacyV1Key }}
+- name: OCTO_SECRETENCRYPTION__LEGACYV1KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" $fullname }}
+      key: communicationInstanceSecretKey
+{{- end }}
 {{- end }}
 
 {{- define "octo-mesh.broker-env" -}}
@@ -100,6 +126,30 @@
 # (verified on test-2). Value matches the app.kubernetes.io/service label.
 - name: OTEL_SERVICE_NAME
   value: {{ include "octo-mesh.service-fullname" (dict "global" .global "name" .name "svc" .svc) | quote }}
+# Our own ActivitySources, declared to the injected .NET auto-instrumentation.
+# The services also subscribe to these in Meshmakers.Octo.Services.Observability,
+# which is what makes the Activities exist at all — but that in-process
+# TracerProvider deliberately has no exporter in the cluster (a second exporter
+# would duplicate every HTTP span the injector already sends). Naming the
+# sources here is what gets the spans OUT, through the injector's provider.
+# Harmless on a service that never emits on them: an unknown source name costs
+# one idle listener.
+- name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+  value: "Meshmakers.Octo.StreamData,Meshmakers.Octo.StreamData.Crate"
+{{- /*
+  AB#5478 section 2.3: nlog.config takes the log level from the environment
+  instead of having it pinned in the repository. Both are omitted unless set, and
+  nlog.config then falls back to Info. See values.yaml for why a one-off
+  investigation is better served by DiagnosticsService than by these.
+*/}}
+{{- if .global.Values.logLevel }}
+- name: OCTO_LOG_LEVEL
+  value: {{ .global.Values.logLevel | quote }}
+{{- end }}
+{{- if .global.Values.logLevelRoot }}
+- name: OCTO_LOG_LEVEL_ROOT
+  value: {{ .global.Values.logLevelRoot | quote }}
+{{- end }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
@@ -219,6 +269,8 @@ repository coordinates below are actually configurable.
 {{- end }}
 - name: OCTO_BOT__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- /* AB#5560 PVC / artifact store; renders nothing with the defaults. */}}
+{{- include "octo-mesh.bot-storage-env" . }}
 
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}

@@ -117,3 +117,48 @@ the include.
   {{- $_ := set $ "_webhookCerts" (dict "caKey" $caKey "caCrt" $caCrt "svcKey" $svcKey "svcCrt" $svcCrt) -}}
 {{- end -}}
 {{- end -}}
+{{/*
+SECRET attribute key ring for operator-deployed workloads (AB#5536, concept
+AB#5528 §3.5). Same derivation as the octo-mesh chart's
+"octo-mesh.secretEncryption" helper — keep the two in step:
+
+  default:  { k1: clusterSecrets.instanceSecretKey }, active k1
+  override: a non-empty clusterSecrets.secretEncryptionKeys REPLACES the ring
+            (rotation), clusterSecrets.secretEncryptionActiveKeyId picks the
+            active key (default k1)
+  legacy:   LegacyV1Key is always clusterSecrets.instanceSecretKey
+
+instanceSecretKey must be the same value as the core chart's
+secrets.communicationInstanceSecretKey (Vault `instance_secret_key`).
+Returns JSON: { "keys": {...}, "activeKeyId": "...", "legacyV1Key": "..." }.
+*/}}
+{{- define "octoMeshCommunicationOperator.secretEncryption" -}}
+{{- $cs := .Values.operator.clusterSecrets -}}
+{{- $instanceKey := $cs.instanceSecretKey | default "" -}}
+{{- $keys := dict -}}
+{{- $override := $cs.secretEncryptionKeys | default dict -}}
+{{- if $override -}}
+{{- range $kid, $value := $override -}}
+{{- if not (regexMatch "^[a-z0-9]{1,32}$" $kid) -}}
+{{- fail (printf "operator.clusterSecrets.secretEncryptionKeys: key id '%s' must be 1-32 lowercase letters or digits" $kid) -}}
+{{- end -}}
+{{- if not $value -}}
+{{- fail (printf "operator.clusterSecrets.secretEncryptionKeys.%s is empty; remove the entry instead" $kid) -}}
+{{- end -}}
+{{- if ne (len (b64dec $value)) 32 -}}
+{{- fail (printf "operator.clusterSecrets.secretEncryptionKeys.%s must be a base64-encoded 32-byte key (openssl rand -base64 32)" $kid) -}}
+{{- end -}}
+{{- $_ := set $keys $kid $value -}}
+{{- end -}}
+{{- else if $instanceKey -}}
+{{- $_ := set $keys "k1" $instanceKey -}}
+{{- end -}}
+{{- $active := "" -}}
+{{- if $keys -}}
+{{- $active = $cs.secretEncryptionActiveKeyId | default "k1" -}}
+{{- if not (hasKey $keys $active) -}}
+{{- fail (printf "operator.clusterSecrets.secretEncryptionActiveKeyId '%s' is not a key id of the SECRET key ring (%s)" $active (keys $keys | sortAlpha | join ", ")) -}}
+{{- end -}}
+{{- end -}}
+{{- toJson (dict "keys" $keys "activeKeyId" $active "legacyV1Key" $instanceKey) -}}
+{{- end -}}

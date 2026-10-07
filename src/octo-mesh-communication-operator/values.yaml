@@ -215,6 +215,66 @@ operator:
     mongodbUserPassword: ""
     mongodbAdminPassword: ""
     streamDataPassword: ""
+    # SECRET attribute key ring (AB#5536), injected into workloads with
+    # ReceivesClusterSecrets=true as `secrets.secretEncryption.*` (the mesh
+    # adapter renders OCTO_SECRETENCRYPTION__* from it). Set instanceSecretKey
+    # to the SAME value as the core chart's secrets.communicationInstanceSecretKey
+    # (Vault `instance_secret_key`): it becomes key `k1` (active) and the legacy
+    # `enc:v1` key. Empty = no key ring is injected; adapters then start, but
+    # writing or reading a SECRET attribute fails with a configuration error.
+    instanceSecretKey: ""
+    # OPTIONAL rotation override — a non-empty map REPLACES the derived
+    # { k1: instanceSecretKey } ring, so list every key still needed to decrypt
+    # (see octo-mesh-deployment/docs/VAULT-SETUP.md). Key ids: 1-32 lowercase
+    # letters/digits; values: base64, 32 bytes (validated at render time).
+    secretEncryptionKeys: {}
+    # Active key id for new SECRET values. Empty = "k1".
+    secretEncryptionActiveKeyId: ""
+
+  # IronOCR licence key (AB#5449), projected by the operator as the
+  # secret-flagged value override `secrets.ironOcrLicenseKey` into the workloads
+  # whose chart reads it — today only `octo-mesh-adapter`, which hosts the
+  # `PdfOcrExtraction@1` node. One licence covers the whole estate, so it lives
+  # cluster-side here rather than per workload, the same way `broker.password`
+  # does. Set it in production via the deployment pipeline (Vault), never by
+  # checking a value into git.
+  #
+  # Deliberately NOT under `clusterSecrets`: that block is gated on the
+  # workload's `ReceivesClusterSecrets` opt-in, which means "this adapter talks
+  # to the cluster's data stores" and says nothing about OCR. The operator gates
+  # this one on the chart name instead.
+  #
+  # Empty is a supported state: an adapter deployed without the key starts
+  # normally and fails only when a document actually needs OCR, naming the
+  # setting. Before AB#5449 the key was a literal in the adapter's source, so
+  # every rotation was a code change and every clone carried a live key.
+  ironOcrLicenseKey: ""
+
+  # Dash0 browser RUM (OpenTelemetry) for the frontends this operator rolls out
+  # as tenant workloads: meshmakers-app, energy-community-app and the four
+  # landing pages. The non-secret half below is projected into EVERY workload's
+  # context values; the ingest token is gated on the chart name, exactly like
+  # ironOcrLicenseKey above, so only the frontend charts receive it.
+  #
+  # Per-environment opt-in: leave `endpoint` empty and the operator emits no
+  # dash0 values at all, which the apps read as "Dash0 is not activated here"
+  # and skip SDK initialisation. Nothing else changes.
+  #
+  # ⚠️ `webAuthToken` must be created with the Ingesting permission ONLY. It is
+  # served to every visitor inside the page and is readable in any dev-tools
+  # session — handling it as a secret here keeps it out of rendered manifests
+  # and tenant databases, it does not make the value confidential. Set it from
+  # Vault via the deployment pipeline, never by checking a value into git.
+  dash0:
+    # OTLP/HTTP ingress base URL, excluding the /v1/* prefix (the web SDK
+    # appends it), e.g. https://ingress.europe-west4.gcp.dash0.com
+    endpoint: ""
+    # Dash0 dataset (can also be encoded in the auth token), e.g. "prod-1".
+    dataset: ""
+    # Reported as deployment.environment; conventionally the cluster name, so
+    # RUM and backend telemetry from one cluster group together.
+    environment: ""
+    webAuthToken: ""
 
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant

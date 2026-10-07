@@ -255,6 +255,76 @@ spec:
               name: {{ $clusterSecretName }}
               key: stream-data-password
         {{- end }}
+        {{/*
+          AB#5536 — SECRET attribute key ring. Binds onto
+          OperatorOptions.ClusterSecrets.SecretEncryptionKeys (dictionary, the kid
+          keeps its case in the env var name), SecretEncryptionActiveKeyId and
+          SecretEncryptionLegacyV1Key; the operator injects them into workloads
+          with ReceivesClusterSecrets=true. Nothing is rendered when the ring is
+          empty.
+        */}}
+        {{- $ring := fromJson (include "octoMeshCommunicationOperator.secretEncryption" .) }}
+        {{- range $kid, $_ := $ring.keys }}
+        - name: OPERATOR__CLUSTERSECRETS__SECRETENCRYPTIONKEYS__{{ $kid }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: {{ printf "secret-encryption-key-%s" $kid }}
+        {{- end }}
+        {{- if $ring.keys }}
+        - name: OPERATOR__CLUSTERSECRETS__SECRETENCRYPTIONACTIVEKEYID
+          value: {{ $ring.activeKeyId | quote }}
+        {{- end }}
+        {{- if $ring.legacyV1Key }}
+        - name: OPERATOR__CLUSTERSECRETS__SECRETENCRYPTIONLEGACYV1KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: secret-encryption-legacy-v1-key
+        {{- end }}
+        {{/*
+          AB#5449 — IronOCR licence key. Maps onto OperatorOptions.IronOcrLicenseKey
+          (top level, NOT under ClusterSecrets), which the operator projects as the
+          secret-flagged value override `secrets.ironOcrLicenseKey` into the charts
+          that declare it. Omitted when unset: an adapter without the key starts
+          normally and fails only when a document actually needs OCR.
+        */}}
+        {{- if .Values.operator.ironOcrLicenseKey }}
+        - name: OPERATOR__IRONOCRLICENSEKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: ironocr-license-key
+        {{- end }}
+        {{/*
+          Dash0 browser RUM. The three non-secret values are plain env — they are
+          visible in the page's network traffic anyway — and reach every workload
+          through the operator's context-values layer. The token follows the
+          IronOCR pattern: secretKeyRef here, chart-gated injection in the
+          operator. Each is emitted only when set, so a cluster without Dash0
+          renders exactly what it rendered before.
+        */}}
+        {{- with .Values.operator.dash0 }}
+        {{- if .endpoint }}
+        - name: OPERATOR__DASH0__ENDPOINT
+          value: {{ .endpoint | quote }}
+        {{- end }}
+        {{- if .dataset }}
+        - name: OPERATOR__DASH0__DATASET
+          value: {{ .dataset | quote }}
+        {{- end }}
+        {{- if .environment }}
+        - name: OPERATOR__DASH0__ENVIRONMENT
+          value: {{ .environment | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.operator.dash0.webAuthToken }}
+        - name: OPERATOR__DASH0WEBAUTHTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ $clusterSecretName }}
+              key: dash0-web-auth-token
+        {{- end }}
         envFrom:
         - configMapRef:
             name: {{ printf "%s-webhook-config" (include "octoMeshCommunicationOperator.fullname" .) }}
