@@ -224,6 +224,12 @@ operator:
     secretEncryptionKeys: {}
     # Active key id for new SECRET values. Empty = "k1".
     secretEncryptionActiveKeyId: ""
+    # OPTIONAL missing-key guard (AB#5528 phase 3), default false = unchanged.
+    # true = rendering FAILS when the key ring is empty or instanceSecretKey is
+    # not a base64 32-byte key (e.g. an unresolved "$(VAULT_instance_secret_key)").
+    # Enable on central clusters once Vault instance_secret_key is verified; keep
+    # it off on edge operators that run without a key ring by design.
+    secretEncryptionRequired: false
 
   # IronOCR licence key (AB#5449), projected by the operator as the
   # secret-flagged value override `secrets.ironOcrLicenseKey` into the workloads

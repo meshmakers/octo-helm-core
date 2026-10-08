@@ -67,6 +67,13 @@ secrets:
   secretEncryptionKeys: {}
   # Active key id for new SECRET values. Empty = "k1". Must name a key of the ring.
   secretEncryptionActiveKeyId: ""
+  # OPTIONAL missing-key guard (AB#5528 phase 3), default false = unchanged
+  # behaviour: an empty ring renders nothing and the services start without it.
+  # true = rendering FAILS when the key ring is empty or the instance secret is
+  # not a base64 32-byte key (e.g. an unresolved "$(VAULT_instance_secret_key)").
+  # Turn it on per cluster once Vault instance_secret_key is verified (and backed
+  # up in Keeper) — see octo-mesh-deployment/docs/VAULT-SETUP.md.
+  secretEncryptionRequired: false
   # Dash0 browser-RUM ingest auth token (form "auth_..."), Ingesting permission
   # only. Empty = the studio's DASH0_AUTH_TOKEN secret key is not emitted; pair
   # with services.studio.dash0.endpoint. Sourced from Vault at deploy time.

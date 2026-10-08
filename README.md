@@ -95,6 +95,8 @@ No new value is required: by default the existing `secrets.communicationInstance
 
 Workloads deployed by the communication operator receive the same ring when their Adapter has `ReceivesClusterSecrets=true`; set `operator.clusterSecrets.instanceSecretKey` on the operator chart to the same value (optional override: `operator.clusterSecrets.secretEncryptionKeys` / `secretEncryptionActiveKeyId`).
 
+**Missing-key guard (opt-in).** `secrets.secretEncryptionRequired: true` (octo-mesh) and `operator.clusterSecrets.secretEncryptionRequired: true` (operator) make `helm template`/`upgrade` fail when the key ring is empty or the instance secret is not a base64-encoded 32-byte key — including an unresolved Azure DevOps macro such as `$(VAULT_instance_secret_key)`. The default `false` keeps the previous behaviour (empty ring renders nothing, services start, only SECRET access fails), so clusters without an instance secret and edge operators that run without a key ring by design keep deploying. Enable it per cluster once Vault `instance_secret_key` is verified and backed up.
+
 ### Bot persistence and artifact storage (AB#5560)
 
 The bot keeps pre-sweep secret dumps, tenant dumps and restore uploads. Without configuration they live in the container's temp directory and are lost on every restart. Three optional blocks under `services.bot` change that; all are off by default and the chart then renders exactly as before.

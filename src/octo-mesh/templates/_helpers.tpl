@@ -146,7 +146,46 @@ so the configuration key matches the id the engine writes.
 {{- fail (printf "secrets.secretEncryptionActiveKeyId '%s' is not a key id of the SECRET key ring (%s)" $active (keys $keys | sortAlpha | join ", ")) -}}
 {{- end -}}
 {{- end -}}
+{{- include "octo-mesh.secretEncryptionRequiredCheck" (dict "required" $s.secretEncryptionRequired "keys" $keys "instanceKey" $instanceKey "path" "secrets" "instanceKeyName" "secrets.communicationInstanceSecretKey") -}}
 {{- toJson (dict "keys" $keys "activeKeyId" $active "legacyV1Key" $instanceKey) -}}
+{{- end -}}
+
+{{/*
+Missing-key guard for the SECRET attribute key ring (AB#5528 phase 3).
+
+Opt-in, off by default: with <path>.secretEncryptionRequired unset or false the
+chart renders exactly as before — an empty ring is tolerated (the services start
+and only SECRET attribute access fails at runtime), so clusters that never
+configured an instance secret keep deploying. A cluster whose Vault entry is
+verified sets the flag to true; from then on rendering FAILS instead of silently
+rolling out engine hosts without a key ring when
+  - the ring is empty (no instance secret and no override map), or
+  - the instance secret is set but is not a base64-encoded 32-byte key — this
+    also catches an unresolved pipeline macro such as "$(VAULT_instance_secret_key)",
+    which Azure DevOps leaves in place when the Vault key does not exist.
+Only boolean true / the string "true" enables it, so a --set-string "false" does
+not turn the guard on by accident; any other value (e.g. "yes") fails rendering.
+The instance secret is trimmed before the length check, like the engine does.
+With a rotation override and no instance secret the guard passes although
+LegacyV1Key is empty — intended once no enc:v1 value remains.
+
+Call with (dict "required" <flag> "keys" <ring keys> "instanceKey" <value>
+"path" "<values path of the flag>" "instanceKeyName" "<values path of the instance secret>").
+Emits nothing. Shared shape with octo-helm-pro (octo-mesh-ai/-mcp/-reporting)
+and the communication operator chart — keep them in step.
+*/}}
+{{- define "octo-mesh.secretEncryptionRequiredCheck" -}}
+{{- if not (has (toString .required) (list "true" "false" "<nil>" "")) -}}
+{{- fail (printf "%s.secretEncryptionRequired must be true or false, got '%v'" .path .required) -}}
+{{- end -}}
+{{- if eq (toString .required) "true" -}}
+{{- if not .keys -}}
+{{- fail (printf "%s.secretEncryptionRequired is true but the SECRET key ring is empty: set %s (Vault instance_secret_key, base64 32 bytes) or %s.secretEncryptionKeys" .path .instanceKeyName .path) -}}
+{{- end -}}
+{{- if and .instanceKey (ne (len (b64dec (trim .instanceKey))) 32) -}}
+{{- fail (printf "%s must be a base64-encoded 32-byte key (openssl rand -base64 32) when %s.secretEncryptionRequired is true; a value like $(VAULT_instance_secret_key) means the Vault key is missing for this cluster" .instanceKeyName .path) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
