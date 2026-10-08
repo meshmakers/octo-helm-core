@@ -160,5 +160,70 @@ Returns JSON: { "keys": {...}, "activeKeyId": "...", "legacyV1Key": "..." }.
 {{- fail (printf "operator.clusterSecrets.secretEncryptionActiveKeyId '%s' is not a key id of the SECRET key ring (%s)" $active (keys $keys | sortAlpha | join ", ")) -}}
 {{- end -}}
 {{- end -}}
+{{- /*
+Missing-key guard (AB#5528 phase 3), opt-in via clusterSecrets.secretEncryptionRequired
+(default false = unchanged). Same rules as "octo-mesh.secretEncryptionRequiredCheck"
+in the octo-mesh chart: fail when the ring is empty or instanceSecretKey is not a
+base64 32-byte key (catches an unresolved "$(VAULT_instance_secret_key)" macro).
+Leave it off for edge operators that intentionally run without a key ring.
+*/}}
+{{- if not (has (toString $cs.secretEncryptionRequired) (list "true" "false" "<nil>" "")) -}}
+{{- fail (printf "operator.clusterSecrets.secretEncryptionRequired must be true or false, got '%v'" $cs.secretEncryptionRequired) -}}
+{{- end -}}
+{{- if eq (toString $cs.secretEncryptionRequired) "true" -}}
+{{- if not $keys -}}
+{{- fail "operator.clusterSecrets.secretEncryptionRequired is true but the SECRET key ring is empty: set operator.clusterSecrets.instanceSecretKey (Vault instance_secret_key, base64 32 bytes) or operator.clusterSecrets.secretEncryptionKeys" -}}
+{{- end -}}
+{{- if and $instanceKey (ne (len (b64dec (trim $instanceKey))) 32) -}}
+{{- fail "operator.clusterSecrets.instanceSecretKey must be a base64-encoded 32-byte key (openssl rand -base64 32) when operator.clusterSecrets.secretEncryptionRequired is true; a value like $(VAULT_instance_secret_key) means the Vault key is missing for this cluster" -}}
+{{- end -}}
+{{- end -}}
 {{- toJson (dict "keys" $keys "activeKeyId" $active "legacyV1Key" $instanceKey) -}}
+{{- end -}}
+
+{{/*
+AB#5528 phase 3 / AB#5062 — operator client-credentials configuration.
+Returns JSON: {"enabled": bool, "chartOwned": bool, "secretName", "clientIdKey",
+"clientSecretKey", "issuerUri", "tenantId"}. Validates the combination and fails the
+render on a half-configured or ambiguous setup, because a silently dropped credential
+degrades to an anonymous hub connection that looks healthy until Enforce is armed.
+*/}}
+{{- define "octoMeshCommunicationOperator.authentication" -}}
+{{- $a := .Values.operator.authentication | default dict -}}
+{{- $clientId := $a.clientId | default "" | trim -}}
+{{- $clientSecret := $a.clientSecret | default "" -}}
+{{- $existing := $a.existingSecret | default "" | trim -}}
+{{- $result := dict "enabled" false "chartOwned" false -}}
+{{- if and $existing (or $clientId $clientSecret) -}}
+{{- fail "operator.authentication: set either existingSecret or clientId/clientSecret, not both" -}}
+{{- end -}}
+{{- if and $clientSecret (not $clientId) -}}
+{{- fail "operator.authentication.clientSecret is set but clientId is empty" -}}
+{{- end -}}
+{{- if and $clientId (not $clientSecret) -}}
+{{- fail "operator.authentication.clientId is set but clientSecret is empty (the operator client is confidential; use existingSecret to supply both from a Secret)" -}}
+{{- end -}}
+{{- if or $clientId $existing -}}
+{{- $issuer := $a.issuerUri | default .Values.operator.authUri | default "" -}}
+{{- if not $issuer -}}
+{{- fail "operator.authentication is configured but neither operator.authentication.issuerUri nor operator.authUri is set" -}}
+{{- end -}}
+{{- if not ($a.tenantId | default "" | trim) -}}
+{{- fail "operator.authentication.tenantId is required when operator credentials are configured (normally the system tenant, e.g. octosystem)" -}}
+{{- end -}}
+{{- $_ := set $result "enabled" true -}}
+{{- $_ := set $result "issuerUri" $issuer -}}
+{{- $_ := set $result "tenantId" $a.tenantId -}}
+{{- if $existing -}}
+{{- $_ := set $result "secretName" $existing -}}
+{{- $_ := set $result "clientIdKey" ($a.existingSecretClientIdKey | default "clientId") -}}
+{{- $_ := set $result "clientSecretKey" ($a.existingSecretClientSecretKey | default "clientSecret") -}}
+{{- else -}}
+{{- $_ := set $result "chartOwned" true -}}
+{{- $_ := set $result "secretName" (printf "%s-operator-auth" (include "octoMeshCommunicationOperator.fullname" .)) -}}
+{{- $_ := set $result "clientIdKey" "client-id" -}}
+{{- $_ := set $result "clientSecretKey" "client-secret" -}}
+{{- end -}}
+{{- end -}}
+{{- toJson $result -}}
 {{- end -}}
