@@ -109,6 +109,16 @@ Credentials are only referenced from an existing Secret, never put into values: 
 
 Retention stays in the application (`Bot:SecretSweep:BackupRetentionDays` = 7, `Bot:FileRetentionHours`); bucket/container lifecycle rules are the backstop and belong to the infrastructure. Keep the PVC out of volume snapshots and DR backups. Concept: `octo-construction-kit-engine/docs/secret-sweep-dump-storage.md`.
 
+### Identity REST API role check (AB#5859)
+
+The identity service requires tenant roles on its tenant REST API: `UserManagement` for users, roles and groups; `TenantManagement` or `UserManagement` for clients, identity providers and the other tenant administration endpoints.
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.identity.apiRoleEnforcement` = `Enforce` \| `Warn` | `Enforce` | `OCTO_IDENTITYAPIAUTHORIZATION__ROLEENFORCEMENT` |
+
+`Enforce` rejects callers without the required role (403). `Warn` is the emergency exit / transition switch: such callers are let through and the service logs `would be denied with RoleEnforcement=Enforce (AB#5859)`. Use it only until the missing role assignments are fixed, then switch back to `Enforce`. Any other value fails the render.
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
