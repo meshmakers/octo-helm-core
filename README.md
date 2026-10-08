@@ -119,6 +119,17 @@ The identity service requires tenant roles on its tenant REST API: `UserManageme
 
 `Enforce` rejects callers without the required role (403). `Warn` is the emergency exit / transition switch: such callers are let through and the service logs `would be denied with RoleEnforcement=Enforce (AB#5859)`. Use it only until the missing role assignments are fixed, then switch back to `Enforce`. Any other value fails the render.
 
+### SignalR hub authorization mode (AB#5063, AB#5059)
+
+The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` with a staged check. The chart renders the mode of each hub explicitly on the controller deployment:
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.communication.hubAuthorization.adapterMode` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_ADAPTERHUBAUTHORIZATION__MODE` |
+| `services.communication.hubAuthorization.operatorMode` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_OPERATORHUBAUTHORIZATION__MODE` |
+
+`LogOnly` changes no connection outcome; every connection an enforcing run would refuse is logged and counted (`octo.communication.hub.authorization.decisions`, `outcome=would_refuse`). `Enforce` refuses those connections. Any other value fails the render. Switch per cluster only after the LogOnly evidence is clean — runbook: `octo-communication-controller-services/docs/runbooks/hub-authorization-enforce-rollout.md`. The operator hub additionally needs every operator to authenticate (`operator.authentication.*` on the operator chart, below).
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
@@ -178,6 +189,18 @@ The operator requires the CRDs to be installed, but they are installed by defaul
 ```bash
 helm install --namespace octo-operator-system --values ./examples/operator-sample.yaml --set image.tag=0.0.2408.23001-main  --set-file serviceHooks.caKey=examples/ca-key.pem --set-file serviceHooks.caCrt=examples/ca.pem --set-file serviceHooks.svcKey=examples/svc-key.pem --set-file serviceHooks.svcCrt=examples/svc.pem octo-mesh-op1 ./octo-mesh-communication-operator/
 ```
+
+### Operator authentication against the controller (AB#5062)
+
+The operator logs in with client credentials before it connects to `/operatorHub`. Optional: without these values nothing is rendered and the operator connects anonymously, which only works while the controller runs `operatorMode: LogOnly`.
+
+| Value | Environment variable |
+|---|---|
+| `operator.authentication.issuerUri` (empty = `operator.authUri`) | `OPERATOR__AUTHENTICATION__ISSUERURI` |
+| `operator.authentication.tenantId` (required when configured; the system tenant, e.g. `octosystem`) | `OPERATOR__AUTHENTICATION__TENANTID` |
+| `operator.authentication.clientId` + `clientSecret` → chart-owned Secret `<fullname>-operator-auth`, **or** `operator.authentication.existingSecret` (keys `existingSecretClientIdKey` = `clientId`, `existingSecretClientSecretKey` = `clientSecret`) | `OPERATOR__AUTHENTICATION__CLIENTID` / `__CLIENTSECRET` (secretKeyRef) |
+
+The client must be a confidential `client_credentials` client with scope `octo_api` in that tenant (`octo-cli -c AddClientCredentialsClient`, without `--autoProvision`). Setting both credential sources, only one half of `clientId`/`clientSecret`, or credentials without a tenant id or issuer fails the render. A change of the chart-owned credentials restarts the operator pod (checksum annotation); after rotating an `existingSecret`, restart the deployment manually.
 
 ### Running multiple operators on one cluster (edge devices)
 

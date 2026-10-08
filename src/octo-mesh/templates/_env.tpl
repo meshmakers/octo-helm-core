@@ -302,6 +302,28 @@ must name this service. Enabling the flag without that annotation is inert.
   value: "true"
 {{- end }}
 {{- /*
+AB#5063 / AB#5059 (AB#5528 phase 3): staged authorization of the two SignalR hubs.
+Rendered always, so the mode in effect is visible on the deployment. Section names
+are the controller's AdapterHubAuthorizationOptions.SectionName /
+OperatorHubAuthorizationOptions.SectionName; the OCTO_ prefix is stripped by the
+controller's AddEnvironmentVariables("OCTO_"). LogOnly changes no outcome; Enforce
+refuses unauthenticated / wrongly scoped (adapter hub: wrong-tenant) connections.
+Any other value fails the render - a typo must not silently fall back to LogOnly.
+*/}}
+{{- $hubAuthz := .global.Values.services.communication.hubAuthorization | default dict }}
+{{- $adapterHubMode := $hubAuthz.adapterMode | default "LogOnly" }}
+{{- if not (has $adapterHubMode (list "LogOnly" "Enforce")) }}
+{{- fail (printf "services.communication.hubAuthorization.adapterMode must be LogOnly or Enforce, got '%v'" $adapterHubMode) }}
+{{- end }}
+{{- $operatorHubMode := $hubAuthz.operatorMode | default "LogOnly" }}
+{{- if not (has $operatorHubMode (list "LogOnly" "Enforce")) }}
+{{- fail (printf "services.communication.hubAuthorization.operatorMode must be LogOnly or Enforce, got '%v'" $operatorHubMode) }}
+{{- end }}
+- name: OCTO_ADAPTERHUBAUTHORIZATION__MODE
+  value: {{ $adapterHubMode | quote }}
+- name: OCTO_OPERATORHUBAUTHORIZATION__MODE
+  value: {{ $operatorHubMode | quote }}
+{{- /*
 AES-256-GCM master key for IWorkloadEncryptionService. Emitted only when
 secrets.communicationInstanceSecretKey is set so unconfigured clusters
 keep starting (CommunicationControllerOptions doc: empty is tolerated at

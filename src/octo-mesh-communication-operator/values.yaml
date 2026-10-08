@@ -270,6 +270,38 @@ operator:
     environment: ""
     webAuthToken: ""
 
+  # Client-credentials login the operator authenticates its own /operatorHub
+  # connection with (AB#5062; rollout AB#5528 phase 3 - the controller's
+  # operator-hub gate AB#5059 can only go to Enforce once every operator sends a
+  # token). Maps onto OperatorOptions.Authentication:
+  #   OPERATOR__AUTHENTICATION__ISSUERURI / __TENANTID     (plain env)
+  #   OPERATOR__AUTHENTICATION__CLIENTID  / __CLIENTSECRET (secretKeyRef)
+  #
+  # OPTIONAL. Nothing is rendered unless clientId or existingSecret is set, and
+  # the operator then connects anonymously exactly as before (it logs one
+  # startup warning saying so). Credentials come from ONE of two sources:
+  #   a) clientId + clientSecret - packaged into the chart-owned Secret
+  #      <fullname>-operator-auth (the deploy pipeline writes both from Vault
+  #      into its temporary secrets values file, never into git), or
+  #   b) existingSecret - the name of a Secret in the release namespace that
+  #      holds the two keys below (manual / edge installs).
+  # Setting both, or only one half of a), fails the render.
+  authentication:
+    # Public issuer URI of the identity service the client is registered in.
+    # Empty = operator.authUri (the same identity service on every cluster
+    # today). Must be the public issuer, not a cluster-internal service name.
+    issuerUri: ""
+    # Tenant the client is registered in, sent as acr_values=tenant:<id>.
+    # REQUIRED when credentials are configured: the installation's system
+    # tenant, normally "octosystem". Never one of the tenants the operator
+    # manages (a tenant delete would take the fleet credential with it).
+    tenantId: ""
+    clientId: ""
+    clientSecret: ""
+    existingSecret: ""
+    existingSecretClientIdKey: clientId
+    existingSecretClientSecretKey: clientSecret
+
 # === RabbitMQ broker for adapter pods ===
 # These connection details are written by the operator into per-tenant
 # `<tenantId>-<poolName>-octo-mesh-connection` Secrets, which adapter pods

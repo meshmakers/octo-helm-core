@@ -509,6 +509,22 @@ services:
     # default of 60s cuts the hold short). Without that annotation nothing routes
     # here and the flag does nothing.
     activatorEnabled: false
+    # Staged authorization of the controller's SignalR hubs (AB#5063 adapter hub,
+    # AB#5059 operator hub; rollout AB#5528 phase 3). Rendered as
+    # OCTO_ADAPTERHUBAUTHORIZATION__MODE / OCTO_OPERATORHUBAUTHORIZATION__MODE.
+    #   LogOnly - default: no connection outcome changes; every connection an
+    #             enforcing run would refuse is logged ("would be refused when ...")
+    #             and counted in octo.communication.hub.authorization.decisions
+    #             with outcome=would_refuse.
+    #   Enforce - such connections are refused (HubException).
+    # Switch a hub to Enforce per cluster only after its would_refuse count has been
+    # zero for the review window - see the controller runbook
+    # docs/runbooks/hub-authorization-enforce-rollout.md. Operators need
+    # communication-operator `operator.authentication.*` credentials first.
+    # Any other value fails the render.
+    hubAuthorization:
+      adapterMode: LogOnly
+      operatorMode: LogOnly
     # set false to prevent deployment
     deploy: true
     # Use Recreate strategy because the service consumes exclusive RabbitMQ

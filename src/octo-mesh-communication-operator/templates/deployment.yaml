@@ -14,10 +14,22 @@ spec:
       {{- include "octoMeshCommunicationOperator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- /*
+      AB#5528 phase 3: a rotated chart-owned operator credential must restart the pod,
+      otherwise the operator keeps logging in with the retired secret until some
+      unrelated restart. The checksum covers the chart-owned Secret only; a rotated
+      existingSecret needs a manual rollout restart.
+      */}}
+      {{- $authForChecksum := fromJson (include "octoMeshCommunicationOperator.authentication" .) }}
+      {{- if or .Values.podAnnotations $authForChecksum.chartOwned }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}      
+        {{- end }}
+        {{- if $authForChecksum.chartOwned }}
+        checksum/operator-authentication: {{ printf "%s/%s" .Values.operator.authentication.clientId .Values.operator.authentication.clientSecret | sha256sum | quote }}
+        {{- end }}
+      {{- end }}
       labels:
         {{- include "octoMeshCommunicationOperator.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -172,6 +184,28 @@ spec:
         {{- range $i, $issuer := .Values.operator.additionalValidIssuers }}
         - name: OPERATOR__ADDITIONALVALIDISSUERS__{{ $i }}
           value: {{ $issuer | quote }}
+        {{- end }}
+        {{/*
+          AB#5528 phase 3 / AB#5062 — the operator's own client-credentials login for
+          /operatorHub. Nothing is rendered when operator.authentication is not
+          configured: the operator then connects anonymously, as before.
+        */}}
+        {{- $auth := fromJson (include "octoMeshCommunicationOperator.authentication" .) }}
+        {{- if $auth.enabled }}
+        - name: OPERATOR__AUTHENTICATION__ISSUERURI
+          value: {{ $auth.issuerUri | quote }}
+        - name: OPERATOR__AUTHENTICATION__TENANTID
+          value: {{ $auth.tenantId | quote }}
+        - name: OPERATOR__AUTHENTICATION__CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: {{ $auth.secretName }}
+              key: {{ $auth.clientIdKey }}
+        - name: OPERATOR__AUTHENTICATION__CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ $auth.secretName }}
+              key: {{ $auth.clientSecretKey }}
         {{- end }}
         {{- if .Values.operator.imageRegistry }}
         - name: OPERATOR__IMAGEREGISTRY
