@@ -209,12 +209,13 @@ would OVERRIDE that default with nothing (a catalog pointed at owner ""/
 repo "" fails to refresh). So guard with `with` on each individual value
 — never with `default`, which would materialise a value.
 
-There is no OCTO_PrivateOctoGitHubBlueprints__IsEnabled on purpose.
-Unlike the CK side, a blueprint catalog cannot be disabled by
-configuration at all: BlueprintCatalogOptions has no IsEnabled property
-and GitHubBlueprintCatalog hard-codes its enabled flags. Emitting such a
-variable would bind to nothing and silently do nothing — only the
-repository coordinates below are actually configurable.
+AB#6112: the GitHub blueprint catalogs have an IsEnabled switch since
+engine AB#6112 (GitHubBlueprintCatalogOptions.IsEnabled, engine default
+true). blueprintCatalog.privateGitHubEnabled is tri-state: empty keeps the
+engine default (no env var), true/false is emitted explicitly. A plain
+`with` cannot be used here because it skips `false`. Production sets it to
+false so only released (public) blueprints are offered. Older engines
+ignore the variable (it binds to nothing).
 */}}
 {{- with .global.Values.services.assetRepository.ckCatalog }}
 - name: OCTO_LocalFileSystemCatalog__IsEnabled
@@ -241,6 +242,10 @@ repository coordinates below are actually configurable.
 {{- end }}
 {{- end }}
 {{- with .global.Values.services.assetRepository.blueprintCatalog }}
+{{- if ne (toString .privateGitHubEnabled) "" }}
+- name: OCTO_PrivateOctoGitHubBlueprints__IsEnabled
+  value: "{{ .privateGitHubEnabled }}"
+{{- end }}
 {{- with .privateGitHub }}
 {{- with .repositoryOwner }}
 - name: OCTO_PrivateOctoGitHubBlueprints__GitHubRepositoryOwner

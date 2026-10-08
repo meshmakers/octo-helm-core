@@ -290,13 +290,13 @@ services:
     # Blueprint Catalog configuration (AB#5139). Same lane-scoping as ckCatalog
     # above, for the private blueprint catalog (engine default:
     # meshmakers/blueprint-libraries-build, branch main).
-    # NOTE: there is deliberately no enable/disable switch here. Unlike the CK
-    # side, blueprint catalogs cannot be turned off by configuration at all —
-    # BlueprintCatalogOptions carries no IsEnabled property, and
-    # GitHubBlueprintCatalog hard-codes its enabled flags in the constructor.
-    # Only the repository coordinates below are configurable.
     # Empty string means "keep the engine's built-in default" — see ckCatalog.
     blueprintCatalog:
+      # AB#6112: read the private (main-lane, unreleased) blueprint catalog?
+      # "" = engine default (enabled), true/false = explicit. Production
+      # installations set false so only released blueprints are offered.
+      # Needs an engine with AB#6112; older engines ignore it.
+      privateGitHubEnabled: ""
       privateGitHub:
         repositoryOwner: ""
         repositoryName: ""
