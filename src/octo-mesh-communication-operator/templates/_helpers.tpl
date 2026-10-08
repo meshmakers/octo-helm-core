@@ -172,9 +172,9 @@ degrades to an anonymous hub connection that looks healthy until Enforce is arme
 */}}
 {{- define "octoMeshCommunicationOperator.authentication" -}}
 {{- $a := .Values.operator.authentication | default dict -}}
-{{- $clientId := $a.clientId | default "" -}}
+{{- $clientId := $a.clientId | default "" | trim -}}
 {{- $clientSecret := $a.clientSecret | default "" -}}
-{{- $existing := $a.existingSecret | default "" -}}
+{{- $existing := $a.existingSecret | default "" | trim -}}
 {{- $result := dict "enabled" false "chartOwned" false -}}
 {{- if and $existing (or $clientId $clientSecret) -}}
 {{- fail "operator.authentication: set either existingSecret or clientId/clientSecret, not both" -}}
@@ -190,7 +190,7 @@ degrades to an anonymous hub connection that looks healthy until Enforce is arme
 {{- if not $issuer -}}
 {{- fail "operator.authentication is configured but neither operator.authentication.issuerUri nor operator.authUri is set" -}}
 {{- end -}}
-{{- if not $a.tenantId -}}
+{{- if not ($a.tenantId | default "" | trim) -}}
 {{- fail "operator.authentication.tenantId is required when operator credentials are configured (normally the system tenant, e.g. octosystem)" -}}
 {{- end -}}
 {{- $_ := set $result "enabled" true -}}

@@ -200,7 +200,7 @@ The operator logs in with client credentials before it connects to `/operatorHub
 | `operator.authentication.tenantId` (required when configured; the system tenant, e.g. `octosystem`) | `OPERATOR__AUTHENTICATION__TENANTID` |
 | `operator.authentication.clientId` + `clientSecret` → chart-owned Secret `<fullname>-operator-auth`, **or** `operator.authentication.existingSecret` (keys `existingSecretClientIdKey` = `clientId`, `existingSecretClientSecretKey` = `clientSecret`) | `OPERATOR__AUTHENTICATION__CLIENTID` / `__CLIENTSECRET` (secretKeyRef) |
 
-The client must be a confidential `client_credentials` client with scope `octo_api` in that tenant (`octo-cli -c AddClientCredentialsClient`, without `--autoProvision`). Setting both credential sources, only one half of `clientId`/`clientSecret`, or credentials without a tenant id or issuer fails the render. A change of the chart-owned credentials restarts the operator pod (checksum annotation); after rotating an `existingSecret`, restart the deployment manually.
+The client must be a confidential `client_credentials` client with scope `octo_api` in that tenant (`octo-cli -c AddClientCredentialsClient`, without `--autoProvision`). Setting both credential sources, only one half of `clientId`/`clientSecret`, or credentials without a tenant id or issuer fails the render. Use a generated secret (e.g. `openssl rand -hex 32`): the pod carries a salted sha256 of the chart-owned credentials as a checksum annotation, so a change restarts the operator pod. An `existingSecret` must exist in the release namespace, otherwise the pod fails with `CreateContainerConfigError`; after rotating an `existingSecret`, restart the deployment manually.
 
 ### Running multiple operators on one cluster (edge devices)
 

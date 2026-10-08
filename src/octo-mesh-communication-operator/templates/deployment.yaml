@@ -27,7 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- if $authForChecksum.chartOwned }}
-        checksum/operator-authentication: {{ printf "%s/%s" .Values.operator.authentication.clientId .Values.operator.authentication.clientSecret | sha256sum | quote }}
+        checksum/operator-authentication: {{ printf "%s/%s/%s" (include "octoMeshCommunicationOperator.fullname" .) .Values.operator.authentication.clientId .Values.operator.authentication.clientSecret | sha256sum | quote }}
         {{- end }}
       {{- end }}
       labels:
@@ -185,7 +185,7 @@ spec:
         - name: OPERATOR__ADDITIONALVALIDISSUERS__{{ $i }}
           value: {{ $issuer | quote }}
         {{- end }}
-        {{/*
+        {{- /*
           AB#5528 phase 3 / AB#5062 — the operator's own client-credentials login for
           /operatorHub. Nothing is rendered when operator.authentication is not
           configured: the operator then connects anonymously, as before.
@@ -199,13 +199,13 @@ spec:
         - name: OPERATOR__AUTHENTICATION__CLIENTID
           valueFrom:
             secretKeyRef:
-              name: {{ $auth.secretName }}
-              key: {{ $auth.clientIdKey }}
+              name: {{ $auth.secretName | quote }}
+              key: {{ $auth.clientIdKey | quote }}
         - name: OPERATOR__AUTHENTICATION__CLIENTSECRET
           valueFrom:
             secretKeyRef:
-              name: {{ $auth.secretName }}
-              key: {{ $auth.clientSecretKey }}
+              name: {{ $auth.secretName | quote }}
+              key: {{ $auth.clientSecretKey | quote }}
         {{- end }}
         {{- if .Values.operator.imageRegistry }}
         - name: OPERATOR__IMAGEREGISTRY
