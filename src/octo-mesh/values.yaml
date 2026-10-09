@@ -145,9 +145,17 @@ serviceDefaults:
 ingress:
   enabled: true
   className: nginx
+  # AB#6174: maximum request body size nginx accepts, rendered as the
+  # nginx.ingress.kubernetes.io/proxy-body-size annotation. The asset repository
+  # accepts files up to services.assetRepository.files.maxUploadBytes (100 MB)
+  # via PUT /{tenant}/v1/files/... and RT model imports; 110m leaves room for
+  # multipart/HTTP overhead so a 100 MB file does not fail with 413 at nginx.
+  # All services share ONE Ingress object (one host per service), so the value
+  # applies to every host. An explicit proxy-body-size entry in
+  # ingress.annotations (e.g. a cluster overlay) takes precedence over this
+  # value. Empty = no annotation (nginx default 1m).
+  proxyBodySize: "110m"
   annotations:
-    # set to allow uploads of big rt model files using import rt function
-    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     # set to prevent "upstream sent too big header while reading response header from upstream"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
     # Emit CORS headers on EVERY response — including the default error pages
@@ -302,6 +310,19 @@ services:
         repositoryName: ""
         repositoryBranch: ""
         pagesUri: ""
+    # AB#6174 file API limits (configuration section "Files", rendered as
+    # OCTO_Files__* env vars). Defaults equal the service defaults. Keep
+    # maxUploadBytes below ingress.proxyBodySize, otherwise nginx rejects the
+    # upload with 413 before the service sees it.
+    files:
+      # Maximum size of a single uploaded file (PUT /{tenant}/v1/files/...). 100 MB.
+      maxUploadBytes: 104857600
+      # Maximum number of entries in a ZIP archive.
+      zipMaxFiles: 1000
+      # Maximum total uncompressed size of a ZIP archive. 500 MB.
+      zipMaxBytes: 524288000
+      # Maximum file size for which a preview is generated. 20 MB.
+      previewMaxBytes: 20971520
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
