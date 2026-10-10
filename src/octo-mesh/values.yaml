@@ -25,6 +25,14 @@ appVersion: ""
 logLevel: ""
 logLevelRoot: ""
 
+tracing:
+  # Export one span per MongoDB command (MongoDB.Driver ActivitySource) through the
+  # injected Dash0 auto-instrumentation. Makes database time visible below every
+  # server span (AB#6307). Off by default because it multiplies the span volume of
+  # database-heavy services; enable per cluster (test-2 first). The services always
+  # subscribe to the source; this only controls whether the spans leave the pod.
+  mongoDb: false
+
 imageDefaults:
   pullPolicy: IfNotPresent
   imagePullSecrets: []

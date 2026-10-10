@@ -134,8 +134,13 @@ _helpers.tpl for how the ring is derived from the instance secret.
 # sources here is what gets the spans OUT, through the injector's provider.
 # Harmless on a service that never emits on them: an unknown source name costs
 # one idle listener.
+#
+# MongoDB.Driver (3.x native tracing, one CLIENT span per command) is added
+# when tracing.mongoDb is on, so a slow request shows its database calls
+# instead of a childless server span (AB#6307). Switchable per cluster because
+# it multiplies the span volume of database-heavy services.
 - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
-  value: "Meshmakers.Octo.StreamData,Meshmakers.Octo.StreamData.Crate"
+  value: "Meshmakers.Octo.StreamData,Meshmakers.Octo.StreamData.Crate{{ if .global.Values.tracing.mongoDb }},MongoDB.Driver{{ end }}"
 {{- /*
   AB#5478 section 2.3: nlog.config takes the log level from the environment
   instead of having it pinned in the repository. Both are omitted unless set, and
