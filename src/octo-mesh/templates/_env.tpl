@@ -284,6 +284,13 @@ byte counts never render in float notation (1.048576e+08).
 - name: OCTO_Files__PreviewMaxBytes
   value: {{ .previewMaxBytes | int64 | quote }}
 {{- end }}
+{{- /*
+AB#6175 migration sweep System.Reporting -> System.Files (section "FilesMigration"), off by default.
+*/}}
+{{- with .global.Values.services.assetRepository.filesMigration }}
+- name: OCTO_FilesMigration__SweepEnabled
+  value: {{ .sweepEnabled | default false | toString | quote }}
+{{- end }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}

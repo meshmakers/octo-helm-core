@@ -331,6 +331,11 @@ services:
       zipMaxBytes: 524288000
       # Maximum file size for which a preview is generated. 20 MB.
       previewMaxBytes: 20971520
+    # AB#6175/AB#6171 move of System.Reporting file data to System.Files
+    # (configuration section "FilesMigration"). Off by default: switch it on per
+    # cluster in the rollout (AB#6183) once Reporting and the apps read System.Files.
+    filesMigration:
+      sweepEnabled: false
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
