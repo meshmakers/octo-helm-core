@@ -270,6 +270,27 @@ ignore the variable (it binds to nothing).
 {{- end }}
 {{- end }}
 {{- end }}
+{{- /*
+AB#6174 file API limits (section "Files"). Numbers go through int64 so large
+byte counts never render in float notation (1.048576e+08).
+*/}}
+{{- with .global.Values.services.assetRepository.files }}
+- name: OCTO_Files__MaxUploadBytes
+  value: {{ .maxUploadBytes | int64 | quote }}
+- name: OCTO_Files__ZipMaxFiles
+  value: {{ .zipMaxFiles | int64 | quote }}
+- name: OCTO_Files__ZipMaxBytes
+  value: {{ .zipMaxBytes | int64 | quote }}
+- name: OCTO_Files__PreviewMaxBytes
+  value: {{ .previewMaxBytes | int64 | quote }}
+{{- end }}
+{{- /*
+AB#6175 migration sweep System.Reporting -> System.Files (section "FilesMigration"), off by default.
+*/}}
+{{- with .global.Values.services.assetRepository.filesMigration }}
+- name: OCTO_FilesMigration__SweepEnabled
+  value: {{ .sweepEnabled | default false | toString | quote }}
+{{- end }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
