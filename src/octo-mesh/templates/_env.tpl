@@ -290,6 +290,11 @@ AB#6175 migration sweep System.Reporting -> System.Files (section "FilesMigratio
 {{- with .global.Values.services.assetRepository.filesMigration }}
 - name: OCTO_FilesMigration__SweepEnabled
   value: {{ .sweepEnabled | default false | toString | quote }}
+{{- /* AB#6473: allow-list on top of the global switch; empty (default) renders nothing. */}}
+{{- range $index, $tenant := .sweepTenants }}
+- name: OCTO_FilesMigration__SweepTenants__{{ $index }}
+  value: {{ $tenant | toString | quote }}
+{{- end }}
 {{- end }}
 
 {{- else if eq .name "bot" -}}
