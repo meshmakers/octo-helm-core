@@ -29,18 +29,26 @@
 {{- range $key, $svc := .Values.services }}
 {{- if and (kindIs "map" $svc) $svc.deploy (dig "prePull" "enabled" false $svc) }}
 {{- $prePull := $svc.prePull }}
+{{- /*
+  The pods carry their OWN app.kubernetes.io/service value (<service>-pre-pull), never the service's
+  selector label: the Service of the real workload selects on name+instance+service, and a pre-pull pod
+  matching it would become a Ready endpoint that answers nothing (502 on 5 of 6 requests, test-2 2026-10-12).
+*/}}
+{{- $prePullName := printf "%s-pre-pull" (include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc)) }}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc) }}-pre-pull
+  name: {{ $prePullName }}
   labels:
-    {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 4 }}
+    {{- include "octo-mesh.selectorLabels" $global | nindent 4 }}
+    app.kubernetes.io/service: {{ $prePullName }}
     app.kubernetes.io/component: image-pre-pull
 spec:
   selector:
     matchLabels:
-      {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 6 }}
+      {{- include "octo-mesh.selectorLabels" $global | nindent 6 }}
+      app.kubernetes.io/service: {{ $prePullName }}
       app.kubernetes.io/component: image-pre-pull
   updateStrategy:
     type: RollingUpdate
@@ -49,7 +57,8 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
+        {{- include "octo-mesh.selectorLabels" $global | nindent 8 }}
+        app.kubernetes.io/service: {{ $prePullName }}
         app.kubernetes.io/component: image-pre-pull
     spec:
       {{- with $global.Values.imageDefaults.imagePullSecrets }}
