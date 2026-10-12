@@ -36,6 +36,17 @@ OUT="$(render --set services.identity.prePull.enabled=true --set services.assetR
   --set services.platformServices.prePull.enabled=true)"
 check "five opt-ins render five DaemonSets"     test "$(grep -c '^kind: DaemonSet' <<<"$OUT")" = 5
 
+# 5b. Regression (test-2 2026-10-12): pre-pull pods must never match a workload Service selector, otherwise
+#     they become Ready endpoints that answer nothing (502). The DaemonSet carries its own
+#     app.kubernetes.io/service value, so no value used by a pre-pull doc may be used by another document.
+OUT="$(render --set services.identity.prePull.enabled=true --set services.assetRepository.prePull.enabled=true \
+  --set services.bot.prePull.enabled=true --set services.communication.prePull.enabled=true \
+  --set services.platformServices.prePull.enabled=true)"
+DS_VALUES="$(awk 'BEGIN{RS="\n---\n"} /\nkind: DaemonSet/ {n=split($0,l,"\n"); for(i=1;i<=n;i++) if(l[i] ~ /app.kubernetes.io\/service:/) {sub(/.*service: */,"",l[i]); print l[i]}}' <<<"$OUT" | sort -u)"
+OTHER_VALUES="$(awk 'BEGIN{RS="\n---\n"} !/\nkind: DaemonSet/ {n=split($0,l,"\n"); for(i=1;i<=n;i++) if(l[i] ~ /app.kubernetes.io\/service:/) {sub(/.*service: */,"",l[i]); print l[i]}}' <<<"$OUT" | sort -u)"
+check "pre-pull pods carry their own service label (5 values)" test "$(wc -l <<<"$DS_VALUES" | tr -d ' ')" = 5
+check "no pre-pull label value is selected by a Service/Deployment" test -z "$(comm -12 <(echo "$DS_VALUES") <(echo "$OTHER_VALUES"))"
+
 # 6. Recreate strategy is untouched, probe timing (AB#6592)
 OUT="$(render)"
 check "services keep strategy Recreate (5x)"    test "$(grep -c 'type: Recreate' <<<"$OUT")" = 5
