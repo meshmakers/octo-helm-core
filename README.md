@@ -261,9 +261,8 @@ Until the event hub no longer needs exclusive command queues, the chart shortens
 - **Faster Ready detection**: startup probe every 2 s (300 tries = the former 600 s budget) and readiness probe
   every 3 s with 10 failures (30 s tolerance as before) instead of 5 s / 10 s.
 
-The remaining, dominant part of the gap is the application start: the shared startup initialisation
+The application start itself is not shortened by the chart: the shared startup initialisation
 (`DefaultConfigurationInitializationService` in `octo-common-services`) checks CK model upgrades, migrations and
-bootstrap blueprints for every tenant before the host listens (about 80 s for 25 tenants on test-2, up to ~9m42s on
-staging-1). That needs a code change, tracked separately.
+bootstrap blueprints for every tenant before the host starts listening, so the time grows with the number of tenants.
 
 Render tests (no cluster needed): `src/octo-mesh/tests/render-tests.sh`.
