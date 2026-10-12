@@ -1,0 +1,86 @@
+{{- /*
+  Image-Pre-Pull DaemonSets (generic since AB#6592; the AI-services variant was #4115 Phase F).
+
+  One DaemonSet per service with services.<key>.prePull.enabled=true. Each pod runs one
+  init container from the SERVICE image whose only job is to make the kubelet pull that image
+  onto the node; the main container is a pause container that keeps the pod Running so the
+  image stays in the node cache.
+
+  Why: the services with recreateStrategy: true (identity, assetRepository, bot, communication,
+  platformServices) are down from the moment the old pod stops until the new pod is Ready, and the
+  image pull of the new tag is part of that gap. Two use cases:
+    * aiServices: KEDA scales to zero, a cold start must not pull the ~500 MB worker image.
+    * Recreate services: the image pull of a new release tag is taken out of the outage window.
+      This only works if the DaemonSet is rolled BEFORE the Deployment. A plain `helm upgrade`
+      applies both at once, so the CD template (octo-mesh-deployment
+      pipelines/templates/helm-deploy-octo-mesh.yml) renders this file first, applies it and waits for
+      the DaemonSet rollout, and only then runs `helm upgrade`. Without that step the DaemonSet is
+      harmless but gains nothing.
+
+  Off by default for every service. Resources are minimal (~0 CPU, a few MB RAM per node).
+
+  Values per service (services.<key>.prePull):
+    enabled        render the DaemonSet                                   (default false)
+    nodeSelector   restrict to a node group                               (default none)
+    tolerations    let the pod run on tainted nodes                       (default none)
+    maxUnavailable DaemonSet rollingUpdate.maxUnavailable                 (default 100%, all nodes pull in parallel)
+*/}}
+{{- $global := . -}}
+{{- range $key, $svc := .Values.services }}
+{{- if and (kindIs "map" $svc) $svc.deploy (dig "prePull" "enabled" false $svc) }}
+{{- $prePull := $svc.prePull }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "octo-mesh.service-fullname" (dict "global" $global "name" $key "svc" $svc) }}-pre-pull
+  labels:
+    {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 4 }}
+    app.kubernetes.io/component: image-pre-pull
+spec:
+  selector:
+    matchLabels:
+      {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 6 }}
+      app.kubernetes.io/component: image-pre-pull
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ dig "maxUnavailable" "100%" $prePull }}
+  template:
+    metadata:
+      labels:
+        {{- include "octo-mesh.service-selectorLabels" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
+        app.kubernetes.io/component: image-pre-pull
+    spec:
+      {{- with $global.Values.imageDefaults.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Stay off tainted/specialised nodes (GPU, storage). Override the tolerations to warm those too.
+      tolerations:
+        {{- with $prePull.tolerations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $prePull.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # The init container performs the image pull as a side effect of being scheduled; the pause
+      # container then keeps the pod Running so the image is not garbage-collected from the node cache.
+      initContainers:
+        - name: pre-pull
+          image: {{ if $global.Values.imageDefaults.privateRegistry }}{{ $global.Values.imageDefaults.privateRegistry }}/{{ end }}{{ $svc.image.repository }}:{{ $svc.image.tag | default $global.Values.appVersion | default $global.Chart.AppVersion }}
+          imagePullPolicy: {{ $global.Values.imageDefaults.pullPolicy }}
+          command: ["/bin/true"]
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              cpu: 10m
+              memory: 16Mi
+{{- end }}
+{{- end }}

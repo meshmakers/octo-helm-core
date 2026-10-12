@@ -62,6 +62,11 @@ stages:
               sshPassphrase: '$(SSHPassphrase)'
               sshKeySecureFile: '$(SSHPrivateKeyFile)'
 
+          # ---- octo-mesh render tests (AB#6592) ----
+          - bash: bash src/octo-mesh/tests/render-tests.sh
+            displayName: 'helm render tests octo-mesh'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+
           # ---- octo-mesh ----
           - task: HelmDeploy@0
             displayName: 'helm package octo-mesh'

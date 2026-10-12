@@ -244,3 +244,26 @@ Examples are available in the [example's](src/examples) directory.
 ```bash
 helm template --namespace octo --values schema-provider-sample.yaml schema-provider ../octo-mesh-schema-provider
 ```
+## Release downtime of the Recreate services (identity, asset repository, bot, communication, platform services)
+
+These services run with `recreateStrategy: true` (`strategy: Recreate`) because their command consumers declare
+fixed-name **exclusive** RabbitMQ queues (`AddCommandConsumer`, `Temporary = true`): a second pod cannot declare the
+queue while the old one holds it (`RESOURCE_LOCKED 405`), so a RollingUpdate or a second replica deadlocks
+(reproduced on test-2, AB#6592). They are therefore down from the moment the old pod stops until the new pod is Ready.
+Until the event hub no longer needs exclusive command queues, the chart shortens that window:
+
+- **Image pre-pull** (`services.<key>.prePull.enabled`, default `false`): renders a DaemonSet `<service>-pre-pull`
+  that pulls the service image onto every node (init container `/bin/true` + pause container). It only helps when
+  it is rolled **before** the Deployment. The CD template `octo-mesh-deployment/pipelines/templates/helm-deploy-octo-mesh.yml`
+  does that automatically: it renders `templates/pre-pull-daemonset.yaml`, applies it, waits for the DaemonSet rollout
+  and only then runs `helm upgrade`. A cluster opts in through its values file, nothing else changes. Optional per
+  service: `prePull.nodeSelector`, `prePull.tolerations`, `prePull.maxUnavailable` (default `100%`).
+- **Faster Ready detection**: startup probe every 2 s (300 tries = the former 600 s budget) and readiness probe
+  every 3 s with 10 failures (30 s tolerance as before) instead of 5 s / 10 s.
+
+The remaining, dominant part of the gap is the application start: the shared startup initialisation
+(`DefaultConfigurationInitializationService` in `octo-common-services`) checks CK model upgrades, migrations and
+bootstrap blueprints for every tenant before the host listens (about 80 s for 25 tenants on test-2, up to ~9m42s on
+staging-1). That needs a code change, tracked separately.
+
+Render tests (no cluster needed): `src/octo-mesh/tests/render-tests.sh`.
