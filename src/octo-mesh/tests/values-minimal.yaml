@@ -1,0 +1,22 @@
+# Minimal mandatory values so `helm template` renders the octo-mesh chart (render tests only).
+# All secret-looking values are dummies.
+services:
+  identity:
+    publicUri: "https://connect.example.test"
+    signingKey:
+      key: "dummy-render-test"
+      password: "dummy-render-test"
+  assetRepository:
+    publicUri: "https://assets.example.test"
+  bot:
+    publicUri: "https://bots.example.test"
+  communication:
+    publicUri: "https://communication.example.test"
+  platformServices:
+    publicUri: "https://platform.example.test"
+secrets:
+  databaseUser: "dummy-render-test"
+  databaseAdmin: "dummy-render-test"
+  rabbitmq: "dummy-render-test"
+  streamDataPassword: "dummy-render-test"
+  rootCa: "dummy-render-test"

@@ -219,6 +219,15 @@ services:
     # and the old pod is never torn down because the new one never reaches Ready —
     # the rollout deadlocks until the old pod is manually deleted.
     recreateStrategy: true
+    # Image pre-pull DaemonSet (AB#6592): pulls the service image onto every node before the CD
+    # replaces this Recreate service, so the image pull is not part of the outage window. Only
+    # effective together with the pre-pull step of octo-mesh-deployment
+    # pipelines/templates/helm-deploy-octo-mesh.yml (it applies this DaemonSet before `helm upgrade`).
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      tolerations: [ ]
+      maxUnavailable: 100%
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -234,13 +243,14 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      # Budget: failureThreshold * periodSeconds = 300 * 2s = 600s (10 minutes);
+      # polled every 2s so the pod is switched to Ready within seconds of the init finishing (AB#6592).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
-        periodSeconds: 5
-        failureThreshold: 120
+        periodSeconds: 2
+        failureThreshold: 300
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -253,8 +263,8 @@ services:
           path: /healthz/ready
           port: http
         initialDelaySeconds: 30
-        periodSeconds: 10
-        failureThreshold: 3
+        periodSeconds: 3
+        failureThreshold: 10
       # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
       # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
       resources:
@@ -277,6 +287,15 @@ services:
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
     # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
     recreateStrategy: true
+    # Image pre-pull DaemonSet (AB#6592): pulls the service image onto every node before the CD
+    # replaces this Recreate service, so the image pull is not part of the outage window. Only
+    # effective together with the pre-pull step of octo-mesh-deployment
+    # pipelines/templates/helm-deploy-octo-mesh.yml (it applies this DaemonSet before `helm upgrade`).
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      tolerations: [ ]
+      maxUnavailable: 100%
     # CK Model Catalog configuration
     ckCatalog:
       # Enable local file system catalog (default: disabled in production)
@@ -358,13 +377,14 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      # Budget: failureThreshold * periodSeconds = 300 * 2s = 600s (10 minutes);
+      # polled every 2s so the pod is switched to Ready within seconds of the init finishing (AB#6592).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
-        periodSeconds: 5
-        failureThreshold: 120
+        periodSeconds: 2
+        failureThreshold: 300
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -377,8 +397,8 @@ services:
           path: /healthz/ready
           port: http
         initialDelaySeconds: 30
-        periodSeconds: 10
-        failureThreshold: 3
+        periodSeconds: 3
+        failureThreshold: 10
       # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
       # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
       resources:
@@ -401,6 +421,15 @@ services:
     # Use Recreate strategy because the bot service uses exclusive RabbitMQ queues
     # that only allow a single connection at a time.
     recreateStrategy: true
+    # Image pre-pull DaemonSet (AB#6592): pulls the service image onto every node before the CD
+    # replaces this Recreate service, so the image pull is not part of the outage window. Only
+    # effective together with the pre-pull step of octo-mesh-deployment
+    # pipelines/templates/helm-deploy-octo-mesh.yml (it applies this DaemonSet before `helm upgrade`).
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      tolerations: [ ]
+      maxUnavailable: 100%
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -416,13 +445,14 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      # Budget: failureThreshold * periodSeconds = 300 * 2s = 600s (10 minutes);
+      # polled every 2s so the pod is switched to Ready within seconds of the init finishing (AB#6592).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
-        periodSeconds: 5
-        failureThreshold: 120
+        periodSeconds: 2
+        failureThreshold: 300
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -435,8 +465,8 @@ services:
           path: /healthz/ready
           port: http
         initialDelaySeconds: 30
-        periodSeconds: 10
-        failureThreshold: 3
+        periodSeconds: 3
+        failureThreshold: 10
       # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
       # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
       resources:
@@ -578,6 +608,15 @@ services:
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
     # queues; RollingUpdate deadlocks on RESOURCE_LOCKED. See identity for details.
     recreateStrategy: true
+    # Image pre-pull DaemonSet (AB#6592): pulls the service image onto every node before the CD
+    # replaces this Recreate service, so the image pull is not part of the outage window. Only
+    # effective together with the pre-pull step of octo-mesh-deployment
+    # pipelines/templates/helm-deploy-octo-mesh.yml (it applies this DaemonSet before `helm upgrade`).
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      tolerations: [ ]
+      maxUnavailable: 100%
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -593,13 +632,14 @@ services:
       port: 80
       # Startup probe gives backend services time to import CK models and run
       # per-tenant initialization before liveness/readiness probes take over.
-      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      # Budget: failureThreshold * periodSeconds = 300 * 2s = 600s (10 minutes);
+      # polled every 2s so the pod is switched to Ready within seconds of the init finishing (AB#6592).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
-        periodSeconds: 5
-        failureThreshold: 120
+        periodSeconds: 2
+        failureThreshold: 300
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -612,8 +652,8 @@ services:
           path: /healthz/ready
           port: http
         initialDelaySeconds: 30
-        periodSeconds: 10
-        failureThreshold: 3
+        periodSeconds: 3
+        failureThreshold: 10
       # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
       # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
       resources:
@@ -642,6 +682,15 @@ services:
     # service-managed blueprints) and consumes exclusive RabbitMQ queues;
     # RollingUpdate deadlocks on RESOURCE_LOCKED. Same as adminPanel / identity.
     recreateStrategy: true
+    # Image pre-pull DaemonSet (AB#6592): pulls the service image onto every node before the CD
+    # replaces this Recreate service, so the image pull is not part of the outage window. Only
+    # effective together with the pre-pull step of octo-mesh-deployment
+    # pipelines/templates/helm-deploy-octo-mesh.yml (it applies this DaemonSet before `helm upgrade`).
+    prePull:
+      enabled: false
+      nodeSelector: { }
+      tolerations: [ ]
+      maxUnavailable: 100%
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
@@ -659,13 +708,14 @@ services:
       # across all tenants (Phase 4 tenant-lifecycle host) before liveness takes
       # over — without it, liveness kills the pod after ~75s while startup can
       # exceed 90s, causing a CrashLoopBackOff that never binds the port.
-      # Budget: failureThreshold * periodSeconds = 120 * 5s = 600s (10 minutes).
+      # Budget: failureThreshold * periodSeconds = 300 * 2s = 600s (10 minutes);
+      # polled every 2s so the pod is switched to Ready within seconds of the init finishing (AB#6592).
       startupProbe:
         httpGet:
           path: /healthz/live
           port: http
-        periodSeconds: 5
-        failureThreshold: 120
+        periodSeconds: 2
+        failureThreshold: 300
       livenessProbe:
         httpGet:
           path: /healthz/live
@@ -678,8 +728,8 @@ services:
           path: /healthz/ready
           port: http
         initialDelaySeconds: 30
-        periodSeconds: 10
-        failureThreshold: 3
+        periodSeconds: 3
+        failureThreshold: 10
       # Defaults sized from prod-1 steady-state usage (AB#4361). The memory
       # limit bounds the .NET GC heap; no CPU limit to avoid throttling.
       resources:
