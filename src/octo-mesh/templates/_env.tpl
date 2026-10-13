@@ -360,6 +360,16 @@ Any other value fails the render - a typo must not silently fall back to LogOnly
 - name: OCTO_OPERATORHUBAUTHORIZATION__MODE
   value: {{ $operatorHubMode | quote }}
 {{- /*
+AB#5114 (SECRET phase 3): the impersonation switch may clear the stored secret of eligible
+standalone service accounts only when this is explicitly enabled; the controller refuses
+apply=true with 409 otherwise. Rendered only when true so the default stays visible as "absent".
+*/}}
+{{- $impersonation := .global.Values.services.communication.serviceAccountImpersonation | default dict }}
+{{- if $impersonation.allowSecretClearing }}
+- name: OCTO_SERVICEACCOUNTIMPERSONATION__ALLOWSECRETCLEARING
+  value: "true"
+{{- end }}
+{{- /*
 AES-256-GCM master key for IWorkloadEncryptionService. Emitted only when
 secrets.communicationInstanceSecretKey is set so unconfigured clusters
 keep starting (CommunicationControllerOptions doc: empty is tolerated at

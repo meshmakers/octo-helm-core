@@ -36,6 +36,12 @@ OUT="$(render --set services.identity.prePull.enabled=true --set services.assetR
   --set services.platformServices.prePull.enabled=true)"
 check "five opt-ins render five DaemonSets"     test "$(grep -c '^kind: DaemonSet' <<<"$OUT")" = 5
 
+# 5a. AB#5114: ALLOWSECRETCLEARING is rendered only on the communication controller and only when enabled
+check "default renders no ALLOWSECRETCLEARING"  bash -c "! helm template t '$CHART' -f '$VALUES' | grep -q 'ALLOWSECRETCLEARING'"
+OUT="$(render --set services.communication.serviceAccountImpersonation.allowSecretClearing=true)"
+check "enabled renders ALLOWSECRETCLEARING=true" test "$(grep -A1 'name: OCTO_SERVICEACCOUNTIMPERSONATION__ALLOWSECRETCLEARING' <<<"$OUT" | grep -c 'value: "true"')" = 1
+check "enabled renders it exactly once"         test "$(grep -c 'ALLOWSECRETCLEARING' <<<"$OUT")" = 1
+
 # 5b. Regression (test-2 2026-10-12): pre-pull pods must never match a workload Service selector, otherwise
 #     they become Ready endpoints that answer nothing (502). The DaemonSet carries its own
 #     app.kubernetes.io/service value, so no value used by a pre-pull doc may be used by another document.

@@ -603,6 +603,15 @@ services:
     hubAuthorization:
       adapterMode: LogOnly
       operatorMode: LogOnly
+    # Service-account impersonation switch (AB#5114, SECRET phase 3). false (default): the
+    # controller answers `apply=true` on POST {tenantId}/v1/serviceAccount/switchToImpersonation
+    # with 409, the dry run (apply=false) always works. true: the switch may clear the stored
+    # secret of eligible standalone service accounts. Rendered as
+    # OCTO_SERVICEACCOUNTIMPERSONATION__ALLOWSECRETCLEARING only when true. Enable per cluster
+    # deliberately, for the time of the switch; see the controller docs
+    # (docs/concepts/secret-attributes.md, "Service accounts and impersonation").
+    serviceAccountImpersonation:
+      allowSecretClearing: false
     # set false to prevent deployment
     deploy: true
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
