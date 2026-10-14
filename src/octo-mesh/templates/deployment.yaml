@@ -138,6 +138,11 @@ spec:
           - name: http
             containerPort: {{ $svc.pod.port }}
             protocol: TCP
+          {{- if gt (int ($global.Values.observability.prometheusPort | default 0)) 0 }}
+          - name: metrics
+            containerPort: {{ int $global.Values.observability.prometheusPort }}
+            protocol: TCP
+          {{- end }}
         env:
           {{- include "octo-mesh.env" (dict "global" $global "name" $key "svc" $svc) | nindent 8 }}
         {{- with $svc.pod.startupProbe}}

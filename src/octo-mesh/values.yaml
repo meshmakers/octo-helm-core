@@ -33,6 +33,16 @@ tracing:
   # subscribe to the source; this only controls whether the spans leave the pod.
   mongoDb: false
 
+observability:
+  # AB#5868: Prometheus scrape endpoint (/metrics) of every service. It is NEVER served on the service
+  # port (80) that the Service and the Ingress route to: the services only answer /metrics on a
+  # dedicated listener, and the ingress additionally answers 404 for /metrics. 0 (default) = no
+  # /metrics endpoint at all - metrics reach Dash0 via OTLP and nothing scrapes /metrics today.
+  # Set a port (e.g. 9464) to open an extra container listener for an in-cluster scraper (pod IP:port).
+  # The port is rendered as a container port only; it is deliberately not part of the Service, so it
+  # cannot be reached through the Ingress. Needs a service build with Observability:PrometheusPort.
+  prometheusPort: 0
+
 imageDefaults:
   pullPolicy: IfNotPresent
   imagePullSecrets: []

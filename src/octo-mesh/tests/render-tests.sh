@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
-# hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934).
+# hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
+# /metrics never routed through an ingress (AB#5868).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -119,5 +120,35 @@ check "operator guard off by default: no key ring renders" op
 renders_fail "operator guard=true without key fails" "SECRET key ring is empty" op --set operator.clusterSecrets.secretEncryptionRequired=true
 renders_fail "operator guard=true with unresolved Vault macro fails" "base64-encoded 32-byte key" op --set operator.clusterSecrets.secretEncryptionRequired=true --set 'operator.clusterSecrets.instanceSecretKey=$(VAULT_instance_secret_key)'
 check "operator guard=true with a valid key renders" op --set operator.clusterSecrets.secretEncryptionRequired=true --set "operator.clusterSecrets.instanceSecretKey=$KEY"
+
+# 10. AB#5868: /metrics must not be reachable through the public ingress.
+#     Layer 1 (services): /metrics only on a dedicated listener that no Service port and no Ingress backend names.
+#     Layer 2 (ingress): nginx answers 404 for /metrics even if a service served it on the routed port.
+ing()  { awk 'BEGIN{RS="\n---\n"} /\nkind: Ingress\n/' <<<"$OUT"; }
+svc()  { awk 'BEGIN{RS="\n---\n"} /\nkind: Service\n/' <<<"$OUT"; }
+OUT="$(render)"
+check "ingress answers 404 for /metrics"        grep -qF 'if ($uri ~* "^/+metrics(/.*)?$") { return 404; }' <<<"$(ing)"
+check "ingress keeps the CORS snippet"          grep -q 'Access-Control-Allow-Origin' <<<"$(ing)"
+check "no ingress rule names a /metrics path"   bash -c '! grep -qi "path: /*metrics" <<<"$0"' "$(ing)"
+check "every ingress backend uses the service port (80)" test "$(grep -c 'number: 80$' <<<"$(ing)")" = "$(grep -c 'number: ' <<<"$(ing)")"
+check "default: no Prometheus env or listener"  bash -c '! grep -qE "Observability__PrometheusPort|http://\+:80;|name: metrics$" <<<"$0"' "$OUT"
+check "default: ASPNETCORE_URLS is port 80 only (5x)" test "$(grep -A1 'name: ASPNETCORE_URLS' <<<"$OUT" | grep -c 'value: "http://+:80"')" = 5
+
+# 10a. A cluster overlay that replaces the configuration-snippet cannot drop the guard
+OUT="$(render --set-string 'ingress.annotations.nginx\.ingress\.kubernetes\.io/configuration-snippet=more_set_headers "X-Test: 1";')"
+check "overridden snippet is kept"              grep -qF 'more_set_headers "X-Test: 1";' <<<"$(ing)"
+check "overridden snippet still gets the guard" grep -qF 'return 404; }' <<<"$(ing)"
+# ... and an overlay that sets no snippet at all (annotations without it) gets the guard as well
+OUT="$(render --set ingress.annotations=null)"
+check "no snippet in values: guard still rendered" grep -qF 'return 404; }' <<<"$(ing)"
+
+# 10b. Opt-in internal listener: container port + env only, never a Service port or an ingress backend
+OUT="$(render --set observability.prometheusPort=9464)"
+check "prometheusPort adds the internal listener to ASPNETCORE_URLS (5x)" test "$(grep -c 'value: "http://+:80;http://+:9464"' <<<"$OUT")" = 5
+check "prometheusPort sets Observability__PrometheusPort (5x)" test "$(grep -A1 'name: Observability__PrometheusPort' <<<"$OUT" | grep -c 'value: "9464"')" = 5
+check "prometheusPort renders a metrics container port (5x)" test "$(grep -c 'containerPort: 9464' <<<"$OUT")" = 5
+check "no Service exposes the metrics port"     bash -c '! grep -q 9464 <<<"$0"' "$(svc)"
+check "no ingress backend uses the metrics port" bash -c '! grep -q 9464 <<<"$0"' "$(ing)"
+check "ingress guard is still rendered with the listener on" grep -qF 'return 404; }' <<<"$(ing)"
 
 exit $fail
