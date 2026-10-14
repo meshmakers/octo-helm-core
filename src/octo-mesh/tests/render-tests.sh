@@ -11,6 +11,12 @@ check() { # check <description> <command...>  (command must succeed)
   if "$@" >/dev/null 2>&1; then echo "ok   - $d"; else echo "FAIL - $d"; fail=1; fi
 }
 
+renders_fail() { # renders_fail <description> <expected error text> <helm args...>  (render must fail with that text)
+  local d="$1" msg="$2"; shift 2
+  local err; err="$("$@" 2>&1 >/dev/null)" && { echo "FAIL - $d (render succeeded)"; fail=1; return; }
+  if grep -qF -- "$msg" <<<"$err"; then echo "ok   - $d"; else echo "FAIL - $d (wrong error: $(head -c 200 <<<"$err"))"; fail=1; fi
+}
+
 # 1. Default: no pre-pull DaemonSet at all (off by default for every service)
 check "default renders no DaemonSet"            bash -c "! helm template t '$CHART' -f '$VALUES' | grep -q '^kind: DaemonSet'"
 
@@ -58,5 +64,59 @@ OUT="$(render)"
 check "services keep strategy Recreate (5x)"    test "$(grep -c 'type: Recreate' <<<"$OUT")" = 5
 check "startupProbe polls every 2s, 300 tries (600s budget)" test "$(grep -A5 'startupProbe' <<<"$OUT" | grep -c 'failureThreshold: 300')" = 5
 check "readinessProbe polls every 3s, tolerates 30s" test "$(grep -A7 'readinessProbe' <<<"$OUT" | grep -c 'periodSeconds: 3')" -ge 5
+
+# 7. AB#5930: hub authorization mode per hub (controller env), default LogOnly, anything else fails the render
+mode() { grep -A1 "name: OCTO_$1HUBAUTHORIZATION__MODE" <<<"$OUT" | grep -o 'value: "[A-Za-z]*"'; }
+OUT="$(render)"
+check "hub mode defaults to LogOnly (adapter)"  test "$(mode ADAPTER)" = 'value: "LogOnly"'
+check "hub mode defaults to LogOnly (operator)" test "$(mode OPERATOR)" = 'value: "LogOnly"'
+OUT="$(render --set services.communication.hubAuthorization.adapterMode=Enforce)"
+check "adapterMode=Enforce renders, operator stays LogOnly" test "$(mode ADAPTER) $(mode OPERATOR)" = 'value: "Enforce" value: "LogOnly"'
+OUT="$(render --set services.communication.hubAuthorization.operatorMode=Enforce)"
+check "operatorMode=Enforce renders, adapter stays LogOnly" test "$(mode ADAPTER) $(mode OPERATOR)" = 'value: "LogOnly" value: "Enforce"'
+renders_fail "invalid adapterMode fails the render"  "adapterMode must be LogOnly or Enforce" render --set services.communication.hubAuthorization.adapterMode=Bogus
+renders_fail "invalid operatorMode fails the render" "operatorMode must be LogOnly or Enforce" render --set services.communication.hubAuthorization.operatorMode=enforce
+
+# 8. AB#5930/AB#5934: opt-in SECRET missing-key guard of the octo-mesh chart (secrets.secretEncryptionRequired)
+KEY="$(printf '0123456789abcdef0123456789abcdef' | base64)"   # 32 bytes, dummy
+check "guard is off by default: no key ring renders" render
+check "guard=false without key renders"         render --set secrets.secretEncryptionRequired=false
+renders_fail "guard=true without key fails the render" "SECRET key ring is empty" render --set secrets.secretEncryptionRequired=true
+renders_fail "guard=true with unresolved Vault macro fails" "base64-encoded 32-byte key" render --set secrets.secretEncryptionRequired=true --set 'secrets.communicationInstanceSecretKey=$(VAULT_instance_secret_key)'
+renders_fail "guard=\"yes\" is rejected"        "must be true or false" render --set secrets.secretEncryptionRequired=yes
+check "guard=true with a valid key renders"     render --set secrets.secretEncryptionRequired=true --set "secrets.communicationInstanceSecretKey=$KEY"
+
+# 9. AB#5930/AB#5934: communication operator chart (operator.authentication, clusterSecrets.secretEncryptionRequired).
+#    The chart depends on file://../octo-mesh-crds, so it is rendered from a temp copy with the dependency built.
+OPSRC="$CHART/../octo-mesh-communication-operator"
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+cp -R "$OPSRC" "$CHART/../octo-mesh-crds" "$TMP/"
+helm dependency build "$TMP/octo-mesh-communication-operator" >/dev/null
+op() { helm template o "$TMP/octo-mesh-communication-operator" --set operator.authUri=https://connect.example.test "$@"; }
+AUTH=(--set operator.authentication.tenantId=octosystem --set operator.authentication.clientId=cid-render-test)
+
+check "operator renders without authentication" op
+check "no authentication => no OPERATOR__AUTHENTICATION env" bash -c "! helm template o '$TMP/octo-mesh-communication-operator' --set operator.authUri=https://connect.example.test | grep -q 'OPERATOR__AUTHENTICATION'"
+OUT="$(op "${AUTH[@]}" --set operator.authentication.clientSecret=secret-render-A)"
+check "client id/secret are referenced via secretKeyRef (2x)" test "$(grep -A4 -E 'name: OPERATOR__AUTHENTICATION__CLIENT(ID|SECRET)$' <<<"$OUT" | grep -c 'secretKeyRef:')" = 2
+check "no literal value for the client id/secret env" test "$(grep -A1 -E 'name: OPERATOR__AUTHENTICATION__CLIENT(ID|SECRET)$' <<<"$OUT" | grep -c 'value:')" = 0
+check "credential never appears in clear text"  bash -c '! grep -q -- "$1" <<<"$0"' "$OUT" secret-render-A
+SUM_A="$(grep 'checksum/operator-authentication' <<<"$OUT")"
+SUM_B="$(op "${AUTH[@]}" --set operator.authentication.clientSecret=secret-render-B | grep 'checksum/operator-authentication')"
+check "checksum annotation is rendered"         test -n "$SUM_A"
+check "checksum changes when the credential changes" test "$SUM_A" != "$SUM_B"
+check "checksum is stable for the same credential" test "$SUM_A" = "$(op "${AUTH[@]}" --set operator.authentication.clientSecret=secret-render-A | grep 'checksum/operator-authentication')"
+OUT="$(op --set operator.authentication.tenantId=octosystem --set operator.authentication.existingSecret=my-operator-auth)"
+check "existingSecret is referenced by name"    grep -q 'name: "my-operator-auth"' <<<"$OUT"
+check "existingSecret renders no chart-owned Secret" bash -c '! grep -q -- "-operator-auth$" <<<"$0"' "$OUT"
+renders_fail "clientId without clientSecret fails"  "clientSecret is empty" op "${AUTH[@]}"
+renders_fail "clientSecret without clientId fails"  "clientId is empty" op --set operator.authentication.clientSecret=x
+renders_fail "existingSecret together with clientId fails" "not both" op "${AUTH[@]}" --set operator.authentication.existingSecret=s
+renders_fail "credentials without tenantId fail"    "tenantId is required" op --set operator.authentication.clientId=c --set operator.authentication.clientSecret=s
+
+check "operator guard off by default: no key ring renders" op
+renders_fail "operator guard=true without key fails" "SECRET key ring is empty" op --set operator.clusterSecrets.secretEncryptionRequired=true
+renders_fail "operator guard=true with unresolved Vault macro fails" "base64-encoded 32-byte key" op --set operator.clusterSecrets.secretEncryptionRequired=true --set 'operator.clusterSecrets.instanceSecretKey=$(VAULT_instance_secret_key)'
+check "operator guard=true with a valid key renders" op --set operator.clusterSecrets.secretEncryptionRequired=true --set "operator.clusterSecrets.instanceSecretKey=$KEY"
 
 exit $fail
