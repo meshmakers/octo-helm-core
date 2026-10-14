@@ -12,6 +12,16 @@
 {{- if and .Values.ingress.proxyBodySize (not (hasKey $annotations "nginx.ingress.kubernetes.io/proxy-body-size")) }}
 {{- $_ := set $annotations "nginx.ingress.kubernetes.io/proxy-body-size" (toString .Values.ingress.proxyBodySize) }}
 {{- end }}
+{{- /*
+  AB#5868: /metrics must never be reachable through the public ingress (tenant ids, pipeline names and pool
+  ids in the Prometheus export, no authentication). The services already refuse /metrics on the port the
+  ingress routes to; this is the second layer. It is appended to the configuration-snippet AFTER any
+  override from ingress.annotations, so a cluster overlay that replaces the snippet cannot drop it.
+  $uri is the decoded, normalized path, so /Metrics, //metrics and /%6Detrics are covered too.
+*/}}
+{{- $metricsGuard := `if ($uri ~* "^/+metrics(/.*)?$") { return 404; }` }}
+{{- $snippet := index $annotations "nginx.ingress.kubernetes.io/configuration-snippet" | default "" | trimSuffix "\n" }}
+{{- $_ := set $annotations "nginx.ingress.kubernetes.io/configuration-snippet" (printf "%s\n# AB#5868: never serve /metrics through the ingress\n%s\n" $snippet $metricsGuard) }}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}

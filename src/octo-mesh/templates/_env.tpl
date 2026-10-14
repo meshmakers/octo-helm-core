@@ -116,8 +116,14 @@ _helpers.tpl for how the ring is derived from the instance secret.
 
 
 {{- define "octo-mesh.env" -}}
+{{- /* AB#5868: optional internal-only Prometheus listener, see values observability.prometheusPort */}}
+{{- $promPort := int (.global.Values.observability.prometheusPort | default 0) }}
 - name: ASPNETCORE_URLS
-  value: "http://+:80"
+  value: {{ if gt $promPort 0 }}"http://+:80;http://+:{{ $promPort }}"{{ else }}"http://+:80"{{ end }}
+{{- if gt $promPort 0 }}
+- name: Observability__PrometheusPort
+  value: {{ $promPort | quote }}
+{{- end }}
 # Distinct OpenTelemetry service.name per workload. Without this the Dash0
 # auto-instrumentation derives service.name from the app.kubernetes.io/name
 # label, which is identical ("octo-mesh") for every service in this release —
