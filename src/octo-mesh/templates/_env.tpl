@@ -171,10 +171,6 @@ _helpers.tpl for how the ring is derived from the instance secret.
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_IDENTITY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
-- name: OCTO_IDENTITY__IdentityServerLicenseKey
-  value: {{ .global.Values.services.identity.identityServerLicenseKey }}
-- name: OCTO_IDENTITY__AutoMapperLicenseKey
-  value: {{ .global.Values.services.identity.autoMapperLicenseKey }}
 {{- /* AB#5859 role check on the tenant REST API; Warn is the emergency exit. */}}
 {{- $roleEnforcement := .global.Values.services.identity.apiRoleEnforcement | default "Enforce" }}
 {{- if not (has $roleEnforcement (list "Enforce" "Warn")) }}
