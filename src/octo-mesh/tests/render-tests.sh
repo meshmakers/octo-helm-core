@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Render tests for the octo-mesh chart (AB#6592): image pre-pull DaemonSets and probe timing.
+# Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
+# hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
