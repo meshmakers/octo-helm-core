@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
-# /metrics never routed through an ingress (AB#5868).
+# /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -150,5 +150,14 @@ check "prometheusPort renders a metrics container port (5x)" test "$(grep -c 'co
 check "no Service exposes the metrics port"     bash -c '! grep -q 9464 <<<"$0"' "$(svc)"
 check "no ingress backend uses the metrics port" bash -c '! grep -q 9464 <<<"$0"' "$(ing)"
 check "ingress guard is still rendered with the listener on" grep -qF 'return 404; }' <<<"$(ing)"
+
+# 11. AB#6726: the identity service no longer reads IdentityServerLicenseKey / AutoMapperLicenseKey
+OUT="$(render)"
+check "identity renders no license key env vars" bash -c '! grep -qiE "IdentityServerLicenseKey|AutoMapperLicenseKey" <<<"$0"' "$OUT"
+check "identity env block is still rendered (INSTANCEPREFIX)" grep -q 'name: OCTO_IDENTITY__INSTANCEPREFIX' <<<"$OUT"
+# A pipeline that still passes the removed values must not break the render, and must not bring the env vars back
+OUT="$(render --set services.identity.identityServerLicenseKey=x --set services.identity.autoMapperLicenseKey=y)"
+check "old --set license values render without error" test -n "$OUT"
+check "old --set license values are ignored"     bash -c '! grep -qiE "LicenseKey" <<<"$0"' "$OUT"
 
 exit $fail
