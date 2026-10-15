@@ -198,10 +198,6 @@ services:
   identity:
     # Public URI of service
     publicUri: ""
-    # License key for identity services
-    identityServerLicenseKey: ""
-    # License key for AutoMapper
-    autoMapperLicenseKey: ""
     # AB#5859 role check on the identity service's tenant REST API
     # (OCTO_IDENTITYAPIAUTHORIZATION__ROLEENFORCEMENT). The API requires tenant
     # roles: UserManagement for users/roles/groups, TenantManagement or
