@@ -198,6 +198,7 @@ _helpers.tpl for how the ring is derived from the instance secret.
   value: {{ .global.Values.services.identity.publicUri }}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
+{{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.assetRepository.userTokenEnforcement" "mode" .global.Values.services.assetRepository.userTokenEnforcement) }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /*
@@ -357,6 +358,7 @@ Any other value fails the render - a typo must not silently fall back to LogOnly
 {{- if not (has $operatorHubMode (list "LogOnly" "Enforce")) }}
 {{- fail (printf "services.communication.hubAuthorization.operatorMode must be LogOnly or Enforce, got '%v'" $operatorHubMode) }}
 {{- end }}
+{{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.communication.userTokenEnforcement" "mode" .global.Values.services.communication.userTokenEnforcement) }}
 - name: OCTO_ADAPTERHUBAUTHORIZATION__MODE
   value: {{ $adapterHubMode | quote }}
 - name: OCTO_OPERATORHUBAUTHORIZATION__MODE
@@ -552,4 +554,21 @@ endpoint/dataset/environment are non-secret plain values.
 {{- else }}
 {{- fail (printf "Service %s is not configured for the octo-mesh helm chart." .name) -}}
 {{- end }}
+{{- end }}
+
+{{- define "octo-mesh.user-token-enforcement-env" -}}
+{{- /*
+AB#6834 (AB#6728): mode of the user-token tenant gate (TenantAuthorizationMiddleware) of one
+service, section TenantAuthorization of the service configuration. Rendered explicitly so the
+mode in effect is visible on the deployment. LogOnly (default) denies nothing and logs "would be
+denied"; Enforce answers 403 for a user token of a foreign tenant. Any other value fails the
+render - a typo must not silently fall back to LogOnly. Included only by assetRepository and
+communication; every other service keeps its code default.
+*/ -}}
+{{- $mode := .mode | default "LogOnly" }}
+{{- if not (has $mode (list "LogOnly" "Enforce")) }}
+{{- fail (printf "%s must be LogOnly or Enforce, got '%v'" .key $mode) }}
+{{- end }}
+- name: OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT
+  value: {{ $mode | quote }}
 {{- end }}

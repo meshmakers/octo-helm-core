@@ -288,6 +288,14 @@ services:
   assetRepository:
     # Public URI of service
     publicUri: ""
+    # Mode of the user-token tenant gate (AB#6834, AB#6728): what happens when a user token
+    # issued for tenant A calls a route of tenant B. Rendered as
+    # OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT on this service only.
+    #   LogOnly - default: nothing is denied; the service logs "would be denied".
+    #   Enforce - the call is answered with 403.
+    # One value per service, so one service can be rolled back alone. Any other value fails
+    # the render. Runbook: octo-communication-controller-services/docs/runbooks (AB#6833).
+    userTokenEnforcement: LogOnly
     # set false to prevent deployment
     deploy: true
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
@@ -593,6 +601,14 @@ services:
     # default of 60s cuts the hold short). Without that annotation nothing routes
     # here and the flag does nothing.
     activatorEnabled: false
+    # Mode of the user-token tenant gate (AB#6834, AB#6728): what happens when a user token
+    # issued for tenant A calls a route of tenant B. Rendered as
+    # OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT on this service only.
+    #   LogOnly - default: nothing is denied; the service logs "would be denied".
+    #   Enforce - the call is answered with 403.
+    # One value per service, so one service can be rolled back alone. Any other value fails
+    # the render. Runbook: octo-communication-controller-services/docs/runbooks (AB#6833).
+    userTokenEnforcement: LogOnly
     # Staged authorization of the controller's SignalR hubs (AB#5063 adapter hub,
     # AB#5059 operator hub; rollout AB#5528 phase 3). Rendered as
     # OCTO_ADAPTERHUBAUTHORIZATION__MODE / OCTO_OPERATORHUBAUTHORIZATION__MODE.
