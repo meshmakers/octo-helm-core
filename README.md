@@ -132,6 +132,19 @@ The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` w
 
 `LogOnly` changes no connection outcome; every connection an enforcing run would refuse is logged and counted (`octo.communication.hub.authorization.decisions`, `outcome=would_refuse`). `Enforce` refuses those connections. Any other value fails the render. Switch per cluster only after the LogOnly evidence is clean — runbook: `octo-communication-controller-services/docs/runbooks/hub-authorization-enforce-rollout.md`. The operator hub additionally needs every operator to authenticate (`operator.authentication.*` on the operator chart, below).
 
+### User-token tenant gate mode (AB#6834)
+
+Asset repository and communication controller reject (or, in `LogOnly`, only log) a user token issued for tenant A that calls a route of tenant B. The chart renders the mode of each service explicitly on its deployment, and on no other service (identity and bot keep their code default):
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.assetRepository.userTokenEnforcement` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT` |
+| `services.communication.userTokenEnforcement` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT` |
+
+`LogOnly` (the default, identical to the services' code default, so no installation changes without a value) denies nothing and logs `would be denied`. `Enforce` answers such calls with 403. Any other value fails the render. The SignalR hubs are not part of this gate; see the hub authorization mode above.
+
+Rollback: set the value of the affected service back to `LogOnly` and roll the deployment; each service is switched independently. Switch per cluster only after the LogOnly warnings are clean - rollout steps and checks: runbook in `octo-communication-controller-services` (AB#6833).
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
