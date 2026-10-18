@@ -193,4 +193,16 @@ check "variable only inside the two deployments"         test "$(grep -c "name: 
 renders_fail "invalid asset repository value fails the render" "services.assetRepository.userTokenEnforcement must be LogOnly or Enforce" render --set services.assetRepository.userTokenEnforcement=Bogus
 renders_fail "invalid communication value fails the render"    "services.communication.userTokenEnforcement must be LogOnly or Enforce" render --set services.communication.userTokenEnforcement=enforce
 
+# 13. Bot artifact store S3: the CrateDB-side endpoint is rendered only when set
+S3="--set services.bot.artifactStorage.provider=S3 --set services.bot.artifactStorage.s3.bucket=b --set services.bot.artifactStorage.s3.serviceUrl=http://store.example.test:8333"
+OUT="$(render $S3)"
+check "S3 without crateDbServiceUrl renders the service URL"  grep -q 'name: OCTO_ARTIFACTSTORAGE__S3__SERVICEURL' <<<"$OUT"
+check "S3 without crateDbServiceUrl renders no CRATEDBSERVICEURL" bash -c '! grep -q "OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL" <<<"$0"' "$OUT"
+OUT="$(render $S3 --set services.bot.artifactStorage.s3.crateDbServiceUrl=http://store.crate.test:8333)"
+check "S3 with crateDbServiceUrl renders CRATEDBSERVICEURL once" test "$(grep -c 'name: OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL' <<<"$OUT")" = 1
+check "CRATEDBSERVICEURL carries the value"                   test "$(grep -A1 'name: OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL' <<<"$OUT" | grep -c 'value: "http://store.crate.test:8333"')" = 1
+check "the bot's own SERVICEURL is unchanged"                 grep -q 'value: "http://store.example.test:8333"' <<<"$OUT"
+OUT="$(render --set services.bot.artifactStorage.provider=FileSystem --set services.bot.artifactStorage.fileSystem.rootPath=/data/a --set services.bot.artifactStorage.s3.crateDbServiceUrl=http://store.crate.test:8333)"
+check "FileSystem provider ignores crateDbServiceUrl"          bash -c '! grep -q "OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL" <<<"$0"' "$OUT"
+
 exit $fail
