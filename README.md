@@ -217,6 +217,14 @@ The operator logs in with client credentials before it connects to `/operatorHub
 
 The client must be a confidential `client_credentials` client with scope `octo_api` in that tenant (`octo-cli -c AddClientCredentialsClient`, without `--autoProvision`). Setting both credential sources, only one half of `clientId`/`clientSecret`, or credentials without a tenant id or issuer fails the render. Use a generated secret (e.g. `openssl rand -hex 32`): the pod carries a salted sha256 of the chart-owned credentials as a checksum annotation, so a change restarts the operator pod. An `existingSecret` must exist in the release namespace, otherwise the pod fails with `CreateContainerConfigError`; after rotating an `existingSecret`, restart the deployment manually.
 
+### Forcing the classic watch mode (AB#6901)
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `operator.forceClassicWatch` | `false` | `OPERATOR__FORCECLASSICWATCH` (rendered only when `true`) |
+
+The operator asks the API server for a consistent watch start and falls back to classic list+watch (`resourceVersion=0`) on its own when the API server refuses it (AB#6898). Setting `operator.forceClassicWatch: true` starts in classic mode from the first request and logs a WARN at startup. It is an incident lever for a cluster known to refuse the consistent start, not a default: leave it `false` elsewhere. The value must be `true` or `false` (a string `"false"` stays off, anything else fails the render); changing it restarts the operator pod. Enabling it on a cluster is a separate decision per cluster.
+
 ### Running multiple operators on one cluster (edge devices)
 
 When deploying multiple operator instances onto the same Kubernetes cluster — typically one per target communication controller on an edge device — each instance must be isolated to its own namespace. Otherwise all operators watch every `DeploymentSite` CR cluster-wide and race on reconciliation.

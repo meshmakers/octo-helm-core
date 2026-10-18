@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
-# /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834).
+# /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -120,6 +120,15 @@ check "operator guard off by default: no key ring renders" op
 renders_fail "operator guard=true without key fails" "SECRET key ring is empty" op --set operator.clusterSecrets.secretEncryptionRequired=true
 renders_fail "operator guard=true with unresolved Vault macro fails" "base64-encoded 32-byte key" op --set operator.clusterSecrets.secretEncryptionRequired=true --set 'operator.clusterSecrets.instanceSecretKey=$(VAULT_instance_secret_key)'
 check "operator guard=true with a valid key renders" op --set operator.clusterSecrets.secretEncryptionRequired=true --set "operator.clusterSecrets.instanceSecretKey=$KEY"
+
+# 9a. AB#6901: operator.forceClassicWatch -> OPERATOR__FORCECLASSICWATCH (operator AB#6898). Off by default.
+check "forceClassicWatch default: no env rendered" bash -c "! helm template o '$TMP/octo-mesh-communication-operator' --set operator.authUri=https://connect.example.test | grep -q 'FORCECLASSICWATCH'"
+check "forceClassicWatch=false: no env rendered"   bash -c "! helm template o '$TMP/octo-mesh-communication-operator' --set operator.authUri=https://connect.example.test --set operator.forceClassicWatch=false | grep -q 'FORCECLASSICWATCH'"
+OUT="$(op --set operator.forceClassicWatch=true)"
+check "forceClassicWatch=true renders OPERATOR__FORCECLASSICWATCH=true once" test "$(grep -A1 'name: OPERATOR__FORCECLASSICWATCH$' <<<"$OUT" | grep -c 'value: "true"')" = 1
+check "forceClassicWatch=true renders the env exactly once" test "$(grep -c 'FORCECLASSICWATCH' <<<"$OUT")" = 1
+check "forceClassicWatch string \"false\" stays off (not truthy)" bash -c "! helm template o '$TMP/octo-mesh-communication-operator' --set operator.authUri=https://connect.example.test --set-string operator.forceClassicWatch=false | grep -q 'FORCECLASSICWATCH'"
+renders_fail "forceClassicWatch garbage value fails" "must be true or false" op --set operator.forceClassicWatch=yes
 
 # 10. AB#5868: /metrics must not be reachable through the public ingress.
 #     Layer 1 (services): /metrics only on a dedicated listener that no Service port and no Ingress backend names.
