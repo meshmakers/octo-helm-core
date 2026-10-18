@@ -101,6 +101,15 @@ operator:
   # https://octo-mesh-communication-controller-services
   communicationControllerUri: ""
 
+  # Starts the operator's CR watchers in classic mode (resourceVersion=0) from the
+  # first request, rendered as OPERATOR__FORCECLASSICWATCH (AB#6898, AB#6901).
+  # Default false: the operator asks the API server for a consistent watch start and
+  # falls back to classic list+watch on its own when the API server refuses it (seen
+  # on prod-1), so this is only an incident lever for a cluster known to refuse. When
+  # true the operator logs a WARN at startup. Must be true or false (a string "false" stays off); any other
+  # value fails the render. Only rendered when true; changing it restarts the pod.
+  forceClassicWatch: false
+
   # Controller URI projected into the Helm values of every deployed workload. Empty
   # (default) projects communicationControllerUri, which is correct wherever operator
   # and workloads resolve the same name the same way. Set it when the operator needs

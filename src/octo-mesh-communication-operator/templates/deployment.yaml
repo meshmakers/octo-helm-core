@@ -173,6 +173,20 @@ spec:
               name: {{ printf "%s-ca" (include "octoMeshCommunicationOperator.fullname" .) }}
               key: root-ca.pem
         {{- end }}
+        {{- /*
+          AB#6901: operator.forceClassicWatch -> OPERATOR__FORCECLASSICWATCH (AB#6898). Rendered
+          only when true, so the default pod spec is unchanged. The value is compared as text, so
+          a string "false" (--set-string) stays off instead of being truthy; anything but
+          true/false fails the render.
+        */}}
+        {{- $forceClassicWatch := toString .Values.operator.forceClassicWatch }}
+        {{- if not (has $forceClassicWatch (list "true" "false")) }}
+        {{- fail (printf "operator.forceClassicWatch must be true or false, got %q" $forceClassicWatch) }}
+        {{- end }}
+        {{- if eq $forceClassicWatch "true" }}
+        - name: OPERATOR__FORCECLASSICWATCH
+          value: "true"
+        {{- end }}
         {{- if .Values.operator.reportingServiceUri }}
         - name: OPERATOR__REPORTINGSERVICEURI
           value: {{ .Values.operator.reportingServiceUri | quote }}
