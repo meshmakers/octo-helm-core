@@ -255,6 +255,10 @@ Renders nothing with the defaults.
 - name: OCTO_ARTIFACTSTORAGE__S3__SERVICEURL
   value: {{ . | quote }}
 {{- end }}
+{{- with $s3.crateDbServiceUrl }}
+- name: OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL
+  value: {{ . | quote }}
+{{- end }}
 {{- with $s3.region }}
 - name: OCTO_ARTIFACTSTORAGE__S3__REGION
   value: {{ . | quote }}

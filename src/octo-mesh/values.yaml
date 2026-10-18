@@ -545,6 +545,9 @@ services:
       s3:
         # endpoint for S3-compatible stores (Hetzner Object Storage, Exoscale SOS); empty = AWS
         serviceUrl: ""
+        # endpoint under which the CrateDB nodes reach the same store (COPY TO / COPY FROM of the archive
+        # dump), when it differs from serviceUrl; empty = CrateDB uses serviceUrl. Not rendered when empty.
+        crateDbServiceUrl: ""
         region: ""
         bucket: ""
         forcePathStyle: false
