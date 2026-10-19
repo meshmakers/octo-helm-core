@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
-# /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901).
+# /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
+# removed files migration settings (AB#7033).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -204,5 +205,10 @@ check "CRATEDBSERVICEURL carries the value"                   test "$(grep -A1 '
 check "the bot's own SERVICEURL is unchanged"                 grep -q 'value: "http://store.example.test:8333"' <<<"$OUT"
 OUT="$(render --set services.bot.artifactStorage.provider=FileSystem --set services.bot.artifactStorage.fileSystem.rootPath=/data/a --set services.bot.artifactStorage.s3.crateDbServiceUrl=http://store.crate.test:8333)"
 check "FileSystem provider ignores crateDbServiceUrl"          bash -c '! grep -q "OCTO_ARTIFACTSTORAGE__S3__CRATEDBSERVICEURL" <<<"$0"' "$OUT"
+
+# 14. Removed files migration (AB#7033): a cluster value left over from the rollout renders nothing
+OUT="$(render --set services.assetRepository.filesMigration.sweepEnabled=true --set 'services.assetRepository.filesMigration.sweepTenants[0]=t1')"
+check "asset repository deployment was found (test is not vacuous)" grep -q 'asset-rep-services' <<<"$OUT"
+check "leftover filesMigration value renders no OCTO_FilesMigration variable" bash -c '! grep -qi "OCTO_FilesMigration" <<<"$0"' "$OUT"
 
 exit $fail

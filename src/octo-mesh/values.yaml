@@ -364,18 +364,6 @@ services:
       zipMaxBytes: 524288000
       # Maximum file size for which a preview is generated. 20 MB.
       previewMaxBytes: 20971520
-    # AB#6175/AB#6171 move of System.Reporting file data to System.Files
-    # (configuration section "FilesMigration"). Off by default: switch it on per
-    # cluster in the rollout (AB#6183) once Reporting and the apps read System.Files,
-    # and only for the tenants listed in sweepTenants.
-    filesMigration:
-      sweepEnabled: false
-      # AB#6473: second level of the control. The sweep runs only for the tenants named here (tenant ids, exact,
-      # case-insensitive), and only while sweepEnabled is true; an empty list sweeps nothing. The trigger is the
-      # tenant start (a ClearCache starts the tenant, ReRunTenantSetup does not). Each entry renders
-      # OCTO_FilesMigration__SweepTenants__<n>. The state per tenant is returned by
-      # GET system/v1/files/migration-status/{tenantId} (field "sweep").
-      sweepTenants: []
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name
