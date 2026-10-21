@@ -20,8 +20,20 @@
   $uri is the decoded, normalized path, so /Metrics, //metrics and /%6Detrics are covered too.
 */}}
 {{- $metricsGuard := `if ($uri ~* "^/+metrics(/.*)?$") { return 404; }` }}
+{{- /*
+  AB#7265: exact-match CORS allowlist for ingress-generated responses. Never reflects $http_origin and
+  never emits Access-Control-Allow-Credentials. Each origin is validated (no quotes, wildcards, paths) so a
+  value cannot inject nginx config. more_set_headers replaces an ACAO already set by the application.
+*/}}
+{{- $corsBlock := "" }}
+{{- range ((.Values.ingress.cors | default dict).allowedOrigins | default list) }}
+{{- if not (regexMatch "^https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?(:[0-9]{1,5})?$" (toString .)) }}
+{{- fail (printf "ingress.cors.allowedOrigins entry %q must be an exact origin (scheme://host[:port], no path, no wildcard)" (toString .)) }}
+{{- end }}
+{{- $corsBlock = printf "%s\nif ($http_origin = \"%s\") {\n  more_set_headers \"Access-Control-Allow-Origin: %s\" always;\n  add_header Vary Origin always;\n}" $corsBlock . . }}
+{{- end }}
 {{- $snippet := index $annotations "nginx.ingress.kubernetes.io/configuration-snippet" | default "" | trimSuffix "\n" }}
-{{- $_ := set $annotations "nginx.ingress.kubernetes.io/configuration-snippet" (printf "%s\n# AB#5868: never serve /metrics through the ingress\n%s\n" $snippet $metricsGuard) }}
+{{- $_ := set $annotations "nginx.ingress.kubernetes.io/configuration-snippet" (printf "%s%s\n# AB#5868: never serve /metrics through the ingress\n%s\n" $snippet $corsBlock $metricsGuard) }}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1
 {{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}

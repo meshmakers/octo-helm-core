@@ -138,7 +138,10 @@ ing()  { awk 'BEGIN{RS="\n---\n"} /\nkind: Ingress\n/' <<<"$OUT"; }
 svc()  { awk 'BEGIN{RS="\n---\n"} /\nkind: Service\n/' <<<"$OUT"; }
 OUT="$(render)"
 check "ingress answers 404 for /metrics"        grep -qF 'if ($uri ~* "^/+metrics(/.*)?$") { return 404; }' <<<"$(ing)"
-check "ingress keeps the CORS snippet"          grep -q 'Access-Control-Allow-Origin' <<<"$(ing)"
+# AB#7265: the ingress must never reflect the Origin nor allow credentials
+check "default ingress: no \$http_origin reflection"      bash -c '! grep -q "Access-Control-Allow-Origin: .*http_origin" <<<"$0"' "$(ing)"
+check "default ingress: no Access-Control-Allow-Credentials" bash -c '! grep -qi "Access-Control-Allow-Credentials" <<<"$0"' "$(ing)"
+check "default ingress: no Access-Control-Allow-Origin at all" bash -c '! grep -q "Access-Control-Allow-Origin" <<<"$0"' "$(ing)"
 check "no ingress rule names a /metrics path"   bash -c '! grep -qi "path: /*metrics" <<<"$0"' "$(ing)"
 check "every ingress backend uses the service port (80)" test "$(grep -c 'number: 80$' <<<"$(ing)")" = "$(grep -c 'number: ' <<<"$(ing)")"
 check "default: no Prometheus env or listener"  bash -c '! grep -qE "Observability__PrometheusPort|http://\+:80;|name: metrics$" <<<"$0"' "$OUT"
@@ -151,6 +154,19 @@ check "overridden snippet still gets the guard" grep -qF 'return 404; }' <<<"$(i
 # ... and an overlay that sets no snippet at all (annotations without it) gets the guard as well
 OUT="$(render --set ingress.annotations=null)"
 check "no snippet in values: guard still rendered" grep -qF 'return 404; }' <<<"$(ing)"
+
+# 10c. AB#7265: optional exact-match origin allowlist; never reflection, never credentials
+OUT="$(render --set 'ingress.cors.allowedOrigins={https://studio.example.test,https://admin.example.test:8443}')"
+check "allowlist: exact-match if for studio"    grep -qF 'if ($http_origin = "https://studio.example.test") {' <<<"$(ing)"
+check "allowlist: ACAO is the literal origin"   grep -qF 'more_set_headers "Access-Control-Allow-Origin: https://studio.example.test" always;' <<<"$(ing)"
+check "allowlist: second origin with port"      grep -qF 'more_set_headers "Access-Control-Allow-Origin: https://admin.example.test:8443" always;' <<<"$(ing)"
+check "allowlist: Vary: Origin added"           test "$(grep -c 'add_header Vary Origin always;' <<<"$(ing)")" = 2
+check "allowlist: still no reflection"          bash -c '! grep -q "Access-Control-Allow-Origin: .*http_origin" <<<"$0"' "$(ing)"
+check "allowlist: still no credentials"         bash -c '! grep -qi "Access-Control-Allow-Credentials" <<<"$0"' "$(ing)"
+check "allowlist: metrics guard kept"           grep -qF 'return 404; }' <<<"$(ing)"
+for bad in '*' 'https://*.example.test' 'https://a.example.test/path' 'http://x";}' 'studio.example.test'; do
+  renders_fail "allowlist rejects '$bad'" "must be an exact origin" render --set-string "ingress.cors.allowedOrigins[0]=$bad"
+done
 
 # 10b. Opt-in internal listener: container port + env only, never a Service port or an ingress backend
 OUT="$(render --set observability.prometheusPort=9464)"
