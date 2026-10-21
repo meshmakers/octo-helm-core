@@ -160,7 +160,8 @@ OUT="$(render --set 'ingress.cors.allowedOrigins={https://studio.example.test,ht
 check "allowlist: exact-match if for studio"    grep -qF 'if ($http_origin = "https://studio.example.test") {' <<<"$(ing)"
 check "allowlist: ACAO is the literal origin"   grep -qF 'more_set_headers "Access-Control-Allow-Origin: https://studio.example.test" always;' <<<"$(ing)"
 check "allowlist: second origin with port"      grep -qF 'more_set_headers "Access-Control-Allow-Origin: https://admin.example.test:8443" always;' <<<"$(ing)"
-check "allowlist: Vary: Origin added"           test "$(grep -c 'add_header Vary Origin always;' <<<"$(ing)")" = 2
+check "allowlist: Vary: Origin set via more_set_headers" test "$(grep -c 'more_set_headers "Vary: Origin" always;' <<<"$(ing)")" = 2
+check "allowlist: no add_header (keeps inherited headers)" bash -c '! grep -q "add_header" <<<"$0"' "$(ing)"
 check "allowlist: still no reflection"          bash -c '! grep -q "Access-Control-Allow-Origin: .*http_origin" <<<"$0"' "$(ing)"
 check "allowlist: still no credentials"         bash -c '! grep -qi "Access-Control-Allow-Credentials" <<<"$0"' "$(ing)"
 check "allowlist: metrics guard kept"           grep -qF 'return 404; }' <<<"$(ing)"

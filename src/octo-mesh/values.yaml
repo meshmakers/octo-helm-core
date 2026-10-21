@@ -183,7 +183,7 @@ ingress:
   # wildcards, no domain patterns) for which nginx adds
   # "Access-Control-Allow-Origin: <that origin>" (without credentials) plus "Vary: Origin" to
   # EVERY response, including nginx's own 502/503 pages during a rollout, so the SPA sees the real
-  # status instead of a CORS error. The header replaces (never duplicates) the application's one.
+  # status instead of a CORS error. Both headers replace (never duplicate) the application's ones.
   # Only list origins of platform SPAs you control (e.g. https://studio.<cluster-domain>);
   # never an origin that tenant-controlled code can run on. Empty (default) = ingress emits no
   # CORS headers; browsers then report a CORS error for ingress-generated 502/503.
