@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added (AB#8093)
+- **octo-mesh: identity values `services.identity.secretManagementRoleEnforcement` (`Warn` | `Enforce`, AB#5861)
+  and `services.identity.dataProtection.encryptExistingKeys` (`true` | `false`, AB#5530).** They render
+  `OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT` and
+  `OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS` on the identity deployment only when set; unset keeps the
+  service defaults (`Warn`, `false`). Invalid values fail the render. Clusters switch them in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml`.
+
 ### Security (AB#7265)
 - **octo-mesh: the ingress no longer reflects the request `Origin` and no longer sets
   `Access-Control-Allow-Credentials: true`.** The former default `configuration-snippet` (commit df97f23, "Emit CORS headers on ingress error responses") set `Access-Control-Allow-Origin: $http_origin` + `Access-Control-Allow-Credentials: true` on every

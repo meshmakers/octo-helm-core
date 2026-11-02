@@ -121,6 +121,19 @@ The identity service requires tenant roles on its tenant REST API: `UserManageme
 
 `Enforce` rejects callers without the required role (403). `Warn` is the emergency exit / transition switch: such callers are let through and the service logs `would be denied with RoleEnforcement=Enforce (AB#5859)`. Use it only until the missing role assignments are fixed, then switch back to `Enforce`. Any other value fails the render.
 
+### Identity secret management and Data Protection key encryption (AB#5861, AB#5530)
+
+Both values are rendered on the identity deployment **only when set**; unset keeps the service default, so no installation changes without a value.
+
+| Value | Default (unset) | Environment variable |
+|---|---|---|
+| `services.identity.secretManagementRoleEnforcement` = `Warn` \| `Enforce` | not rendered (service default `Warn`) | `OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT` |
+| `services.identity.dataProtection.encryptExistingKeys` = `true` \| `false` | not rendered (service default `false`) | `OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS` |
+
+`secretManagementRoleEnforcement`: `Warn` still lets `TenantManagement`/`UserManagement` callers write API secrets and logs `would be denied with SecretManagementRoleEnforcement=Enforce (AB#5861)`; `Enforce` accepts only the `SecretManagement` role. `apiRoleEnforcement: Warn` also relaxes it. Any other value fails the render. Switch per cluster after the precheck in `octo-identity-services/docs/rollout-identity-rest-role-enforcement.md`.
+
+`dataProtection.encryptExistingKeys`: `true` encrypts new Data Protection keys with the platform key ring and rewrites every stored plain key encrypted at startup; identity refuses to start without a `SecretEncryption` key. Switch on per cluster only after every identity pod runs an image with the decryptor (`octo-identity-services/docs/rollout-identity-dataprotection-encryption.md`). Setting it back to `false` does not decrypt stored keys. A non-boolean value fails the render.
+
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 
 The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` with a staged check. The chart renders the mode of each hub explicitly on the controller deployment:

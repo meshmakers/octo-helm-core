@@ -184,6 +184,26 @@ _helpers.tpl for how the ring is derived from the instance secret.
 {{- end }}
 - name: OCTO_IDENTITYAPIAUTHORIZATION__ROLEENFORCEMENT
   value: {{ $roleEnforcement | quote }}
+{{- /* AB#5861 staged SecretManagement role on the API secret writes. Rendered only when set:
+unset keeps the service default (Warn). Any other value fails the render. */}}
+{{- $secretMgmt := .global.Values.services.identity.secretManagementRoleEnforcement }}
+{{- if not (or (kindIs "invalid" $secretMgmt) (and (kindIs "string" $secretMgmt) (eq $secretMgmt ""))) }}
+{{- if not (and (kindIs "string" $secretMgmt) (has $secretMgmt (list "Warn" "Enforce"))) }}
+{{- fail (printf "services.identity.secretManagementRoleEnforcement must be Warn or Enforce, got '%v'" $secretMgmt) }}
+{{- end }}
+- name: OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT
+  value: {{ $secretMgmt | quote }}
+{{- end }}
+{{- /* AB#5530 encryption at rest of the Data Protection key ring. Rendered only when set (true or
+false): unset keeps the service default (false). A non-boolean value fails the render. */}}
+{{- $dataProtection := .global.Values.services.identity.dataProtection | default dict }}
+{{- if and (hasKey $dataProtection "encryptExistingKeys") (not (kindIs "invalid" $dataProtection.encryptExistingKeys)) }}
+{{- if not (kindIs "bool" $dataProtection.encryptExistingKeys) }}
+{{- fail (printf "services.identity.dataProtection.encryptExistingKeys must be true or false, got '%v'" $dataProtection.encryptExistingKeys) }}
+{{- end }}
+- name: OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS
+  value: {{ $dataProtection.encryptExistingKeys | quote }}
+{{- end }}
 {{- if .global.Values.services.studio.publicUri }}
 - name: OCTO_IDENTITY__RefineryStudioUrl
   value: {{ .global.Values.services.studio.publicUri }}
