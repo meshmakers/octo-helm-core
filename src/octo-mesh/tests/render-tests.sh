@@ -2,7 +2,7 @@
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
-# removed files migration settings (AB#7033).
+# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -227,5 +227,27 @@ check "FileSystem provider ignores crateDbServiceUrl"          bash -c '! grep -
 OUT="$(render --set services.assetRepository.filesMigration.sweepEnabled=true --set 'services.assetRepository.filesMigration.sweepTenants[0]=t1')"
 check "asset repository deployment was found (test is not vacuous)" grep -q 'asset-rep-services' <<<"$OUT"
 check "leftover filesMigration value renders no OCTO_FilesMigration variable" bash -c '! grep -qi "OCTO_FilesMigration" <<<"$0"' "$OUT"
+
+# 15. AB#8093: identity SecretManagement enforcement (AB#5861) and Data Protection key encryption (AB#5530),
+#     rendered on the identity deployment only when set
+SM=OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT
+DPK=OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS
+idval() { grep -A1 "name: $1" <<<"$(dep identity)" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
+OUT="$(render)"
+check "identity deployment was found (AB#8093 test is not vacuous)" test -n "$(dep identity)"
+check "unset secretManagementRoleEnforcement renders no variable" bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$SM"
+check "unset encryptExistingKeys renders no variable"             bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$DPK"
+OUT="$(render --set services.identity.secretManagementRoleEnforcement=Enforce)"
+check "secretManagementRoleEnforcement=Enforce renders Enforce on identity" test "$(idval $SM)" = 'value: "Enforce" '
+check "secretManagementRoleEnforcement renders exactly once"      test "$(grep -c "name: $SM" <<<"$OUT")" = 1
+OUT="$(render --set services.identity.secretManagementRoleEnforcement=Warn)"
+check "secretManagementRoleEnforcement=Warn renders Warn"         test "$(idval $SM)" = 'value: "Warn" '
+OUT="$(render --set services.identity.dataProtection.encryptExistingKeys=true)"
+check "encryptExistingKeys=true renders true on identity"         test "$(idval $DPK)" = 'value: "true" '
+check "encryptExistingKeys renders exactly once"                  test "$(grep -c "name: $DPK" <<<"$OUT")" = 1
+OUT="$(render --set services.identity.dataProtection.encryptExistingKeys=false)"
+check "encryptExistingKeys=false renders false (explicit value)"  test "$(idval $DPK)" = 'value: "false" '
+renders_fail "invalid secretManagementRoleEnforcement fails the render" "services.identity.secretManagementRoleEnforcement must be Warn or Enforce" render --set services.identity.secretManagementRoleEnforcement=enforce
+renders_fail "non-boolean encryptExistingKeys fails the render"  "services.identity.dataProtection.encryptExistingKeys must be true or false" render --set-string services.identity.dataProtection.encryptExistingKeys=yes
 
 exit $fail

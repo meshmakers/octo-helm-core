@@ -214,6 +214,29 @@ services:
     #             missing role assignments are fixed.
     # Any other value fails the render.
     apiRoleEnforcement: Enforce
+    # AB#5861 SecretManagement role on the API secret writes
+    # (OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT).
+    #   "" (unset) - no env var rendered; the service default applies (Warn).
+    #   Warn       - TenantManagement/UserManagement callers are still let through and the
+    #                service logs "would be denied with SecretManagementRoleEnforcement=Enforce
+    #                (AB#5861)".
+    #   Enforce    - only callers with the SecretManagement role may write API secrets.
+    # Switch per cluster after the precheck in octo-identity-services
+    # docs/rollout-identity-rest-role-enforcement.md. apiRoleEnforcement=Warn also relaxes it.
+    # Any other value fails the render.
+    secretManagementRoleEnforcement: ""
+    dataProtection:
+      # AB#5530 encryption at rest of the Data Protection key ring with the platform key ring
+      # (OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS).
+      #   null (unset) - no env var rendered; the service default applies (false).
+      #   false        - stored keys are read as they are; new keys stay unencrypted while the
+      #                  store holds keys.
+      #   true         - new keys are encrypted and every stored plain key is rewritten encrypted
+      #                  at startup; identity refuses to start without a SecretEncryption key.
+      # Switch on per cluster only after every identity pod runs an image with the decryptor -
+      # see octo-identity-services docs/rollout-identity-dataprotection-encryption.md. Setting it
+      # back to false does not decrypt stored keys. A non-boolean value fails the render.
+      encryptExistingKeys: null
 
     signingKey:
       # certificate with private and public key in pfx format, by command arg
