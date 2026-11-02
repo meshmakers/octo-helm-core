@@ -134,6 +134,14 @@ Both values are rendered on the identity deployment **only when set**; unset kee
 
 `dataProtection.encryptExistingKeys`: `true` encrypts new Data Protection keys with the platform key ring and rewrites every stored plain key encrypted at startup; identity refuses to start without a `SecretEncryption` key. Switch on per cluster only after every identity pod runs an image with the decryptor (`octo-identity-services/docs/rollout-identity-dataprotection-encryption.md`). Setting it back to `false` does not decrypt stored keys. A non-boolean value fails the render.
 
+### Identity admin role migration (AB#8165)
+
+| Value | Default (unset) | Environment variable |
+|---|---|---|
+| `services.identity.adminRoleMigration` = `Off` \| `DryRun` \| `Apply` | not rendered (service default `Off`) | `OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION` |
+
+Moves existing tenant admins from directly assigned roles to `TenantOwners` membership. `DryRun` only logs, per tenant, the subject ids that would join the group and the direct roles that would be removed. `Apply` makes users, `xt_` users and external tenant user mappings that hold `TenantManagement` and `UserManagement` directly members of `TenantOwners` and removes a direct role only when `TenantOwners` carries it; clients and groups are not migrated, a second run changes nothing. It changes role data: set it per cluster, `DryRun` first, `Apply` only with the go of the cluster owner. Any other value fails the render.
+
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 
 The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` with a staged check. The chart renders the mode of each hub explicitly on the controller deployment:

@@ -225,6 +225,18 @@ services:
     # docs/rollout-identity-rest-role-enforcement.md. apiRoleEnforcement=Warn also relaxes it.
     # Any other value fails the render.
     secretManagementRoleEnforcement: ""
+    # AB#8165 migration of existing tenant admins from directly assigned roles to TenantOwners membership
+    # (OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION). Runs at identity start, once per tenant setup.
+    #   "" (unset) - no env var rendered; the service default applies (Off).
+    #   Off        - nothing changes.
+    #   DryRun     - logs per tenant which subject ids would join TenantOwners and which direct roles would
+    #                be removed; writes nothing.
+    #   Apply      - users, xt_ users and mappings holding TenantManagement and UserManagement directly join
+    #                TenantOwners; a direct role is removed only when TenantOwners carries it. Clients and
+    #                groups are not migrated. Idempotent.
+    # Changes role data: per cluster, DryRun first, Apply only with the go of the cluster owner. See
+    # octo-identity-services docs/rollout-identity-rest-role-enforcement.md. Any other value fails the render.
+    adminRoleMigration: ""
     dataProtection:
       # AB#5530 encryption at rest of the Data Protection key ring with the platform key ring
       # (OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS).
