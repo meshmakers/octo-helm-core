@@ -186,12 +186,13 @@ _helpers.tpl for how the ring is derived from the instance secret.
   value: {{ $roleEnforcement | quote }}
 {{- /* AB#5861 staged SecretManagement role on the API secret writes. Rendered only when set:
 unset keeps the service default (Warn). Any other value fails the render. */}}
-{{- with .global.Values.services.identity.secretManagementRoleEnforcement }}
-{{- if not (has . (list "Warn" "Enforce")) }}
-{{- fail (printf "services.identity.secretManagementRoleEnforcement must be Warn or Enforce, got '%v'" .) }}
+{{- $secretMgmt := .global.Values.services.identity.secretManagementRoleEnforcement }}
+{{- if not (or (kindIs "invalid" $secretMgmt) (and (kindIs "string" $secretMgmt) (eq $secretMgmt ""))) }}
+{{- if not (and (kindIs "string" $secretMgmt) (has $secretMgmt (list "Warn" "Enforce"))) }}
+{{- fail (printf "services.identity.secretManagementRoleEnforcement must be Warn or Enforce, got '%v'" $secretMgmt) }}
 {{- end }}
 - name: OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT
-  value: {{ . | quote }}
+  value: {{ $secretMgmt | quote }}
 {{- end }}
 {{- /* AB#5530 encryption at rest of the Data Protection key ring. Rendered only when set (true or
 false): unset keeps the service default (false). A non-boolean value fails the render. */}}

@@ -248,6 +248,10 @@ check "encryptExistingKeys renders exactly once"                  test "$(grep -
 OUT="$(render --set services.identity.dataProtection.encryptExistingKeys=false)"
 check "encryptExistingKeys=false renders false (explicit value)"  test "$(idval $DPK)" = 'value: "false" '
 renders_fail "invalid secretManagementRoleEnforcement fails the render" "services.identity.secretManagementRoleEnforcement must be Warn or Enforce" render --set services.identity.secretManagementRoleEnforcement=enforce
+renders_fail "secretManagementRoleEnforcement=false fails the render" "services.identity.secretManagementRoleEnforcement must be Warn or Enforce" render --set services.identity.secretManagementRoleEnforcement=false
+renders_fail "secretManagementRoleEnforcement=0 fails the render"     "services.identity.secretManagementRoleEnforcement must be Warn or Enforce" render --set services.identity.secretManagementRoleEnforcement=0
+OUT="$(render --set-string services.identity.secretManagementRoleEnforcement=)"
+check "explicit empty secretManagementRoleEnforcement renders no variable" bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$SM"
 renders_fail "non-boolean encryptExistingKeys fails the render"  "services.identity.dataProtection.encryptExistingKeys must be true or false" render --set-string services.identity.dataProtection.encryptExistingKeys=yes
 
 exit $fail
