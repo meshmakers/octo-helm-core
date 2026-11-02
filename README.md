@@ -140,7 +140,7 @@ Both values are rendered on the identity deployment **only when set**; unset kee
 |---|---|---|
 | `services.identity.adminRoleMigration` = `Off` \| `DryRun` \| `Apply` | not rendered (service default `Off`) | `OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION` |
 
-Moves existing tenant admins from directly assigned roles to `TenantOwners` membership. `DryRun` only logs, per tenant, the subject ids that would join the group and the direct roles that would be removed. `Apply` makes users, `xt_` users and external tenant user mappings that hold `TenantManagement` and `UserManagement` directly members of `TenantOwners` and removes a direct role only when `TenantOwners` carries it; clients and groups are not migrated, a second run changes nothing. It changes role data: set it per cluster, `DryRun` first, `Apply` only with the go of the cluster owner. Any other value fails the render.
+Moves existing tenant admins from directly assigned roles to `TenantOwners` membership. `DryRun` only logs, per tenant, the subject ids that would join the group and the direct roles that would be removed. `Apply` makes users, `xt_` users and external tenant user mappings that hold `TenantManagement` and `UserManagement` directly members of `TenantOwners` and removes a direct role only when `TenantOwners` carries it; clients and groups are not migrated, a second run changes nothing. It changes role data: set it per cluster, `DryRun` first, `Apply` only with the go of the cluster owner. Any other value fails the render. In a values file write `adminRoleMigration: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails the render.
 
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 

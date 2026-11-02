@@ -236,6 +236,7 @@ services:
     #                groups are not migrated. Idempotent.
     # Changes role data: per cluster, DryRun first, Apply only with the go of the cluster owner. See
     # octo-identity-services docs/rollout-identity-rest-role-enforcement.md. Any other value fails the render.
+    # Quote it in a values file: an unquoted Off is a YAML boolean (false) and fails the render.
     adminRoleMigration: ""
     dataProtection:
       # AB#5530 encryption at rest of the Data Protection key ring with the platform key ring

@@ -267,5 +267,13 @@ renders_fail "invalid adminRoleMigration fails the render"  "services.identity.a
 renders_fail "adminRoleMigration=false fails the render"    "services.identity.adminRoleMigration must be Off, DryRun or Apply" render --set services.identity.adminRoleMigration=false
 OUT="$(render --set-string services.identity.adminRoleMigration=)"
 check "explicit empty adminRoleMigration renders no variable"     bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$AM"
+# YAML 1.1 reads an unquoted Off as boolean false: a values file must quote it
+AMFILE="$(mktemp)"
+printf 'services:\n  identity:\n    adminRoleMigration: "Off"\n' > "$AMFILE"
+OUT="$(render -f "$AMFILE")"
+check "values file with adminRoleMigration: \"Off\" renders Off"  test "$(idval $AM)" = 'value: "Off" '
+printf 'services:\n  identity:\n    adminRoleMigration: Off\n' > "$AMFILE"
+renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.identity.adminRoleMigration must be Off, DryRun or Apply" render -f "$AMFILE"
+rm -f "$AMFILE"
 
 exit $fail
