@@ -2,7 +2,7 @@
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
-# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093).
+# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -253,5 +253,27 @@ renders_fail "secretManagementRoleEnforcement=0 fails the render"     "services.
 OUT="$(render --set-string services.identity.secretManagementRoleEnforcement=)"
 check "explicit empty secretManagementRoleEnforcement renders no variable" bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$SM"
 renders_fail "non-boolean encryptExistingKeys fails the render"  "services.identity.dataProtection.encryptExistingKeys must be true or false" render --set-string services.identity.dataProtection.encryptExistingKeys=yes
+
+# 16. AB#8165: identity admin role migration mode, rendered on the identity deployment only when set
+AM=OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION
+OUT="$(render)"
+check "unset adminRoleMigration renders no variable"              bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$AM"
+for MODE in Off DryRun Apply; do
+  OUT="$(render --set services.identity.adminRoleMigration=$MODE)"
+  check "adminRoleMigration=$MODE renders $MODE on identity"      test "$(idval $AM)" = "value: \"$MODE\" "
+  check "adminRoleMigration=$MODE renders exactly once"           test "$(grep -c "name: $AM" <<<"$OUT")" = 1
+done
+renders_fail "invalid adminRoleMigration fails the render"  "services.identity.adminRoleMigration must be Off, DryRun or Apply" render --set services.identity.adminRoleMigration=apply
+renders_fail "adminRoleMigration=false fails the render"    "services.identity.adminRoleMigration must be Off, DryRun or Apply" render --set services.identity.adminRoleMigration=false
+OUT="$(render --set-string services.identity.adminRoleMigration=)"
+check "explicit empty adminRoleMigration renders no variable"     bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$AM"
+# YAML 1.1 reads an unquoted Off as boolean false: a values file must quote it
+AMFILE="$(mktemp)"
+printf 'services:\n  identity:\n    adminRoleMigration: "Off"\n' > "$AMFILE"
+OUT="$(render -f "$AMFILE")"
+check "values file with adminRoleMigration: \"Off\" renders Off"  test "$(idval $AM)" = 'value: "Off" '
+printf 'services:\n  identity:\n    adminRoleMigration: Off\n' > "$AMFILE"
+renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.identity.adminRoleMigration must be Off, DryRun or Apply" render -f "$AMFILE"
+rm -f "$AMFILE"
 
 exit $fail

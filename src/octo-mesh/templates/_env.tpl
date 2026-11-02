@@ -194,6 +194,16 @@ unset keeps the service default (Warn). Any other value fails the render. */}}
 - name: OCTO_IDENTITYAPIAUTHORIZATION__SECRETMANAGEMENTROLEENFORCEMENT
   value: {{ $secretMgmt | quote }}
 {{- end }}
+{{- /* AB#8165 migration of existing tenant admins from direct roles to TenantOwners membership.
+Rendered only when set: unset keeps the service default (Off). Any other value fails the render. */}}
+{{- $adminMigration := .global.Values.services.identity.adminRoleMigration }}
+{{- if not (or (kindIs "invalid" $adminMigration) (and (kindIs "string" $adminMigration) (eq $adminMigration ""))) }}
+{{- if not (and (kindIs "string" $adminMigration) (has $adminMigration (list "Off" "DryRun" "Apply"))) }}
+{{- fail (printf "services.identity.adminRoleMigration must be Off, DryRun or Apply, got '%v'" $adminMigration) }}
+{{- end }}
+- name: OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION
+  value: {{ $adminMigration | quote }}
+{{- end }}
 {{- /* AB#5530 encryption at rest of the Data Protection key ring. Rendered only when set (true or
 false): unset keeps the service default (false). A non-boolean value fails the render. */}}
 {{- $dataProtection := .global.Values.services.identity.dataProtection | default dict }}

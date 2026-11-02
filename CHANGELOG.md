@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added (AB#8165)
+- **octo-mesh: identity value `services.identity.adminRoleMigration` (`Off` | `DryRun` | `Apply`).** Renders
+  `OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION` on the identity deployment only when set; unset keeps the
+  service default (`Off`). Invalid values fail the render. It moves existing tenant admins from directly assigned
+  roles to `TenantOwners` membership (see octo-identity-services); switch per cluster, `DryRun` first, in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml`.
+
 ### Added (AB#8093)
 - **octo-mesh: identity values `services.identity.secretManagementRoleEnforcement` (`Warn` | `Enforce`, AB#5861)
   and `services.identity.dataProtection.encryptExistingKeys` (`true` | `false`, AB#5530).** They render
