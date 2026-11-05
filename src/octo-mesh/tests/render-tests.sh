@@ -288,6 +288,8 @@ renders_fail "secret without id fails the render"  "methodsFingerprintCurrentSec
 renders_fail "malformed id fails the render"       "must be 1-64 characters of A-Za-z0-9._-" render --set "$FPID=bad id!" --set "$FPS=$FPKEY"
 renders_fail "unresolved Vault macro fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS"='$(VAULT_methods_fingerprint_current_secret)'
 renders_fail "secret shorter than 32 bytes fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=$(printf 'short' | base64)"
+renders_fail "malformed base64 'a' fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=a"
+renders_fail "non-canonical base64 (long, bad padding) fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=$(printf 'A%.0s' {1..45})"
 OUT="$(render --set "$FPID=t2-2026-11" --set "$FPS=$FPKEY")"
 check "id and secret render the id variable once (asset repository only)" test "$(grep -c 'name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID' <<<"$OUT")" = 1
 check "id variable carries the key id"           bash -c 'grep -A1 "name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID" <<<"$0" | grep -q "value: \"t2-2026-11\""' "$OUT"

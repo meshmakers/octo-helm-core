@@ -350,7 +350,7 @@ Secret: secrets.methodsFingerprintCurrentSecret (base64 of >= 32 bytes, matches 
 {{- if not (regexMatch "^[A-Za-z0-9._-]{1,64}$" $id) -}}
 {{- fail "services.assetRepository.methods.idempotency.fingerprint.currentId must be 1-64 characters of A-Za-z0-9._-" -}}
 {{- end -}}
-{{- if not (and (regexMatch "^[A-Za-z0-9+/]+={0,2}$" $secret) (ge (len (b64dec $secret)) 32)) -}}
+{{- if not (and (regexMatch "^[A-Za-z0-9+/]+={0,2}$" $secret) (eq (b64enc (b64dec $secret)) $secret) (ge (len (b64dec $secret)) 32)) -}}
 {{- fail "secrets.methodsFingerprintCurrentSecret must be base64 of at least 32 random bytes (openssl rand -base64 32)" -}}
 {{- end -}}
 {{- $id -}}
