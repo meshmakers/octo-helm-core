@@ -2,7 +2,7 @@
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
-# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165).
+# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -275,5 +275,30 @@ check "values file with adminRoleMigration: \"Off\" renders Off"  test "$(idval 
 printf 'services:\n  identity:\n    adminRoleMigration: Off\n' > "$AMFILE"
 renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.identity.adminRoleMigration must be Off, DryRun or Apply" render -f "$AMFILE"
 rm -f "$AMFILE"
+
+# 13. AB#8280: CK method idempotency fingerprint key, asset repository only, id + secret together or not at all
+FPID=services.assetRepository.methods.idempotency.fingerprint.currentId
+FPS=secrets.methodsFingerprintCurrentSecret
+FPKEY="$(printf '0123456789abcdef0123456789abcdef' | base64)"   # 32 bytes, dummy
+OUT="$(render)"
+check "default renders no fingerprint variable"  bash -c '! grep -q "METHODS__IDEMPOTENCY" <<<"$0"' "$OUT"
+check "default renders no fingerprint secret key" bash -c '! grep -q "methodsFingerprintCurrentSecret" <<<"$0"' "$OUT"
+renders_fail "id without secret fails the render"  "currentId is set but secrets.methodsFingerprintCurrentSecret is empty" render --set "$FPID=t2-2026-11"
+renders_fail "secret without id fails the render"  "methodsFingerprintCurrentSecret is set but" render --set "$FPS=$FPKEY"
+renders_fail "malformed id fails the render"       "must be 1-64 characters of A-Za-z0-9._-" render --set "$FPID=bad id!" --set "$FPS=$FPKEY"
+renders_fail "unresolved Vault macro fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS"='$(VAULT_methods_fingerprint_current_secret)'
+renders_fail "secret shorter than 32 bytes fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=$(printf 'short' | base64)"
+renders_fail "malformed base64 'a' fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=a"
+renders_fail "non-canonical base64 (long, bad padding) fails the render" "must be base64 of at least 32 random bytes" render --set "$FPID=t2-2026-11" --set "$FPS=$(printf 'A%.0s' {1..45})"
+OUT="$(render --set "$FPID=t2-2026-11" --set "$FPS=$FPKEY")"
+check "id and secret render the id variable once (asset repository only)" test "$(grep -c 'name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID' <<<"$OUT")" = 1
+check "id variable carries the key id"           bash -c 'grep -A1 "name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID" <<<"$0" | grep -q "value: \"t2-2026-11\""' "$OUT"
+check "secret variable comes from secretKeyRef"  bash -c 'grep -A4 "name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__SECRET" <<<"$0" | grep -q "key: methodsFingerprintCurrentSecret"' "$OUT"
+check "backend Secret carries the secret key"    grep -q '^  methodsFingerprintCurrentSecret: ' <<<"$OUT"
+check "the secret value never appears in clear"  bash -c '! grep -qF "$1" <<<"$0"' "$OUT" "$FPKEY"
+FPDEP="$(awk 'BEGIN{RS="\n---\n"} /\nkind: Deployment\n/ && $0 ~ /name: [^\n]*asset-rep-services\n/' <<<"$OUT")"
+check "the variable is on the asset repository deployment" grep -q 'METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID' <<<"$FPDEP"
+OUT="$(render --set "$FPID=t2-2026-11" --set "$FPS=$FPKEY" --set services.assetRepository.replicaCount=2)"
+check "replicaCount 2 renders 2 replicas on the asset repository" bash -c 'awk "BEGIN{RS=\"\\n---\\n\"} /asset-rep-services/ && /kind: Deployment/" <<<"$0" | grep -q "replicas: 2"' "$OUT"
 
 exit $fail

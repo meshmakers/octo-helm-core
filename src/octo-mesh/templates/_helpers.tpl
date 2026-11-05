@@ -330,3 +330,29 @@ Renders nothing with the defaults.
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+CK method idempotency fingerprint key (AB#8280). Returns the key id ("" = not configured) and fails the
+render when only one half is set or a half is malformed. The messages name the value, never its content.
+Id: services.assetRepository.methods.idempotency.fingerprint.currentId (1-64 chars A-Za-z0-9._-).
+Secret: secrets.methodsFingerprintCurrentSecret (base64 of >= 32 bytes, matches the service's own check).
+*/}}
+{{- define "octo-mesh.methodsFingerprint" -}}
+{{- $id := dig "methods" "idempotency" "fingerprint" "currentId" "" .Values.services.assetRepository | default "" -}}
+{{- $secret := .Values.secrets.methodsFingerprintCurrentSecret | default "" -}}
+{{- if and $id (not $secret) -}}
+{{- fail "services.assetRepository.methods.idempotency.fingerprint.currentId is set but secrets.methodsFingerprintCurrentSecret is empty; set both or none" -}}
+{{- end -}}
+{{- if and $secret (not $id) -}}
+{{- fail "secrets.methodsFingerprintCurrentSecret is set but services.assetRepository.methods.idempotency.fingerprint.currentId is empty; set both or none" -}}
+{{- end -}}
+{{- if $id -}}
+{{- if not (regexMatch "^[A-Za-z0-9._-]{1,64}$" $id) -}}
+{{- fail "services.assetRepository.methods.idempotency.fingerprint.currentId must be 1-64 characters of A-Za-z0-9._-" -}}
+{{- end -}}
+{{- if not (and (regexMatch "^[A-Za-z0-9+/]+={0,2}$" $secret) (eq (b64enc (b64dec $secret)) $secret) (ge (len (b64dec $secret)) 32)) -}}
+{{- fail "secrets.methodsFingerprintCurrentSecret must be base64 of at least 32 random bytes (openssl rand -base64 32)" -}}
+{{- end -}}
+{{- $id -}}
+{{- end -}}
+{{- end -}}

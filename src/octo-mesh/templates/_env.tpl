@@ -231,6 +231,17 @@ false): unset keeps the service default (false). A non-boolean value fails the r
 {{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.assetRepository.userTokenEnforcement" "mode" .global.Values.services.assetRepository.userTokenEnforcement) }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
+{{- /* AB#8280 CK method idempotency fingerprint key. Id (plain) and secret (secretKeyRef) are rendered
+together or not at all; the pairing and format checks run in "octo-mesh.methodsFingerprint". */}}
+{{- if (include "octo-mesh.methodsFingerprint" .global) }}
+- name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID
+  value: {{ include "octo-mesh.methodsFingerprint" .global | quote }}
+- name: OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__SECRET
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s-backend" (include "octo-mesh.fullname" .global) }}
+      key: methodsFingerprintCurrentSecret
+{{- end }}
 {{- /*
 AB#5139 lane-scoped catalogs. The private CK catalog
 (PrivateOctoGitHub) and the private blueprint catalog

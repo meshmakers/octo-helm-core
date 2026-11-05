@@ -96,6 +96,14 @@ secrets:
   # only. Empty = the studio's DASH0_AUTH_TOKEN secret key is not emitted; pair
   # with services.studio.dash0.endpoint. Sourced from Vault at deploy time.
   dash0WebAuthToken: ""
+  # Secret half of the CK method idempotency fingerprint key (AB#8280, CkMethodFingerprintOptions
+  # Methods:Idempotency:Fingerprint:Current:Secret): base64 of at least 32 random bytes
+  # (`openssl rand -base64 32`). Only the asset repository reads it, as
+  # OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__SECRET via secretKeyRef; every replica must
+  # share the same value. Empty (default) = nothing is rendered. Must be set together with
+  # services.assetRepository.methods.idempotency.fingerprint.currentId, otherwise the render fails.
+  # Sourced from Vault at deploy time; never put the value into a values file.
+  methodsFingerprintCurrentSecret: ""
   # content of the root ca certificate chain
   rootCa: ""
 
@@ -405,6 +413,15 @@ services:
       zipMaxBytes: 524288000
       # Maximum file size for which a preview is generated. 20 MB.
       previewMaxBytes: 20971520
+    # CK method idempotency (AB#8280). Key id of the fingerprint key
+    # (Methods:Idempotency:Fingerprint:Current:Id, 1-64 chars of A-Za-z0-9._-). The id is public and stored
+    # with every fingerprint; the secret half is secrets.methodsFingerprintCurrentSecret. Empty (default) =
+    # no fingerprint key is rendered (keyed calls with sensitive parameters are refused by the service).
+    # Set both or none: one without the other fails the render.
+    methods:
+      idempotency:
+        fingerprint:
+          currentId: ""
     # when set, the service will be deployed with the given full name
     fullnameOverride: ""
     # the service will be deployed with the given name and chart name

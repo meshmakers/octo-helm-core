@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added (AB#8280)
+- **octo-mesh: CK method idempotency fingerprint key for the asset repository.** New values
+  `services.assetRepository.methods.idempotency.fingerprint.currentId` (public key id) and
+  `secrets.methodsFingerprintCurrentSecret` (base64 of at least 32 random bytes). The secret goes into the
+  `<fullname>-backend` Secret and reaches only the asset repository as
+  `OCTO_METHODS__IDEMPOTENCY__FINGERPRINT__CURRENT__ID` / `__SECRET` (`secretKeyRef`). Both unset (default) renders
+  exactly as before; one without the other, a malformed id or a short/unresolved secret fails the render. All replicas
+  share the key. Clusters set the id in `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml`; the secret comes from
+  Vault at deploy time.
+
 ### Added (AB#8165)
 - **octo-mesh: identity value `services.identity.adminRoleMigration` (`Off` | `DryRun` | `Apply`).** Renders
   `OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION` on the identity deployment only when set; unset keeps the
