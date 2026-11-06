@@ -204,6 +204,16 @@ Rendered only when set: unset keeps the service default (Off). Any other value f
 - name: OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION
   value: {{ $adminMigration | quote }}
 {{- end }}
+{{- /* AB#8339 cross-tenant ancestry from the tenant registry. Rendered only when set: unset keeps the
+service default (Warn). Any other value fails the render. */}}
+{{- $ancestry := .global.Values.services.identity.crossTenantAncestry }}
+{{- if not (or (kindIs "invalid" $ancestry) (and (kindIs "string" $ancestry) (eq $ancestry ""))) }}
+{{- if not (and (kindIs "string" $ancestry) (has $ancestry (list "Warn" "Enforce"))) }}
+{{- fail (printf "services.identity.crossTenantAncestry must be Warn or Enforce, got '%v'" $ancestry) }}
+{{- end }}
+- name: OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY
+  value: {{ $ancestry | quote }}
+{{- end }}
 {{- /* AB#5530 encryption at rest of the Data Protection key ring. Rendered only when set (true or
 false): unset keeps the service default (false). A non-boolean value fails the render. */}}
 {{- $dataProtection := .global.Values.services.identity.dataProtection | default dict }}

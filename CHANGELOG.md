@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added (AB#8339)
+- **octo-mesh: identity value `services.identity.crossTenantAncestry` (`Warn` | `Enforce`).** Renders
+  `OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY` on the identity deployment only when set; unset keeps the
+  service default (`Warn`). Invalid values fail the render. `Enforce` lets only tenant-registry ancestors act as
+  cross-tenant ancestors (see octo-identity-services); switch per cluster in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml`.
+
 ### Added (AB#8280)
 - **octo-mesh: CK method idempotency fingerprint key for the asset repository.** New values
   `services.assetRepository.methods.idempotency.fingerprint.currentId` (public key id) and

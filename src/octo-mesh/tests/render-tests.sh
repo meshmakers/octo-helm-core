@@ -301,4 +301,18 @@ check "the variable is on the asset repository deployment" grep -q 'METHODS__IDE
 OUT="$(render --set "$FPID=t2-2026-11" --set "$FPS=$FPKEY" --set services.assetRepository.replicaCount=2)"
 check "replicaCount 2 renders 2 replicas on the asset repository" bash -c 'awk "BEGIN{RS=\"\\n---\\n\"} /asset-rep-services/ && /kind: Deployment/" <<<"$0" | grep -q "replicas: 2"' "$OUT"
 
+# 18. AB#8339: identity cross-tenant ancestry mode, rendered on the identity deployment only when set
+CA=OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY
+OUT="$(render)"
+check "unset crossTenantAncestry renders no variable"              bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$CA"
+for MODE in Warn Enforce; do
+  OUT="$(render --set services.identity.crossTenantAncestry=$MODE)"
+  check "crossTenantAncestry=$MODE renders $MODE on identity"      test "$(idval $CA)" = "value: \"$MODE\" "
+  check "crossTenantAncestry=$MODE renders exactly once"           test "$(grep -c "name: $CA" <<<"$OUT")" = 1
+done
+renders_fail "invalid crossTenantAncestry fails the render"  "services.identity.crossTenantAncestry must be Warn or Enforce" render --set services.identity.crossTenantAncestry=enforce
+renders_fail "crossTenantAncestry=true fails the render"     "services.identity.crossTenantAncestry must be Warn or Enforce" render --set services.identity.crossTenantAncestry=true
+OUT="$(render --set-string services.identity.crossTenantAncestry=)"
+check "explicit empty crossTenantAncestry renders no variable"     bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$CA"
+
 exit $fail
