@@ -158,6 +158,14 @@ Removes cross-tenant shadow users (`xt_`) that refused token exchanges left behi
 
 Decides whether the tenant registry or a tenant's own OctoTenant identity providers say who is an ancestor — for the provisioning source users, the tenant switch / token exchange and the cross-tenant login. `Warn` keeps the behaviour before AB#8339 and logs every ancestor the registry does not confirm (`allowed by CrossTenantAncestry=Warn ... (AB#8339)`, with both tenant ids); `Enforce` accepts only registry ancestors and refuses provisioning writes with a non-ancestor source (403) and OctoTenant providers with a non-ancestor parent (400). Switch per cluster in `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml` after the inventory and the Warn log are reviewed (see `octo-identity-services/docs/authentication.md`, *Registry Decides Cross-Tenant Ancestry*). Any other value fails the render.
 
+### REST deprecation wave dates (AB#8415)
+
+REST endpoints that a CK method replaces are marked with `[OctoRestDeprecated(Wave = "<wave>")]`. Their `Deprecation`
+and `Sunset` headers take the dates from `restDeprecation.waves.<wave>.since|sunset` (`yyyy-MM-dd`, UTC), rendered as
+`OCTO_RestDeprecation__Waves__<wave>__Since|Sunset` on every service. Unset = no header. Rule (Gerald 2026-11-07): `since`
+is the delivery day of the release that contains the wave, `sunset` one week after that release runs on prod-1 and prod-2;
+set both on every cluster. Waves: `IdentityUsers1`. Details: octo-common-services `docs/rest-deprecation.md`.
+
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 
 The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` with a staged check. The chart renders the mode of each hub explicitly on the controller deployment:

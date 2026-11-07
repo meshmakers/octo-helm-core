@@ -2,7 +2,8 @@
 # Render tests for the octo-mesh and communication operator charts: image pre-pull and probe timing (AB#6592),
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
-# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280).
+# removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
+# REST deprecation wave dates (AB#8415).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -335,5 +336,20 @@ renders_fail "invalid crossTenantAncestry fails the render"  "services.identity.
 renders_fail "crossTenantAncestry=true fails the render"     "services.identity.crossTenantAncestry must be Warn or Enforce" render --set services.identity.crossTenantAncestry=true
 OUT="$(render --set-string services.identity.crossTenantAncestry=)"
 check "explicit empty crossTenantAncestry renders no variable"     bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$CA"
+
+# 19. AB#8415: REST deprecation wave dates, rendered on every service only when set
+RD=OCTO_RestDeprecation__Waves__IdentityUsers1
+OUT="$(render)"
+check "no wave dates render no RestDeprecation variable"           bash -c '! grep -q "OCTO_RestDeprecation__" <<<"$0"' "$OUT"
+OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.since=2026-12-01)"
+check "since only renders Since on every deployment"               test "$(grep -c "name: ${RD}__Since" <<<"$OUT")" = "$(grep -c '^kind: Deployment' <<<"$OUT")"
+check "since only renders no Sunset"                               bash -c '! grep -q "$1__Sunset" <<<"$0"' "$OUT" "$RD"
+check "Since carries the date"                                     bash -c 'grep -A1 "name: $1__Since" <<<"$0" | grep -q "value: \"2026-12-01\""' "$OUT" "$RD"
+OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.since=2026-12-01 --set-string restDeprecation.waves.IdentityUsers1.sunset=2027-01-15)"
+check "sunset renders Sunset with the date"                        bash -c 'grep -A1 "name: $1__Sunset" <<<"$0" | grep -q "value: \"2027-01-15\""' "$OUT" "$RD"
+OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.since=)"
+check "explicit empty date renders no variable"                    bash -c '! grep -q "OCTO_RestDeprecation__" <<<"$0"' "$OUT"
+renders_fail "wave name with a dash fails the render"  "wave name 'identity-users-1' must consist of letters and digits" render --set-string restDeprecation.waves.identity-users-1.since=2026-12-01
+renders_fail "malformed date fails the render"         "restDeprecation.waves.IdentityUsers1.sunset must be a date yyyy-MM-dd, got '15.01.2027'" render --set-string restDeprecation.waves.IdentityUsers1.sunset=15.01.2027
 
 exit $fail

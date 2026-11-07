@@ -161,6 +161,27 @@ _helpers.tpl for how the ring is derived from the instance secret.
 - name: OCTO_LOG_LEVEL_ROOT
   value: {{ .global.Values.logLevelRoot | quote }}
 {{- end }}
+{{- /*
+  AB#8415: dates of the REST deprecation waves ([OctoRestDeprecated(Wave = …)], octo-common-services
+  docs/rest-deprecation.md). Rendered for every service: a service only reads the waves its endpoints name.
+  An unset date renders nothing (the service then sends no Deprecation / Sunset header for that wave).
+*/}}
+{{- $restDeprecation := .global.Values.restDeprecation | default dict }}
+{{- range $wave, $dates := ($restDeprecation.waves | default dict) }}
+{{- if not (regexMatch "^[A-Za-z][A-Za-z0-9]*$" $wave) }}
+{{- fail (printf "restDeprecation.waves: wave name '%s' must consist of letters and digits and start with a letter" $wave) }}
+{{- end }}
+{{- range $key, $name := (dict "since" "Since" "sunset" "Sunset") }}
+{{- $value := toString (index ($dates | default dict) $key | default "") }}
+{{- if $value }}
+{{- if not (regexMatch "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" $value) }}
+{{- fail (printf "restDeprecation.waves.%s.%s must be a date yyyy-MM-dd, got '%s'" $wave $key $value) }}
+{{- end }}
+- name: {{ printf "OCTO_RestDeprecation__Waves__%s__%s" $wave $name }}
+  value: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
