@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added (AB#8415)
+- **octo-mesh: REST deprecation wave dates `restDeprecation.waves.<wave>.since|sunset` (`yyyy-MM-dd`).** Renders
+  `OCTO_RestDeprecation__Waves__<wave>__Since|Sunset` on every service only when set; the services send the
+  `Deprecation` / `Sunset` headers of the REST endpoints marked with that wave (octo-common-services
+  `docs/rest-deprecation.md`). Default `{}`: no variable, no date. An invalid wave name or date fails the render.
+  First wave: `IdentityUsers1` (identity role and merge endpoints). Set per cluster at rollout in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml` (since = release delivery day; sunset = one week after the
+  release runs on prod-1 and prod-2).
+
 ### Added (AB#8305)
 - **octo-mesh: identity value `services.identity.shadowUserCleanup` (`Off` | `DryRun` | `Apply`).** Renders
   `OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP` on the identity deployment only when set; unset keeps the
