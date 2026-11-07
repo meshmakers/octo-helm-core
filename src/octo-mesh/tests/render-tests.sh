@@ -276,6 +276,27 @@ printf 'services:\n  identity:\n    adminRoleMigration: Off\n' > "$AMFILE"
 renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.identity.adminRoleMigration must be Off, DryRun or Apply" render -f "$AMFILE"
 rm -f "$AMFILE"
 
+# 17. AB#8305: identity shadow user cleanup mode, rendered on the identity deployment only when set
+SU=OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP
+OUT="$(render)"
+check "unset shadowUserCleanup renders no variable"               bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$SU"
+for MODE in Off DryRun Apply; do
+  OUT="$(render --set services.identity.shadowUserCleanup=$MODE)"
+  check "shadowUserCleanup=$MODE renders $MODE on identity"       test "$(idval $SU)" = "value: \"$MODE\" "
+  check "shadowUserCleanup=$MODE renders exactly once"            test "$(grep -c "name: $SU" <<<"$OUT")" = 1
+done
+renders_fail "invalid shadowUserCleanup fails the render"   "services.identity.shadowUserCleanup must be Off, DryRun or Apply" render --set services.identity.shadowUserCleanup=apply
+renders_fail "shadowUserCleanup=false fails the render"     "services.identity.shadowUserCleanup must be Off, DryRun or Apply" render --set services.identity.shadowUserCleanup=false
+OUT="$(render --set-string services.identity.shadowUserCleanup=)"
+check "explicit empty shadowUserCleanup renders no variable"      bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$SU"
+SUFILE="$(mktemp)"
+printf 'services:\n  identity:\n    shadowUserCleanup: "Off"\n' > "$SUFILE"
+OUT="$(render -f "$SUFILE")"
+check "values file with shadowUserCleanup: \"Off\" renders Off"   test "$(idval $SU)" = 'value: "Off" '
+printf 'services:\n  identity:\n    shadowUserCleanup: Off\n' > "$SUFILE"
+renders_fail "unquoted shadowUserCleanup Off (YAML boolean) fails the render" "services.identity.shadowUserCleanup must be Off, DryRun or Apply" render -f "$SUFILE"
+rm -f "$SUFILE"
+
 # 13. AB#8280: CK method idempotency fingerprint key, asset repository only, id + secret together or not at all
 FPID=services.assetRepository.methods.idempotency.fingerprint.currentId
 FPS=secrets.methodsFingerprintCurrentSecret

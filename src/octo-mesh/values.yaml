@@ -246,6 +246,17 @@ services:
     # octo-identity-services docs/rollout-identity-rest-role-enforcement.md. Any other value fails the render.
     # Quote it in a values file: an unquoted Off is a YAML boolean (false) and fails the render.
     adminRoleMigration: ""
+    # AB#8305 cleanup of rights-less cross-tenant shadow users (xt_) left over by refused token exchanges
+    # (OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP). Runs once per identity start, 2 minutes after it.
+    #   "" (unset) - no env var rendered; the service default applies (Off).
+    #   Off        - nothing is read or written.
+    #   DryRun     - logs per tenant every candidate (rtId, user name, creation date), the skip reasons of the
+    #                other xt_ users and a summary; writes nothing.
+    #   Apply      - deletes the candidates through the identity user store, one audit event per user.
+    # Deletes identity data: per cluster, DryRun first, Apply only after the DryRun list is reviewed, then back to
+    # unset. Runbook: octo-identity-services docs/authentication.md. Any other value fails the render.
+    # Quote it in a values file: an unquoted Off is a YAML boolean (false) and fails the render.
+    shadowUserCleanup: ""
     # AB#8339 cross-tenant ancestry (OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY): the tenant registry,
     # not a tenant's own OctoTenant identity providers, decides who is an ancestor for the provisioning source
     # users, the tenant switch / token exchange and the cross-tenant login.

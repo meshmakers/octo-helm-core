@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added (AB#8305)
+- **octo-mesh: identity value `services.identity.shadowUserCleanup` (`Off` | `DryRun` | `Apply`).** Renders
+  `OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP` on the identity deployment only when set; unset keeps the
+  service default (`Off`). Invalid values fail the render. It removes rights-less `xt_` shadow users left over by
+  refused token exchanges (see octo-identity-services); switch per cluster, `DryRun` first, in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml`, and back to unset after `Apply`.
+
 ### Added (AB#8339)
 - **octo-mesh: identity value `services.identity.crossTenantAncestry` (`Warn` | `Enforce`).** Renders
   `OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY` on the identity deployment only when set; unset keeps the
