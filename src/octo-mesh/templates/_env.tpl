@@ -204,6 +204,16 @@ Rendered only when set: unset keeps the service default (Off). Any other value f
 - name: OCTO_IDENTITYAPIAUTHORIZATION__ADMINROLEMIGRATION
   value: {{ $adminMigration | quote }}
 {{- end }}
+{{- /* AB#8305 cleanup of rights-less xt_ shadow users. Rendered only when set: unset keeps the service
+default (Off). Any other value fails the render. */}}
+{{- $shadowCleanup := .global.Values.services.identity.shadowUserCleanup }}
+{{- if not (or (kindIs "invalid" $shadowCleanup) (and (kindIs "string" $shadowCleanup) (eq $shadowCleanup ""))) }}
+{{- if not (and (kindIs "string" $shadowCleanup) (has $shadowCleanup (list "Off" "DryRun" "Apply"))) }}
+{{- fail (printf "services.identity.shadowUserCleanup must be Off, DryRun or Apply, got '%v'" $shadowCleanup) }}
+{{- end }}
+- name: OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP
+  value: {{ $shadowCleanup | quote }}
+{{- end }}
 {{- /* AB#8339 cross-tenant ancestry from the tenant registry. Rendered only when set: unset keeps the
 service default (Warn). Any other value fails the render. */}}
 {{- $ancestry := .global.Values.services.identity.crossTenantAncestry }}

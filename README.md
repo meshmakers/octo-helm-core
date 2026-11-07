@@ -142,6 +142,14 @@ Both values are rendered on the identity deployment **only when set**; unset kee
 
 Moves existing tenant admins from directly assigned roles to `TenantOwners` membership. `DryRun` only logs, per tenant, the subject ids that would join the group and the direct roles that would be removed. `Apply` makes users, `xt_` users and external tenant user mappings that hold `TenantManagement` and `UserManagement` directly members of `TenantOwners` and removes a direct role only when `TenantOwners` carries it; clients and groups are not migrated, a second run changes nothing. It changes role data: set it per cluster, `DryRun` first, `Apply` only with the go of the cluster owner. Any other value fails the render. In a values file write `adminRoleMigration: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails the render.
 
+### Identity shadow user cleanup (AB#8305)
+
+| Value | Default (unset) | Environment variable |
+|---|---|---|
+| `services.identity.shadowUserCleanup` = `Off` \| `DryRun` \| `Apply` | not rendered (service default `Off`) | `OCTO_IDENTITYAPIAUTHORIZATION__SHADOWUSERCLEANUP` |
+
+Removes cross-tenant shadow users (`xt_`) that refused token exchanges left behind and that hold no right: no role, no group, no other association, no external tenant user mapping for them, not the source of a mapping elsewhere, and no password, two-factor, login, token or claim. Identity runs it once per start, two minutes after it. `DryRun` only logs, per tenant, every candidate (rtId, user name, creation date), the skip reasons of the other `xt_` users and a summary. `Apply` deletes the candidates through the identity user store and writes one audit event per deleted user; a second run finds nothing. It deletes identity data: set it per cluster, `DryRun` first, `Apply` only after the DryRun list is reviewed, then remove the value again (runbook in `octo-identity-services/docs/authentication.md`). Any other value fails the render. In a values file write `shadowUserCleanup: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails the render.
+
 ### Identity cross-tenant ancestry (AB#8339)
 
 | Value | Default (unset) | Environment variable |
