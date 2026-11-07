@@ -171,15 +171,37 @@ _helpers.tpl for how the ring is derived from the instance secret.
 {{- if not (regexMatch "^[A-Za-z][A-Za-z0-9]*$" $wave) }}
 {{- fail (printf "restDeprecation.waves: wave name '%s' must consist of letters and digits and start with a letter" $wave) }}
 {{- end }}
-{{- range $key, $name := (dict "since" "Since" "sunset" "Sunset") }}
-{{- $value := toString (index ($dates | default dict) $key | default "") }}
-{{- if $value }}
-{{- if not (regexMatch "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" $value) }}
-{{- fail (printf "restDeprecation.waves.%s.%s must be a date yyyy-MM-dd, got '%s'" $wave $key $value) }}
+{{- $parsed := dict }}
+{{- range $key := list "since" "sunset" }}
+{{- $raw := index ($dates | default dict) $key }}
+{{- /* Missing, null or "" = not set. Anything else must be a string (false is not "unset"). */}}
+{{- if not (or (kindIs "invalid" $raw) (and (kindIs "string" $raw) (eq $raw ""))) }}
+{{- if not (kindIs "string" $raw) }}
+{{- fail (printf "restDeprecation.waves.%s.%s must be a date yyyy-MM-dd, got '%v'" $wave $key $raw) }}
 {{- end }}
-- name: {{ printf "OCTO_RestDeprecation__Waves__%s__%s" $wave $name }}
-  value: {{ $value | quote }}
+{{- if not (regexMatch "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" $raw) }}
+{{- fail (printf "restDeprecation.waves.%s.%s must be a date yyyy-MM-dd, got '%s'" $wave $key $raw) }}
 {{- end }}
+{{- /* A real calendar day: 2026-02-31 matches the pattern but is no date. */}}
+{{- $day := toDate "2006-01-02" $raw }}
+{{- if ne ($day | date "2006-01-02") $raw }}
+{{- fail (printf "restDeprecation.waves.%s.%s must be a date yyyy-MM-dd, got '%s'" $wave $key $raw) }}
+{{- end }}
+{{- $_ := set $parsed $key $raw }}
+{{- end }}
+{{- end }}
+{{- if and (hasKey $parsed "since") (hasKey $parsed "sunset") }}
+{{- if le ((toDate "2006-01-02" $parsed.sunset).Unix) ((toDate "2006-01-02" $parsed.since).Unix) }}
+{{- fail (printf "restDeprecation.waves.%s.sunset %s must be after since %s" $wave $parsed.sunset $parsed.since) }}
+{{- end }}
+{{- end }}
+{{- with $parsed.since }}
+- name: {{ printf "OCTO_RestDeprecation__Waves__%s__Since" $wave }}
+  value: {{ . | quote }}
+{{- end }}
+{{- with $parsed.sunset }}
+- name: {{ printf "OCTO_RestDeprecation__Waves__%s__Sunset" $wave }}
+  value: {{ . | quote }}
 {{- end }}
 {{- end }}
 {{- if eq .name "identity" -}}

@@ -351,5 +351,11 @@ OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.since=)"
 check "explicit empty date renders no variable"                    bash -c '! grep -q "OCTO_RestDeprecation__" <<<"$0"' "$OUT"
 renders_fail "wave name with a dash fails the render"  "wave name 'identity-users-1' must consist of letters and digits" render --set-string restDeprecation.waves.identity-users-1.since=2026-12-01
 renders_fail "malformed date fails the render"         "restDeprecation.waves.IdentityUsers1.sunset must be a date yyyy-MM-dd, got '15.01.2027'" render --set-string restDeprecation.waves.IdentityUsers1.sunset=15.01.2027
+renders_fail "a day that does not exist fails the render" "restDeprecation.waves.IdentityUsers1.since must be a date yyyy-MM-dd, got '2026-02-31'" render --set-string restDeprecation.waves.IdentityUsers1.since=2026-02-31
+renders_fail "a boolean date fails the render"         "restDeprecation.waves.IdentityUsers1.since must be a date yyyy-MM-dd, got 'false'" render --set restDeprecation.waves.IdentityUsers1.since=false
+renders_fail "sunset not after since fails the render" "restDeprecation.waves.IdentityUsers1.sunset 2026-12-01 must be after since 2026-12-01" render --set-string restDeprecation.waves.IdentityUsers1.since=2026-12-01 --set-string restDeprecation.waves.IdentityUsers1.sunset=2026-12-01
+renders_fail "sunset before since fails the render"    "restDeprecation.waves.IdentityUsers1.sunset 2026-11-30 must be after since 2026-12-01" render --set-string restDeprecation.waves.IdentityUsers1.since=2026-12-01 --set-string restDeprecation.waves.IdentityUsers1.sunset=2026-11-30
+OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.sunset=2027-01-15)"
+check "sunset only renders Sunset without Since"                   bash -c 'grep -q "$1__Sunset" <<<"$0" && ! grep -q "$1__Since" <<<"$0"' "$OUT" "$RD"
 
 exit $fail
