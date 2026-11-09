@@ -296,6 +296,18 @@ services:
       # see octo-identity-services docs/rollout-identity-dataprotection-encryption.md. Setting it
       # back to false does not decrypt stored keys. A non-boolean value fails the render.
       encryptExistingKeys: null
+    methods:
+      # AB#8603 identity password methods on the bus (OCTO_Methods__Identity__EnablePasswordMethods):
+      # User.ChangePassword, User.SetPassword, User.ResetPassword, User.CreateUser, Client.AddSecret,
+      # Client.RemoveSecret are offered on the message bus, so the asset-repo GraphQL gateway can call them.
+      #   null (unset) - no env var rendered; the service default applies (false).
+      #   false        - not offered on the bus; the gateway answers METHOD_HANDLER_NOT_AVAILABLE. The REST
+      #                  facades (POST users, POST users/ResetPassword, account pages) keep working local only.
+      #   true         - all six offered on the bus (the method queues carry the password / secret).
+      # Read at start: the CD rollout restarts identity. Switch on per cluster only with the cluster owner's go
+      # (production gate 2026-10-23, AB#8603: test-2 first, then staging-1, prod-1, prod-2). Rollback: false
+      # (or unset) + CD. See octo-identity-services docs/configuration.md. A non-boolean value fails the render.
+      enablePasswordMethods: null
 
     signingKey:
       # certificate with private and public key in pfx format, by command arg
