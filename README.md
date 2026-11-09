@@ -158,6 +158,14 @@ Removes cross-tenant shadow users (`xt_`) that refused token exchanges left behi
 
 Decides whether the tenant registry or a tenant's own OctoTenant identity providers say who is an ancestor — for the provisioning source users, the tenant switch / token exchange and the cross-tenant login. `Warn` keeps the behaviour before AB#8339 and logs every ancestor the registry does not confirm (`allowed by CrossTenantAncestry=Warn ... (AB#8339)`, with both tenant ids); `Enforce` accepts only registry ancestors and refuses provisioning writes with a non-ancestor source (403) and OctoTenant providers with a non-ancestor parent (400). Switch per cluster in `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml` after the inventory and the Warn log are reviewed (see `octo-identity-services/docs/authentication.md`, *Registry Decides Cross-Tenant Ancestry*). Any other value fails the render.
 
+### Identity password methods on the bus (AB#8603)
+
+| Value | Default (unset) | Environment variable |
+|---|---|---|
+| `services.identity.methods.enablePasswordMethods` = `true` \| `false` | not rendered (service default `false`) | `OCTO_Methods__Identity__EnablePasswordMethods` |
+
+`true` offers the identity CK methods that carry a password or secret (`User.ChangePassword`, `User.SetPassword`, `User.ResetPassword`, `User.CreateUser`, `Client.AddSecret`, `Client.RemoveSecret`) on the message bus, so the asset repository GraphQL gateway can call them. `false` or unset: the gateway answers `METHOD_HANDLER_NOT_AVAILABLE`; the REST facades (`POST users`, `POST users/ResetPassword`, account pages) keep working local only in either state. Identity reads the value at start, so the CD rollout restarts it. Switch on per cluster only with the cluster owner's go (test-2 first, then staging-1, prod-1, prod-2); rollback = `false` (or unset) and a CD run. A non-boolean value (also a quoted `"true"`) fails the render. Service side: `octo-identity-services/docs/configuration.md`.
+
 ### REST deprecation wave dates (AB#8415)
 
 REST endpoints that a CK method replaces are marked with `[OctoRestDeprecated(Wave = "<wave>")]`. Their `Deprecation`

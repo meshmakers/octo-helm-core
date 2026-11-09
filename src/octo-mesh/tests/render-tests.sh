@@ -3,7 +3,7 @@
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
-# REST deprecation wave dates (AB#8415).
+# REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -351,5 +351,25 @@ OUT="$(render --set-string restDeprecation.waves.IdentityUsers1.since=)"
 check "explicit empty date renders no variable"                    bash -c '! grep -q "OCTO_RestDeprecation__" <<<"$0"' "$OUT"
 renders_fail "wave name with a dash fails the render"  "wave name 'identity-users-1' must consist of letters and digits" render --set-string restDeprecation.waves.identity-users-1.since=2026-12-01
 renders_fail "malformed date fails the render"         "restDeprecation.waves.IdentityUsers1.sunset must be a date yyyy-MM-dd, got '15.01.2027'" render --set-string restDeprecation.waves.IdentityUsers1.sunset=15.01.2027
+
+# 20. AB#8603: identity password methods on the bus, rendered on the identity deployment only when set
+PM=OCTO_Methods__Identity__EnablePasswordMethods
+OUT="$(render)"
+check "identity deployment was found (AB#8603 test is not vacuous)" test -n "$(dep identity)"
+check "unset enablePasswordMethods renders no variable"            bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$PM"
+OUT="$(render --set services.identity.methods.enablePasswordMethods=true)"
+check "enablePasswordMethods=true renders true on identity"        test "$(idval $PM)" = 'value: "true" '
+check "enablePasswordMethods renders exactly once"                 test "$(grep -c "name: $PM" <<<"$OUT")" = 1
+OUT="$(render --set services.identity.methods.enablePasswordMethods=false)"
+check "enablePasswordMethods=false renders false (explicit value)" test "$(idval $PM)" = 'value: "false" '
+renders_fail "non-boolean enablePasswordMethods fails the render"  "services.identity.methods.enablePasswordMethods must be true or false" render --set-string services.identity.methods.enablePasswordMethods=yes
+renders_fail "enablePasswordMethods=1 fails the render"            "services.identity.methods.enablePasswordMethods must be true or false" render --set services.identity.methods.enablePasswordMethods=1
+PMFILE="$(mktemp)"
+printf 'services:\n  identity:\n    methods:\n      enablePasswordMethods: true\n' > "$PMFILE"
+OUT="$(render -f "$PMFILE")"
+check "values file with enablePasswordMethods: true renders true"  test "$(idval $PM)" = 'value: "true" '
+printf 'services:\n  identity:\n    methods:\n      enablePasswordMethods: "true"\n' > "$PMFILE"
+renders_fail "quoted \"true\" in a values file fails the render"     "services.identity.methods.enablePasswordMethods must be true or false" render -f "$PMFILE"
+rm -f "$PMFILE"
 
 exit $fail

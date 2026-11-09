@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added (AB#8603)
+- **octo-mesh: identity value `services.identity.methods.enablePasswordMethods` (`true` | `false`).** Renders
+  `OCTO_Methods__Identity__EnablePasswordMethods` on the identity deployment only when set; unset keeps the service
+  default (`false`). A non-boolean value fails the render. `true` offers the password/secret CK methods
+  (`User.ChangePassword`, `User.SetPassword`, `User.ResetPassword`, `User.CreateUser`, `Client.AddSecret`,
+  `Client.RemoveSecret`) on the bus for the GraphQL gateway. Switch per cluster with the cluster owner's go in
+  `octo-mesh-deployment/clusters/<c>/values-octo-mesh.yaml` (test-2 first).
+
 ### Added (AB#8415)
 - **octo-mesh: REST deprecation wave dates `restDeprecation.waves.<wave>.since|sunset` (`yyyy-MM-dd`).** Renders
   `OCTO_RestDeprecation__Waves__<wave>__Since|Sunset` on every service only when set; the services send the

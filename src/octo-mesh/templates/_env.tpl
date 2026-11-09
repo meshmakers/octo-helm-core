@@ -255,6 +255,16 @@ false): unset keeps the service default (false). A non-boolean value fails the r
 - name: OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS
   value: {{ $dataProtection.encryptExistingKeys | quote }}
 {{- end }}
+{{- /* AB#8603 identity password methods on the bus. Rendered only when set (true or false): unset keeps
+the service default (false). A non-boolean value fails the render. */}}
+{{- $identityMethods := .global.Values.services.identity.methods | default dict }}
+{{- if and (hasKey $identityMethods "enablePasswordMethods") (not (kindIs "invalid" $identityMethods.enablePasswordMethods)) }}
+{{- if not (kindIs "bool" $identityMethods.enablePasswordMethods) }}
+{{- fail (printf "services.identity.methods.enablePasswordMethods must be true or false, got '%v'" $identityMethods.enablePasswordMethods) }}
+{{- end }}
+- name: OCTO_Methods__Identity__EnablePasswordMethods
+  value: {{ $identityMethods.enablePasswordMethods | quote }}
+{{- end }}
 {{- if .global.Values.services.studio.publicUri }}
 - name: OCTO_IDENTITY__RefineryStudioUrl
   value: {{ .global.Values.services.studio.publicUri }}
