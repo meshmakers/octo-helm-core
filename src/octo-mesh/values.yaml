@@ -27,9 +27,11 @@ logLevelRoot: ""
 
 # AB#8415: dates of the REST deprecation waves. A REST endpoint replaced by a CK method carries
 # [OctoRestDeprecated(Wave = "<wave>")]; its Deprecation and Sunset headers take their dates from here, because
-# the dates are only known at rollout (Gerald 2026-11-07):
-#   since:  delivery day of the release that contains the wave (yyyy-MM-dd, UTC)
-#   sunset: one week after that release runs on BOTH prod-1 and prod-2 (yyyy-MM-dd, UTC, after since)
+# the dates are only known at rollout:
+#   since:  delivery day of the release that contains the wave on prod (yyyy-MM-dd, UTC)
+#   sunset: since + 3 months (concept decision 13; Gerald 2026-11-10 for IdentityUsers1) (yyyy-MM-dd, UTC, after since)
+#   IdentityUsers1: since 2026-11-08, sunset 2027-02-08 (set in octo-mesh-deployment base/values-octo-mesh.yaml)
+# Removal after the sunset only on the octo.rest.deprecated.calls evidence.
 # Unset = no header (the Link header, the OpenAPI flag and the usage counter work without dates). Rendered as
 # OCTO_RestDeprecation__Waves__<wave>__Since|Sunset for every service; a service ignores waves it does not use.
 # Waves: IdentityUsers1 (identity: PUT users/{u}/roles, PUT|DELETE users/{u}/roles/{r}, POST users/{u}/merge).
