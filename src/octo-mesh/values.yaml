@@ -40,8 +40,8 @@ restDeprecation:
   waves: {}
   # waves:
   #   IdentityUsers1:
-  #     since: "2026-12-01"
-  #     sunset: "2027-01-15"
+  #     since: "2026-11-08"
+  #     sunset: "2027-02-08"
 
 tracing:
   # Export one span per MongoDB command (MongoDB.Driver ActivitySource) through the
