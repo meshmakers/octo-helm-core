@@ -29,8 +29,9 @@ logLevelRoot: ""
 # [OctoRestDeprecated(Wave = "<wave>")]; its Deprecation and Sunset headers take their dates from here, because
 # the dates are only known at rollout:
 #   since:  delivery day of the release that contains the wave on prod (yyyy-MM-dd, UTC)
-#   sunset: since + 3 months (concept decision 13; Gerald 2026-11-10 for IdentityUsers1) (yyyy-MM-dd, UTC, after since)
-#   IdentityUsers1: since 2026-11-08, sunset 2027-02-08 (set in octo-mesh-deployment base/values-octo-mesh.yaml)
+#   sunset: earliest removal day, decided by Gerald once the migration functions are implemented
+#           (yyyy-MM-dd, UTC, after since); empty until then = no Sunset header (Gerald 2026-11-11)
+#   IdentityUsers1: since 2026-11-08, sunset to be announced (set in octo-mesh-deployment base/values-octo-mesh.yaml)
 # Removal after the sunset only on the octo.rest.deprecated.calls evidence.
 # Unset = no header (the Link header, the OpenAPI flag and the usage counter work without dates). Rendered as
 # OCTO_RestDeprecation__Waves__<wave>__Since|Sunset for every service; a service ignores waves it does not use.
@@ -41,7 +42,7 @@ restDeprecation:
   # waves:
   #   IdentityUsers1:
   #     since: "2026-11-08"
-  #     sunset: "2027-02-08"
+  #     sunset: ""            # to be announced
 
 tracing:
   # Export one span per MongoDB command (MongoDB.Driver ActivitySource) through the
