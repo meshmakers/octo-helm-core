@@ -142,6 +142,13 @@ clusterDependencies:
   # instance sharing the cluster's CrateDB sets e.g. "dev" so its tenant schemas become
   # dev_{tenantId}. Deliberately separate from serviceDefaults.instancePrefix (RabbitMQ).
   streamDataSchemaInstancePrefix: ""
+  # MongoDB tenant-database prefix (AB#8797, Epic AB#4944), the MongoDB counterpart of
+  # streamDataSchemaInstancePrefix. Empty (default): tenant databases are named as before.
+  # A parallel instance sharing the MongoDB sets e.g. "dev_" so a tenant created without an
+  # explicit database name gets the database dev_{tenantId}; explicit names without the prefix
+  # are refused. Tenants registered before keep their names. Mirror it in the communication
+  # operator chart (operator.clusterDependencies.tenantDatabasePrefix).
+  tenantDatabasePrefix: ""
 
 externalUris:
   # URI of CrateDB to be used by the services

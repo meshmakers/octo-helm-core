@@ -258,6 +258,10 @@ spec:
         - name: OPERATOR__CLUSTERDEPENDENCIES__STREAMDATASCHEMAINSTANCEPREFIX
           value: {{ .streamDataSchemaInstancePrefix | quote }}
         {{- end }}
+        {{- if .tenantDatabasePrefix }}
+        - name: OPERATOR__CLUSTERDEPENDENCIES__TENANTDATABASEPREFIX
+          value: {{ .tenantDatabasePrefix | quote }}
+        {{- end }}
         {{- end }}
         {{- with .Values.operator.ingress }}
         {{- if .className }}
