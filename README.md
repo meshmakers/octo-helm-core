@@ -171,9 +171,10 @@ Decides whether the tenant registry or a tenant's own OctoTenant identity provid
 REST endpoints that a CK method replaces are marked with `[OctoRestDeprecated(Wave = "<wave>")]`. Their `Deprecation`
 and `Sunset` headers take the dates from `restDeprecation.waves.<wave>.since|sunset` (`yyyy-MM-dd`, UTC), rendered as
 `OCTO_RestDeprecation__Waves__<wave>__Since|Sunset` on every service. Unset = no header. Rule: `since`
-is the delivery day of the release that contains the wave on prod, `sunset` is `since` + 3 months (concept decision 13;
-Gerald 2026-11-10); removal after the sunset only on the `octo.rest.deprecated.calls` evidence. Waves: `IdentityUsers1`
-(since `2026-11-08`, sunset `2027-02-08`, set for all clusters in `octo-mesh-deployment/base/values-octo-mesh.yaml`). Details: octo-common-services `docs/rest-deprecation.md`.
+is the delivery day of the release that contains the wave on prod; the `sunset` date is to be announced — Gerald decides it
+once the migration functions are implemented (2026-11-11, no fixed compatibility window), until then it stays empty and no
+`Sunset` header is sent; removal after the sunset only on the `octo.rest.deprecated.calls` evidence. Waves: `IdentityUsers1`
+(since `2026-11-08`, sunset to be announced, set for all clusters in `octo-mesh-deployment/base/values-octo-mesh.yaml`). Details: octo-common-services `docs/rest-deprecation.md`.
 
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 
