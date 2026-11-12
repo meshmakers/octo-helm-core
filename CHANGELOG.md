@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added (AB#8797)
+- **octo-mesh: value `clusterDependencies.tenantDatabasePrefix`** (MongoDB tenant-database prefix, Epic AB#4944).
+  Renders `OCTO_SYSTEM__TENANTDATABASEPREFIX` on every core service only when set; empty (default) renders nothing and
+  every tenant database keeps its name. A second instance on the same MongoDB sets e.g. `dev_`: new tenants without an
+  explicit database name get `dev_<tenantId>`, explicit names without the prefix are refused. Needs services with
+  octo-construction-kit-engine-mongodb AB#8797.
+- **octo-mesh-communication-operator: value `operator.clusterDependencies.tenantDatabasePrefix`.** Renders
+  `OPERATOR__CLUSTERDEPENDENCIES__TENANTDATABASEPREFIX` only when set; the operator projects it into every workload as
+  `clusterDependencies.tenantDatabasePrefix` (octo-communication-operator AB#8797). Mirror the core chart's value.
+
 ### Added (AB#8603)
 - **octo-mesh: identity value `services.identity.methods.enablePasswordMethods` (`true` | `false`).** Renders
   `OCTO_Methods__Identity__EnablePasswordMethods` on the identity deployment only when set; unset keeps the service

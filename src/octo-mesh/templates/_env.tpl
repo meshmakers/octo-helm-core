@@ -7,6 +7,13 @@
 - name: OCTO_SYSTEM__REPLICASETNAME
   value: {{ .global.Values.clusterDependencies.mongodbReplicaSet }}
 {{- end }}
+{{- if .global.Values.clusterDependencies.tenantDatabasePrefix }}
+# MongoDB tenant-database prefix (AB#8797, Epic AB#4944): a second OctoMesh instance on the
+# same MongoDB names new tenant databases <prefix><tenantId> and refuses explicit names
+# without the prefix. Emitted only when set - existing instances keep their names.
+- name: OCTO_SYSTEM__TENANTDATABASEPREFIX
+  value: {{ .global.Values.clusterDependencies.tenantDatabasePrefix | quote }}
+{{- end }}
 - name: OCTO_SYSTEM__DATABASEUSERPASSWORD
   valueFrom:
     secretKeyRef:

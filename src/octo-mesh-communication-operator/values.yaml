@@ -195,6 +195,9 @@ operator:
     # then keep the compiled-in "OctoSystem" and the unprefixed schema names.
     systemDatabaseName: ""
     streamDataSchemaInstancePrefix: ""
+    # MongoDB tenant-database prefix (AB#8797); mirror the core chart's
+    # clusterDependencies.tenantDatabasePrefix. Empty on a single-instance cluster.
+    tenantDatabasePrefix: ""
 
   # Cluster-wide ingress defaults projected into every deployed workload's
   # Helm values. Per-workload ValuesYaml or structured overrides can still

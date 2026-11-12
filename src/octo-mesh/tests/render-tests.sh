@@ -3,7 +3,7 @@
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
-# REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603).
+# REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -371,5 +371,18 @@ check "values file with enablePasswordMethods: true renders true"  test "$(idval
 printf 'services:\n  identity:\n    methods:\n      enablePasswordMethods: "true"\n' > "$PMFILE"
 renders_fail "quoted \"true\" in a values file fails the render"     "services.identity.methods.enablePasswordMethods must be true or false" render -f "$PMFILE"
 rm -f "$PMFILE"
+
+# 21. AB#8797: MongoDB tenant-database prefix on every core service and on the operator, only when set
+TP=OCTO_SYSTEM__TENANTDATABASEPREFIX
+OUT="$(render)"
+check "asset repository deployment was found (AB#8797 test is not vacuous)" test -n "$(dep asset-rep-services)"
+check "unset tenantDatabasePrefix renders no variable"             bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$TP"
+OUT="$(render --set clusterDependencies.tenantDatabasePrefix=dev_)"
+check "tenantDatabasePrefix renders on the asset repository"       bash -c 'grep -A1 "name: $1" <<<"$0" | grep -q "value: \"dev_\""' "$(dep asset-rep-services)" "$TP"
+check "tenantDatabasePrefix renders on identity"                    bash -c 'grep -A1 "name: $1" <<<"$0" | grep -q "value: \"dev_\""' "$(dep identity)" "$TP"
+check "tenantDatabasePrefix renders on every system-env service"    test "$(grep -c "name: $TP" <<<"$OUT")" = "$(grep -c 'name: OCTO_SYSTEM__SYSTEMDATABASENAME' <<<"$OUT")"
+OP_TP=OPERATOR__CLUSTERDEPENDENCIES__TENANTDATABASEPREFIX
+check "operator: unset tenantDatabasePrefix renders no variable"   bash -c '! grep -q "$1" <<<"$0"' "$(op)" "$OP_TP"
+check "operator: tenantDatabasePrefix renders the variable"         bash -c 'grep -A1 "name: $1" <<<"$0" | grep -q "value: \"dev_\""' "$(op --set operator.clusterDependencies.tenantDatabasePrefix=dev_)" "$OP_TP"
 
 exit $fail
