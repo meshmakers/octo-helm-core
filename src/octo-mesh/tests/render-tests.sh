@@ -3,7 +3,8 @@
 # hub authorization and operator credentials (AB#5930), SECRET missing-key guard (AB#5934),
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
-# REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797).
+# REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
+# identity tenant authorization modes (AB#9017).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -188,29 +189,46 @@ OUT="$(render --set services.identity.identityServerLicenseKey=x --set services.
 check "old --set license values render without error" test -n "$OUT"
 check "old --set license values are ignored"     bash -c '! grep -qiE "LicenseKey" <<<"$0"' "$OUT"
 
-# 12. AB#6834: user-token tenant gate mode, only on assetRepository and communication, default LogOnly
+# 12. AB#6834: user-token tenant gate mode on assetRepository and communication (identity: section 12a), default LogOnly
 V=OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT
 dep() { awk -v n="$1" 'BEGIN{RS="\n---\n"} /\nkind: Deployment\n/ && $0 ~ ("name: [^\n]*" n "\n")' <<<"$OUT"; }
 gate() { grep -A1 "name: $V" <<<"$(dep "$1")" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
 OUT="$(render)"
 check "gate mode defaults to LogOnly (asset repository)" test "$(gate asset-rep-services)" = 'value: "LogOnly" '
 check "gate mode defaults to LogOnly (communication)"    test "$(gate communication-controller-services)" = 'value: "LogOnly" '
-check "default renders the variable exactly twice"       test "$(grep -c "name: $V" <<<"$OUT")" = 2
+check "default renders the variable three times (with identity)" test "$(grep -c "name: $V" <<<"$OUT")" = 3
 OUT="$(render --set services.assetRepository.userTokenEnforcement=Enforce)"
 check "assetRepository=Enforce renders, communication stays LogOnly" test "$(gate asset-rep-services)$(gate communication-controller-services)" = 'value: "Enforce" value: "LogOnly" '
 OUT="$(render --set services.communication.userTokenEnforcement=Enforce)"
 check "communication=Enforce renders, asset repository stays LogOnly" test "$(gate asset-rep-services)$(gate communication-controller-services)" = 'value: "LogOnly" value: "Enforce" '
 OUT="$(render --set services.assetRepository.userTokenEnforcement=LogOnly --set services.communication.userTokenEnforcement=LogOnly)"
-check "explicit LogOnly renders LogOnly twice"           test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "LogOnly"')" = 2
+check "explicit LogOnly renders LogOnly twice (+ identity)" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "LogOnly"')" = 3
 OUT="$(render --set services.assetRepository.userTokenEnforcement=Enforce --set services.communication.userTokenEnforcement=Enforce)"
-check "both Enforce render Enforce twice"                test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "Enforce"')" = 2
-for svc in identity bot platform; do
+check "both Enforce render Enforce twice, identity stays LogOnly" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "Enforce"')$(gate identity)" = '2value: "LogOnly" '
+for svc in bot platform; do
   check "$svc deployment carries no gate variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$V"
 done
 check "identity deployment was found (test is not vacuous)" test -n "$(dep identity)"
-check "variable only inside the two deployments"         test "$(grep -c "name: $V" <<<"$(dep asset-rep-services)$(dep communication-controller-services)")" = 2
+check "variable only inside the three deployments"       test "$(grep -c "name: $V" <<<"$(dep asset-rep-services)$(dep communication-controller-services)$(dep identity)")" = 3
 renders_fail "invalid asset repository value fails the render" "services.assetRepository.userTokenEnforcement must be LogOnly or Enforce" render --set services.assetRepository.userTokenEnforcement=Bogus
 renders_fail "invalid communication value fails the render"    "services.communication.userTokenEnforcement must be LogOnly or Enforce" render --set services.communication.userTokenEnforcement=enforce
+
+# 12a. AB#9017 (AB#9000): identity renders both tenant authorization modes, chart default LogOnly
+S=OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT
+mode() { grep -A1 "name: $1" <<<"$(dep identity)" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
+OUT="$(render)"
+check "identity user-token mode defaults to LogOnly"     test "$(mode $V)" = 'value: "LogOnly" '
+check "identity service-token mode defaults to LogOnly"  test "$(mode $S)" = 'value: "LogOnly" '
+check "service-token mode is rendered only on identity"  test "$(grep -c "name: $S" <<<"$OUT")" = 1
+OUT="$(render --set services.identity.userTokenEnforcement=Enforce --set services.identity.serviceTokenEnforcement=Enforce)"
+check "identity Enforce/Enforce renders both"            test "$(mode $V)$(mode $S)" = 'value: "Enforce" value: "Enforce" '
+check "identity Enforce leaves asset repository LogOnly" test "$(gate asset-rep-services)" = 'value: "LogOnly" '
+OUT="$(render --set services.identity.userTokenEnforcement=LogOnly --set services.identity.serviceTokenEnforcement=LogOnly)"
+check "identity explicit LogOnly/LogOnly renders both"   test "$(mode $V)$(mode $S)" = 'value: "LogOnly" value: "LogOnly" '
+OUT="$(render --set services.identity.serviceTokenEnforcement=Disabled)"
+check "identity service-token Disabled renders"          test "$(mode $S)" = 'value: "Disabled" '
+renders_fail "invalid identity user-token value fails the render"    "services.identity.userTokenEnforcement must be LogOnly or Enforce" render --set services.identity.userTokenEnforcement=Disabled
+renders_fail "invalid identity service-token value fails the render" "services.identity.serviceTokenEnforcement must be LogOnly, Enforce or Disabled" render --set services.identity.serviceTokenEnforcement=enforce
 
 # 13. Bot artifact store S3: the CrateDB-side endpoint is rendered only when set
 S3="--set services.bot.artifactStorage.provider=S3 --set services.bot.artifactStorage.s3.bucket=b --set services.bot.artifactStorage.s3.serviceUrl=http://store.example.test:8333"

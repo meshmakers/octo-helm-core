@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added (AB#9017)
+- **octo-mesh: identity values `services.identity.userTokenEnforcement` (`LogOnly` | `Enforce`) and
+  `services.identity.serviceTokenEnforcement` (`LogOnly` | `Enforce` | `Disabled`).** Render
+  `OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT` / `OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT` on the identity
+  deployment; chart default `LogOnly` for both (the service's code default is `Enforce`). Invalid values fail the render.
+  Needed before octo-identity-services #305, which turns on the tenant check of identity's own API: test-2 sets
+  `Enforce` in `octo-mesh-deployment`, staging-1/prod-1/prod-2 keep `LogOnly` for the first release (AB#9000).
+  `Disabled` (service tokens only) skips the check without logging and is an emergency exit only.
+
 ### Added (AB#8797)
 - **octo-mesh: value `clusterDependencies.tenantDatabasePrefix`** (MongoDB tenant-database prefix, Epic AB#4944).
   Renders `OCTO_SYSTEM__TENANTDATABASEPREFIX` on every core service only when set; empty (default) renders nothing and

@@ -294,6 +294,19 @@ services:
     # Enforce per cluster after the inventory (AB#8339) and the Warn log are reviewed. Any other value fails
     # the render.
     crossTenantAncestry: ""
+    # AB#9017 (AB#9000) tenant check of identity's own API (TenantAuthorizationMiddleware): what happens when a
+    # token issued for tenant A calls an identity route of tenant B. From octo-identity-services #305 on the check
+    # runs on identity, whose code default is Enforce for both paths; the chart renders both modes explicitly.
+    #   userTokenEnforcement (OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT), user tokens (sub claim):
+    #     LogOnly  - default: nothing is denied; the service logs "would be denied".
+    #     Enforce  - the call is answered with 403.
+    #   serviceTokenEnforcement (OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT), client-credentials tokens:
+    #     LogOnly  - default: nothing is denied; a service token addressing a foreign tenant is logged.
+    #     Enforce  - such a token gets 403 unless its client is in TenantAuthorization:CrossTenantServiceClientIds.
+    #     Disabled - no check and no log; emergency exit only (hides the inventory).
+    # Enforce per cluster once the LogOnly warnings are clean (test-2 first). Any other value fails the render.
+    userTokenEnforcement: LogOnly
+    serviceTokenEnforcement: LogOnly
     dataProtection:
       # AB#5530 encryption at rest of the Data Protection key ring with the platform key ring
       # (OCTO_IDENTITY__DATAPROTECTION__ENCRYPTEXISTINGKEYS).
