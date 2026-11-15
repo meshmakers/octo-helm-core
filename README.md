@@ -189,7 +189,7 @@ The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` w
 
 ### User-token tenant gate mode (AB#6834)
 
-Asset repository and communication controller reject (or, in `LogOnly`, only log) a user token issued for tenant A that calls a route of tenant B. The chart renders the mode of each service explicitly on its deployment, and on no other service (identity and bot keep their code default):
+Asset repository and communication controller reject (or, in `LogOnly`, only log) a user token issued for tenant A that calls a route of tenant B. The chart renders the mode of each service explicitly on its deployment (identity: next section; every other service keeps its code default, `Enforce`):
 
 | Value | Default | Environment variable |
 |---|---|---|
@@ -199,6 +199,21 @@ Asset repository and communication controller reject (or, in `LogOnly`, only log
 `LogOnly` (the default, identical to the services' code default, so no installation changes without a value) denies nothing and logs `would be denied`. `Enforce` answers such calls with 403. Any other value fails the render. The SignalR hubs are not part of this gate; see the hub authorization mode above.
 
 Rollback: set the value of the affected service back to `LogOnly` and roll the deployment; each service is switched independently. Switch per cluster only after the LogOnly warnings are clean - rollout steps and checks: runbook in `octo-communication-controller-services` (AB#6833).
+
+### Identity tenant authorization modes (AB#9017)
+
+From octo-identity-services #305 (AB#9017) on, identity's own API runs the tenant check of `TenantAuthorizationMiddleware` on bearer tokens: a token issued for tenant A that calls an identity route of tenant B. The service's code default is `Enforce` for both token kinds; the chart renders both modes explicitly on the identity deployment with the chart default `LogOnly`, so an installation without a value only logs. On an identity version before #305 the variables are bound but have no effect: the check never runs there, whatever the mode says.
+
+An unset or empty value renders `LogOnly`; a YAML boolean or number fails the render like any other invalid value.
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.identity.userTokenEnforcement` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT` |
+| `services.identity.serviceTokenEnforcement` = `LogOnly` \| `Enforce` \| `Disabled` | `LogOnly` | `OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT` |
+
+`LogOnly` denies nothing and logs every call an enforcing run would refuse. `Enforce` answers it with 403 (a service token is let through when its client is in `TenantAuthorization:CrossTenantServiceClientIds`). `Disabled` (service tokens only, as in octo-common-services `ServiceTokenTenantEnforcementMode`) skips the check without logging; it is an emergency exit only, because it hides the inventory. Any other value fails the render. The service-token mode is rendered on identity only; asset repository and communication controller keep their code default (`Enforce`) for service tokens.
+
+Rollout plan (AB#9000; values in `octo-mesh-deployment`, a follow-up of this chart change): test-2 sets both to `Enforce`; staging-1, prod-1 and prod-2 stay on `LogOnly` for the first release with #305 and are switched per cluster once the LogOnly warnings are clean. Rollback: set the value back to `LogOnly` and roll the identity deployment.
 
 ### Render octo-mesh chart template locally and display the output
 

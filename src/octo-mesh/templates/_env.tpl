@@ -252,6 +252,11 @@ service default (Warn). Any other value fails the render. */}}
 - name: OCTO_IDENTITYAPIAUTHORIZATION__CROSSTENANTANCESTRY
   value: {{ $ancestry | quote }}
 {{- end }}
+{{- /* AB#9017 (AB#9000): identity's own API runs the tenant check of TenantAuthorizationMiddleware on bearer tokens
+from octo-identity-services #305 on. Both modes are rendered explicitly (chart default LogOnly) so the mode in effect is
+visible on the deployment; the service's code default would be Enforce. */}}
+{{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.identity.userTokenEnforcement" "mode" .global.Values.services.identity.userTokenEnforcement) }}
+{{ include "octo-mesh.service-token-enforcement-env" (dict "key" "services.identity.serviceTokenEnforcement" "mode" .global.Values.services.identity.serviceTokenEnforcement) }}
 {{- /* AB#5530 encryption at rest of the Data Protection key ring. Rendered only when set (true or
 false): unset keeps the service default (false). A non-boolean value fails the render. */}}
 {{- $dataProtection := .global.Values.services.identity.dataProtection | default dict }}
@@ -649,13 +654,45 @@ AB#6834 (AB#6728): mode of the user-token tenant gate (TenantAuthorizationMiddle
 service, section TenantAuthorization of the service configuration. Rendered explicitly so the
 mode in effect is visible on the deployment. LogOnly (default) denies nothing and logs "would be
 denied"; Enforce answers 403 for a user token of a foreign tenant. Any other value fails the
-render - a typo must not silently fall back to LogOnly. Included only by assetRepository and
-communication; every other service keeps its code default.
+render - a typo must not silently fall back to LogOnly. Included by identity (AB#9017),
+assetRepository and communication; every other service keeps its code default.
 */ -}}
-{{- $mode := .mode | default "LogOnly" }}
-{{- if not (has $mode (list "LogOnly" "Enforce")) }}
-{{- fail (printf "%s must be LogOnly or Enforce, got '%v'" .key $mode) }}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce")) }}
 {{- end }}
-- name: OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT
+
+{{- define "octo-mesh.service-token-enforcement-env" -}}
+{{- /*
+AB#9017 (AB#9000): mode of the service-token (client-credentials, no sub claim) tenant check of
+TenantAuthorizationMiddleware of one service, section TenantAuthorization of the service configuration
+(octo-common-services ServiceTokenTenantEnforcementMode). Rendered explicitly so the mode in effect is
+visible on the deployment. LogOnly (default) denies nothing and logs a service token that addresses a
+foreign tenant; Enforce answers 403; Disabled skips the check without logging (emergency exit only,
+it hides the inventory). Any other value fails the render. Included only by identity; every other
+service keeps its code default (Enforce).
+*/ -}}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce" "Disabled")) }}
+{{- end }}
+
+{{- define "octo-mesh.tenant-authorization-mode-env" -}}
+{{- /*
+Shared validation of the TenantAuthorization modes (AB#6834, AB#9017). Only an unset value (null) or
+"" falls back to LogOnly; every other value must be one of .allowed as a string. A YAML boolean or
+number (e.g. an empty-looking false or 0) fails the render instead of silently becoming LogOnly.
+*/ -}}
+{{- $mode := .mode }}
+{{- if or (kindIs "invalid" $mode) (and (kindIs "string" $mode) (eq $mode "")) }}
+{{- $mode = "LogOnly" }}
+{{- end }}
+{{- if not (and (kindIs "string" $mode) (has $mode .allowed)) }}
+{{- fail (printf "%s must be %s, got '%v'" .key (include "octo-mesh.or-list" .allowed) $mode) }}
+{{- end }}
+- name: {{ .env }}
   value: {{ $mode | quote }}
+{{- end }}
+
+{{- define "octo-mesh.or-list" -}}
+{{- $n := len . }}
+{{- if eq $n 1 }}{{ index . 0 }}
+{{- else }}{{ join ", " (initial .) }} or {{ last . }}
+{{- end }}
 {{- end }}
