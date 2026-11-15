@@ -657,12 +657,7 @@ denied"; Enforce answers 403 for a user token of a foreign tenant. Any other val
 render - a typo must not silently fall back to LogOnly. Included by identity (AB#9017),
 assetRepository and communication; every other service keeps its code default.
 */ -}}
-{{- $mode := .mode | default "LogOnly" }}
-{{- if not (has $mode (list "LogOnly" "Enforce")) }}
-{{- fail (printf "%s must be LogOnly or Enforce, got '%v'" .key $mode) }}
-{{- end }}
-- name: OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT
-  value: {{ $mode | quote }}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce")) }}
 {{- end }}
 
 {{- define "octo-mesh.service-token-enforcement-env" -}}
@@ -675,10 +670,29 @@ foreign tenant; Enforce answers 403; Disabled skips the check without logging (e
 it hides the inventory). Any other value fails the render. Included only by identity; every other
 service keeps its code default (Enforce).
 */ -}}
-{{- $mode := .mode | default "LogOnly" }}
-{{- if not (has $mode (list "LogOnly" "Enforce" "Disabled")) }}
-{{- fail (printf "%s must be LogOnly, Enforce or Disabled, got '%v'" .key $mode) }}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce" "Disabled")) }}
 {{- end }}
-- name: OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT
+
+{{- define "octo-mesh.tenant-authorization-mode-env" -}}
+{{- /*
+Shared validation of the TenantAuthorization modes (AB#6834, AB#9017). Only an unset value (null) or
+"" falls back to LogOnly; every other value must be one of .allowed as a string. A YAML boolean or
+number (e.g. an empty-looking false or 0) fails the render instead of silently becoming LogOnly.
+*/ -}}
+{{- $mode := .mode }}
+{{- if or (kindIs "invalid" $mode) (and (kindIs "string" $mode) (eq $mode "")) }}
+{{- $mode = "LogOnly" }}
+{{- end }}
+{{- if not (and (kindIs "string" $mode) (has $mode .allowed)) }}
+{{- fail (printf "%s must be %s, got '%v'" .key (include "octo-mesh.or-list" .allowed) $mode) }}
+{{- end }}
+- name: {{ .env }}
   value: {{ $mode | quote }}
+{{- end }}
+
+{{- define "octo-mesh.or-list" -}}
+{{- $n := len . }}
+{{- if eq $n 1 }}{{ index . 0 }}
+{{- else }}{{ join ", " (initial .) }} or {{ last . }}
+{{- end }}
 {{- end }}

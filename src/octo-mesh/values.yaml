@@ -304,7 +304,8 @@ services:
     #     LogOnly  - default: nothing is denied; a service token addressing a foreign tenant is logged.
     #     Enforce  - such a token gets 403 unless its client is in TenantAuthorization:CrossTenantServiceClientIds.
     #     Disabled - no check and no log; emergency exit only (hides the inventory).
-    # Enforce per cluster once the LogOnly warnings are clean (test-2 first). Any other value fails the render.
+    # Enforce per cluster once the LogOnly warnings are clean (test-2 first). Before #305 the values have no effect.
+    # Unset or "" renders LogOnly; any other value (also a YAML boolean or number) fails the render.
     userTokenEnforcement: LogOnly
     serviceTokenEnforcement: LogOnly
     dataProtection:

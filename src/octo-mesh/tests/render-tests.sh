@@ -202,9 +202,9 @@ check "assetRepository=Enforce renders, communication stays LogOnly" test "$(gat
 OUT="$(render --set services.communication.userTokenEnforcement=Enforce)"
 check "communication=Enforce renders, asset repository stays LogOnly" test "$(gate asset-rep-services)$(gate communication-controller-services)" = 'value: "LogOnly" value: "Enforce" '
 OUT="$(render --set services.assetRepository.userTokenEnforcement=LogOnly --set services.communication.userTokenEnforcement=LogOnly)"
-check "explicit LogOnly renders LogOnly twice (+ identity)" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "LogOnly"')" = 3
+check "explicit LogOnly: asset, communication and identity default LogOnly" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "LogOnly"')" = 3
 OUT="$(render --set services.assetRepository.userTokenEnforcement=Enforce --set services.communication.userTokenEnforcement=Enforce)"
-check "both Enforce render Enforce twice, identity stays LogOnly" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "Enforce"')$(gate identity)" = '2value: "LogOnly" '
+check "asset+communication Enforce render Enforce, identity stays LogOnly" test "$(grep -A1 "name: $V" <<<"$OUT" | grep -c 'value: "Enforce"')$(gate identity)" = '2value: "LogOnly" '
 for svc in bot platform; do
   check "$svc deployment carries no gate variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$V"
 done
@@ -229,6 +229,12 @@ OUT="$(render --set services.identity.serviceTokenEnforcement=Disabled)"
 check "identity service-token Disabled renders"          test "$(mode $S)" = 'value: "Disabled" '
 renders_fail "invalid identity user-token value fails the render"    "services.identity.userTokenEnforcement must be LogOnly or Enforce" render --set services.identity.userTokenEnforcement=Disabled
 renders_fail "invalid identity service-token value fails the render" "services.identity.serviceTokenEnforcement must be LogOnly, Enforce or Disabled" render --set services.identity.serviceTokenEnforcement=enforce
+# A YAML boolean or number must fail instead of silently becoming LogOnly; "" or null keep the chart default
+renders_fail "identity user-token false fails the render"     "services.identity.userTokenEnforcement must be LogOnly or Enforce, got 'false'" render --set services.identity.userTokenEnforcement=false
+renders_fail "identity service-token 0 fails the render"      "services.identity.serviceTokenEnforcement must be LogOnly, Enforce or Disabled, got '0'" render --set services.identity.serviceTokenEnforcement=0
+renders_fail "asset repository user-token false fails the render" "services.assetRepository.userTokenEnforcement must be LogOnly or Enforce, got 'false'" render --set services.assetRepository.userTokenEnforcement=false
+OUT="$(render --set services.identity.userTokenEnforcement= --set services.identity.serviceTokenEnforcement=null)"
+check "identity empty/null values fall back to LogOnly"  test "$(mode $V)$(mode $S)" = 'value: "LogOnly" value: "LogOnly" '
 
 # 13. Bot artifact store S3: the CrateDB-side endpoint is rendered only when set
 S3="--set services.bot.artifactStorage.provider=S3 --set services.bot.artifactStorage.s3.bucket=b --set services.bot.artifactStorage.s3.serviceUrl=http://store.example.test:8333"
