@@ -4,7 +4,7 @@
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
-# identity tenant authorization modes (AB#9017).
+# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -408,5 +408,36 @@ check "tenantDatabasePrefix renders on every system-env service"    test "$(grep
 OP_TP=OPERATOR__CLUSTERDEPENDENCIES__TENANTDATABASEPREFIX
 check "operator: unset tenantDatabasePrefix renders no variable"   bash -c '! grep -q "$1" <<<"$0"' "$(op)" "$OP_TP"
 check "operator: tenantDatabasePrefix renders the variable"         bash -c 'grep -A1 "name: $1" <<<"$0" | grep -q "value: \"dev_\""' "$(op --set operator.clusterDependencies.tenantDatabasePrefix=dev_)" "$OP_TP"
+
+# 22. AB#9027 (AB#9000 switch S2): tenant generation check mode on every service that runs the check
+G=OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT
+AI=(--set services.aiServices.deploy=true --set services.aiServices.publicUri=https://ai.example.test)
+gen() { grep -A1 "name: $G" <<<"$(dep "$1")" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
+gens() { echo "$(gen identity)$(gen asset-rep-services)$(gen bot-services)$(gen communication-controller-services)$(gen ai-services)"; }
+all() { local i; for i in 1 2 3 4 5; do printf 'value: "%s" ' "$1"; done; }
+OUT="$(render "${AI[@]}")"
+check "AB#9027 deployments were found (test is not vacuous)"     test -n "$(dep identity)" -a -n "$(dep ai-services)" -a -n "$(dep bot-services)"
+check "default renders LogOnly on the five services"           test "$(gens)" = "$(all LogOnly)"
+check "rendered exactly five times (not on platform/studio)"   test "$(grep -c "name: $G" <<<"$OUT")" = 5
+check "platform services renders no generation mode"           test -z "$(gen platform-services)"
+OUT="$(render "${AI[@]}" --set tenantAuthorization.tenantGenerationEnforcement=Enforce)"
+check "global Enforce renders Enforce on the five services"    test "$(gens)" = "$(all Enforce)"
+OUT="$(render "${AI[@]}" --set tenantAuthorization.tenantGenerationEnforcement=LogOnly)"
+check "global explicit LogOnly renders LogOnly"                test "$(gens)" = "$(all LogOnly)"
+OUT="$(render "${AI[@]}" --set tenantAuthorization.tenantGenerationEnforcement=Disabled)"
+check "global Disabled renders Disabled"                       test "$(gens)" = "$(all Disabled)"
+OUT="$(render "${AI[@]}" --set 'tenantAuthorization.tenantGenerationEnforcement=')"
+check "global empty renders LogOnly"                           test "$(gens)" = "$(all LogOnly)"
+OUT="$(render "${AI[@]}" --set tenantAuthorization.tenantGenerationEnforcement=Enforce --set services.bot.tenantGenerationEnforcement=LogOnly)"
+check "per-service override wins (bot LogOnly, rest Enforce)"  test "$(gens)" = 'value: "Enforce" value: "Enforce" value: "LogOnly" value: "Enforce" value: "Enforce" '
+OUT="$(render "${AI[@]}" --set services.identity.tenantGenerationEnforcement=Enforce)"
+check "identity override Enforce, rest default LogOnly"        test "$(gens)" = 'value: "Enforce" value: "LogOnly" value: "LogOnly" value: "LogOnly" value: "LogOnly" '
+OUT="$(render "${AI[@]}" --set tenantAuthorization.tenantGenerationEnforcement=Enforce --set 'services.communication.tenantGenerationEnforcement=')"
+check "empty override takes the global value"                  test "$(gen communication-controller-services)" = 'value: "Enforce" '
+renders_fail "invalid global value fails the render"           "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'enforce'" render --set tenantAuthorization.tenantGenerationEnforcement=enforce
+renders_fail "global boolean fails the render"                 "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'false'" render --set tenantAuthorization.tenantGenerationEnforcement=false
+renders_fail "invalid override fails the render"               "services.assetRepository.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'On'" render --set services.assetRepository.tenantGenerationEnforcement=On
+renders_fail "invalid global fails even when overridden"       "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'Yes'" render --set tenantAuthorization.tenantGenerationEnforcement=Yes --set services.identity.tenantGenerationEnforcement=Enforce
+renders_fail "override on platform services fails the render"  "services.platformServices.tenantGenerationEnforcement is not supported" render --set services.platformServices.tenantGenerationEnforcement=Enforce
 
 exit $fail

@@ -189,6 +189,7 @@ _helpers.tpl for how the ring is derived from the instance secret.
 {{- end }}
 {{- end }}
 {{- end }}
+{{- include "octo-mesh.tenant-generation-enforcement-env" . }}
 {{- if eq .name "identity" -}}
 {{- $name := "OCTO_IDENTITY" }}
 {{ include "octo-mesh.system-env" . }}
@@ -671,6 +672,34 @@ it hides the inventory). Any other value fails the render. Included only by iden
 service keeps its code default (Enforce).
 */ -}}
 {{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__SERVICETOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce" "Disabled")) }}
+{{- end }}
+
+{{- define "octo-mesh.tenant-generation-enforcement-env" -}}
+{{- /*
+AB#9027 (AB#9000 switch S2): mode of the tenant generation check (octo-common-services AB#8999,
+TenantAuthorization:TenantGenerationEnforcement, TenantGenerationEnforcementMode). Global value
+tenantAuthorization.tenantGenerationEnforcement, per-service override services.<name>.tenantGenerationEnforcement
+(unset or "" takes the global value). Rendered explicitly (chart default LogOnly) on every service that runs the
+check; the global value is validated even where every service overrides it. An override on a service without the
+check fails the render instead of being ignored silently.
+*/ -}}
+{{- $services := list "identity" "assetRepository" "bot" "communication" "aiServices" }}
+{{- $globalKey := "tenantAuthorization.tenantGenerationEnforcement" }}
+{{- $globalMode := dig "tenantGenerationEnforcement" nil (.global.Values.tenantAuthorization | default dict) }}
+{{- $allowed := list "LogOnly" "Enforce" "Disabled" }}
+{{- $overrideKey := printf "services.%s.tenantGenerationEnforcement" .name }}
+{{- $override := dig "tenantGenerationEnforcement" nil (.svc | default dict) }}
+{{- $overrideSet := not (or (kindIs "invalid" $override) (and (kindIs "string" $override) (eq $override ""))) }}
+{{- if has .name $services }}
+{{- if $overrideSet }}
+{{- $_ := include "octo-mesh.tenant-authorization-mode-env" (dict "key" $globalKey "mode" $globalMode "env" "-" "allowed" $allowed) }}
+{{- include "octo-mesh.tenant-authorization-mode-env" (dict "key" $overrideKey "mode" $override "env" "OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT" "allowed" $allowed) }}
+{{- else }}
+{{- include "octo-mesh.tenant-authorization-mode-env" (dict "key" $globalKey "mode" $globalMode "env" "OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT" "allowed" $allowed) }}
+{{- end }}
+{{- else if $overrideSet }}
+{{- fail (printf "%s is not supported: %s runs no tenant generation check (supported: %s)" $overrideKey .name (join ", " $services)) }}
+{{- end }}
 {{- end }}
 
 {{- define "octo-mesh.tenant-authorization-mode-env" -}}
