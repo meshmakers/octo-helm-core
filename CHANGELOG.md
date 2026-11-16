@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added (AB#9027)
+- **octo-mesh: value `tenantAuthorization.tenantGenerationEnforcement` (`LogOnly` | `Enforce` | `Disabled`) with the
+  per-service override `services.<service>.tenantGenerationEnforcement`.** Renders
+  `OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT` on identity, assetRepository, bot, communication and
+  aiServices (the services that run the tenant generation check of octo-common-services AB#8999); chart default
+  `LogOnly`, identical to the code default, so no installation changes without a value. Unset or empty renders
+  `LogOnly` (override: the global value); any other value fails the render, also an override on a service without the
+  check. Needed for switch S2 of the Enforce plan (AB#9000); the cluster values follow in `octo-mesh-deployment`.
+
 ### Added (AB#9017)
 - **octo-mesh: identity values `services.identity.userTokenEnforcement` (`LogOnly` | `Enforce`) and
   `services.identity.serviceTokenEnforcement` (`LogOnly` | `Enforce` | `Disabled`).** Render

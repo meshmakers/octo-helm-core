@@ -215,6 +215,34 @@ An unset or empty value renders `LogOnly`; a YAML boolean or number fails the re
 
 Rollout plan (AB#9000; values in `octo-mesh-deployment`, a follow-up of this chart change): test-2 sets both to `Enforce`; staging-1, prod-1 and prod-2 stay on `LogOnly` for the first release with #305 and are switched per cluster once the LogOnly warnings are clean. Rollback: set the value back to `LogOnly` and roll the identity deployment.
 
+### Tenant generation check mode (AB#9027)
+
+Access tokens issued by identity since AB#8997 carry `tenant_gen`, the creation time of their tenant; older tokens carry
+none. The services compare it with the current generation of the tenant (octo-common-services AB#8999,
+`docs/tenant-generation-check.md`). Under `Enforce` a token whose `tenant_gen` is missing or differs is refused (e.g. a
+token of a deleted tenant presented to a new tenant with the same id); under `LogOnly` it is only logged and counted.
+The chart renders the mode on every service that runs the check: identity (also its token grants), asset repository,
+bot, communication controller and AI services. Platform services runs no tenant gate and studio is a frontend; neither
+gets the variable.
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `tenantAuthorization.tenantGenerationEnforcement` = `LogOnly` \| `Enforce` \| `Disabled` | `LogOnly` | `OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT` |
+| `services.<service>.tenantGenerationEnforcement` (`identity`, `assetRepository`, `bot`, `communication`, `aiServices`) | unset = the global value | same variable, on that service only |
+
+`LogOnly` (the default, identical to the code default) refuses nothing; tokens without or with a different `tenant_gen`
+are logged (`This would be denied with TenantGenerationEnforcement=Enforce`) and counted
+(`octo.tenant_auth.generation_checks`). `Enforce` refuses them (403, `METHOD_FORBIDDEN`, `invalid_grant`) and answers
+503 when the generation cannot be read. `Disabled` turns the check off without log or metric; it is an emergency exit
+only. An unset or empty value renders `LogOnly` (override: the global value); any other value, also a YAML boolean or
+number, fails the render. All values are validated once per render, also for services that are not deployed; the global
+value is validated even when every service overrides it, and an override on a service without the check (e.g.
+`platformServices`, `studio`) fails the render.
+
+Switch per cluster only by the plan `octo-common-services/docs/tenant-generation-enforce-plan.md` (AB#9000, switch S2):
+all services of a cluster in one CD run, together with the same value in the reporting, MCP and AI charts
+(`octo-helm-pro`). Rollback: set the value back to `LogOnly` and roll the deployments.
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
