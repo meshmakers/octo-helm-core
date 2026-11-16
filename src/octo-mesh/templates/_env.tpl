@@ -401,6 +401,10 @@ default (120000) applies.
 */}}
 {{- with .global.Values.services.assetRepository.runtimeQuery }}
 {{- $maxTimeMs := .maxTimeMs }}
+{{- /* Helm 3.18.0 loads chart values as json.Number (a string kind); convert it, text still fails below. */}}
+{{- if eq (typeOf $maxTimeMs) "json.Number" }}
+{{- $maxTimeMs = float64 $maxTimeMs }}
+{{- end }}
 {{- if not (kindIs "invalid" $maxTimeMs) }}
 {{- if not (or (kindIs "float64" $maxTimeMs) (kindIs "int64" $maxTimeMs) (kindIs "int" $maxTimeMs)) }}
 {{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
