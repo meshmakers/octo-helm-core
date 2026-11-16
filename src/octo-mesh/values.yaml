@@ -527,6 +527,14 @@ services:
       zipMaxBytes: 524288000
       # Maximum file size for which a preview is generated. 20 MB.
       previewMaxBytes: 20971520
+    # Server-side time limit of runtime-entity queries (AB#8897, configuration RuntimeQuery:MaxTimeMs, rendered as
+    # OCTO_RuntimeQuery__MaxTimeMs on this service only). Every query and count by type, by id, by type with
+    # navigation and by CK interface is sent to MongoDB with this maxTimeMS; a query that runs longer is stopped on the
+    # database and answered with the coded error ASSET1008 (GraphQL) / 504 (REST). Above 80 % of the limit the service
+    # logs a warning. Milliseconds up to 2147483647, default 120000 (2 min); 0 switches the limit off. Any other value (negative, not a
+    # whole number, text) fails the render. Blueprint installs and CK migrations run without the limit.
+    runtimeQuery:
+      maxTimeMs: 120000
     # CK method idempotency (AB#8280). Key id of the fingerprint key
     # (Methods:Idempotency:Fingerprint:Current:Id, 1-64 chars of A-Za-z0-9._-). The id is public and stored
     # with every fingerprint; the secret half is secrets.methodsFingerprintCurrentSecret. Empty (default) =

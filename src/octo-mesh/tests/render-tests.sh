@@ -5,7 +5,8 @@
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
 # identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295), bot index upgrade schedule (AB#9319),
-# adapter pool hub mode (AB#9309), GraphQL mutation scope gate (AB#9310).
+# adapter pool hub mode (AB#9309), GraphQL mutation scope gate (AB#9310),
+# runtime query time limit (AB#8897).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -629,5 +630,29 @@ rm -f "$MFILE"
 # an escaped dot in --set makes a scalar entry in services, which serviceaccount.yaml already refuses before the scan runs:
 # only the failure matters here (never a render with the default)
 renders_fail "escaped dot in --set (services.assetRepository\\.enforceMutationScope) fails" "Error:" render --set 'services.assetRepository\.enforceMutationScope=true'
+
+# 27. AB#8897: runtime query time limit on the asset repository only (OCTO_RuntimeQuery__MaxTimeMs)
+RQ=OCTO_RuntimeQuery__MaxTimeMs
+rq() { grep -A1 "name: $RQ" <<<"$(dep asset-rep-services)" | grep -o 'value: "[0-9]*"'; }
+OUT="$(render)"
+check "default renders 120000 on the asset repository"         test "$(rq)" = 'value: "120000"'
+check "rendered on the asset repository only"                  test "$(grep -c "name: $RQ" <<<"$OUT")" = 1
+OUT="$(render --set services.assetRepository.runtimeQuery.maxTimeMs=300000)"
+check "a cluster value is rendered"                            test "$(rq)" = 'value: "300000"'
+OUT="$(render --set services.assetRepository.runtimeQuery.maxTimeMs=0)"
+check "0 (off) is rendered"                                    test "$(rq)" = 'value: "0"'
+RQ_FILE="$(mktemp)"; printf 'services:
+  assetRepository:
+    runtimeQuery:
+      maxTimeMs: 1800000
+' >"$RQ_FILE"
+OUT="$(render -f "$RQ_FILE")"; rm -f "$RQ_FILE"
+check "a values-file number renders without float notation"    test "$(rq)" = 'value: "1800000"'
+OUT="$(render --set services.assetRepository.runtimeQuery.maxTimeMs=null)"
+check "null renders no variable (service default applies)"     test -z "$(rq)"
+renders_fail "negative value fails the render"                 "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '-1'" render --set services.assetRepository.runtimeQuery.maxTimeMs=-1
+renders_fail "fraction fails the render"                       "got '1.5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=1.5
+renders_fail "text fails the render"                           "got '2m'" render --set-string services.assetRepository.runtimeQuery.maxTimeMs=2m
+renders_fail "value above int32 fails the render"              "got '3000000000'" render --set services.assetRepository.runtimeQuery.maxTimeMs=3000000000
 
 exit $fail

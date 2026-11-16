@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added (AB#8897)
+- **octo-mesh: value `services.assetRepository.runtimeQuery.maxTimeMs`** (default `120000`, `0` = off), rendered as
+  `OCTO_RuntimeQuery__MaxTimeMs` on the asset repository only: the server-side time limit of runtime-entity queries
+  (MongoDB `maxTimeMS`, error `ASSET1008` / `504`). A negative value, a fraction, text or a value above `2147483647`
+  fails the render; `null` renders nothing (service default). Needs an asset repository with the time limit; older
+  versions ignore the variable.
+
 ### Added (AB#9319)
 - **octo-mesh: values `services.bot.indexUpgrade.schedule` (`Immediate` | `Window`), `.window.enabled`, `.window.cron`
   and `.window.maxDuration`.** Render `OCTO_INDEXUPGRADE__SCHEDULE`, `OCTO_INDEXUPGRADE__WINDOW__ENABLED`,

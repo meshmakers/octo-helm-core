@@ -394,6 +394,24 @@ byte counts never render in float notation (1.048576e+08).
 - name: OCTO_Files__PreviewMaxBytes
   value: {{ .previewMaxBytes | int64 | quote }}
 {{- end }}
+{{- /*
+AB#8897 server-side time limit of runtime-entity queries (section "RuntimeQuery"). A whole number of
+milliseconds from 0 (off) to 2147483647; anything else fails the render. Unset or null renders nothing: the service
+default (120000) applies.
+*/}}
+{{- with .global.Values.services.assetRepository.runtimeQuery }}
+{{- $maxTimeMs := .maxTimeMs }}
+{{- if not (kindIs "invalid" $maxTimeMs) }}
+{{- if not (or (kindIs "float64" $maxTimeMs) (kindIs "int64" $maxTimeMs) (kindIs "int" $maxTimeMs)) }}
+{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
+{{- end }}
+{{- if or (lt (float64 $maxTimeMs) 0.0) (gt (float64 $maxTimeMs) 2147483647.0) (ne (float64 (int64 $maxTimeMs)) (float64 $maxTimeMs)) }}
+{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
+{{- end }}
+- name: OCTO_RuntimeQuery__MaxTimeMs
+  value: {{ $maxTimeMs | int64 | quote }}
+{{- end }}
+{{- end }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
