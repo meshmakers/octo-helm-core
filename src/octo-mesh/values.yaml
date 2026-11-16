@@ -63,9 +63,12 @@ observability:
   prometheusPort: 0
 
 # AB#9027 (AB#9000 switch S2): mode of the tenant generation check (octo-common-services AB#8999,
-# docs/tenant-generation-check.md). Every access token carries tenant_gen (the creation time of its tenant); the
-# check compares it with the current generation, so a token of a deleted tenant is not accepted by a new tenant
-# with the same id. Rendered as OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT on every service of this
+# docs/tenant-generation-check.md).
+# Access tokens issued by identity since AB#8997 carry tenant_gen (the creation time of their tenant); the check
+# compares it with the current generation. Under Enforce a token whose tenant_gen is missing or differs is refused
+# (e.g. a token of a deleted tenant presented to a new tenant with the same id); under LogOnly it is only logged
+# and counted.
+# Rendered as OCTO_TENANTAUTHORIZATION__TENANTGENERATIONENFORCEMENT on every service of this
 # chart that runs the check: identity (also its grants), assetRepository, bot, communication and aiServices
 # (platformServices runs no tenant gate, studio is a frontend).
 #   LogOnly  - default: nothing is refused; missing/mismatch tokens are logged ("would be denied") and counted.
