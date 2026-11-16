@@ -233,8 +233,9 @@ are logged (`This would be denied with TenantGenerationEnforcement=Enforce`) and
 (`octo.tenant_auth.generation_checks`). `Enforce` refuses them (403, `METHOD_FORBIDDEN`, `invalid_grant`) and answers
 503 when the generation cannot be read. `Disabled` turns the check off without log or metric; it is an emergency exit
 only. An unset or empty value renders `LogOnly` (override: the global value); any other value, also a YAML boolean or
-number, fails the render. The global value is validated even when every service overrides it, and an override on a
-service without the check (e.g. `platformServices`) fails the render.
+number, fails the render. All values are validated once per render, also for services that are not deployed; the global value is validated
+even when every service overrides it, and an override on a service without the check (e.g. `platformServices`,
+`studio`) fails the render.
 
 Switch per cluster only by the plan `octo-common-services/docs/tenant-generation-enforce-plan.md` (AB#9000, switch S2):
 all services of a cluster in one CD run, together with the same value in the reporting, MCP and AI charts

@@ -439,5 +439,8 @@ renders_fail "global boolean fails the render"                 "tenantAuthorizat
 renders_fail "invalid override fails the render"               "services.assetRepository.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'On'" render --set services.assetRepository.tenantGenerationEnforcement=On
 renders_fail "invalid global fails even when overridden"       "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'Yes'" render --set tenantAuthorization.tenantGenerationEnforcement=Yes --set services.identity.tenantGenerationEnforcement=Enforce
 renders_fail "override on platform services fails the render"  "services.platformServices.tenantGenerationEnforcement is not supported" render --set services.platformServices.tenantGenerationEnforcement=Enforce
+renders_fail "override on studio fails the render"            "services.studio.tenantGenerationEnforcement is not supported" render --set services.studio.tenantGenerationEnforcement=Enforce
+renders_fail "invalid override on a service not deployed fails" "services.aiServices.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'bogus'" render --set services.aiServices.tenantGenerationEnforcement=bogus
+renders_fail "invalid global fails with every check service off" "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'nope'" render --set tenantAuthorization.tenantGenerationEnforcement=nope --set services.identity.deploy=false --set services.assetRepository.deploy=false --set services.bot.deploy=false --set services.communication.deploy=false
 
 exit $fail

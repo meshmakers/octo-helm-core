@@ -12,6 +12,8 @@
 {{- include "checkMandatoryValue" (dict "name" "services.platformServices.publicUri" "value" .Values.services.platformServices.publicUri) }}
 {{- end }}
 
+{{- /* AB#9027: tenant generation check values, validated once and independent of deploy */}}
+{{- include "octo-mesh.tenant-generation-enforcement-validate" . }}
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
 {{ if $svc.deploy -}}
