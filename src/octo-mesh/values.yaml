@@ -449,6 +449,15 @@ services:
     # Any other value fails the render. Quote it in a values file: an unquoted Off is a YAML boolean
     # (false) and fails the render. Switch plan per cluster: AB#9296.
     streamDataReadEnforcement: Warn
+    # GraphQL mutation scope gate (AB#4973, chart value AB#9310): a generic GraphQL mutation needs a
+    # token with scope octo_api. Rendered as OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE (configuration key
+    # GraphQl:EnforceMutationScope) on this service only.
+    #   false - default (= the service's default, log-first): the mutation runs and a warning is logged
+    #           ("... would be rejected once GraphQl:EnforceMutationScope is enabled").
+    #   true  - the mutation is refused (forbidden error).
+    # Only a YAML boolean is accepted: a quoted "true" fails the render, as does a misspelled key
+    # (e.g. enforceMutationScop) or the key on another service. Switch plan per cluster: AB#9310.
+    enforceMutationScope: false
     # set false to prevent deployment
     deploy: true
     # Use Recreate strategy because the service consumes exclusive RabbitMQ
@@ -789,9 +798,18 @@ services:
     # docs/runbooks/hub-authorization-enforce-rollout.md. Operators need
     # communication-operator `operator.authentication.*` credentials first.
     # Any other value fails the render.
+    # adapterPoolMode (AB#9309): the /adapterPoolHub gate (pool members connecting
+    # and registering into a pool), rendered as OCTO_ADAPTERPOOLHUBAUTHORIZATION__MODE.
+    # LogOnly lets a member without a token or with a foreign pool tenant through
+    # (counted with octo_hub_name="adapterPoolHub", outcome=would_refuse); Enforce
+    # refuses it. Its row in the same runbook; switch plan per cluster: AB#9309.
+    # Only adapterMode, operatorMode and adapterPoolMode are known keys here: any
+    # other key (e.g. a misspelled adapterPoolMod) fails the render, as does the
+    # value on another service.
     hubAuthorization:
       adapterMode: LogOnly
       operatorMode: LogOnly
+      adapterPoolMode: LogOnly
     # Service-account impersonation switch (AB#5114, SECRET phase 3). false (default): the
     # controller answers `apply=true` on POST {tenantId}/v1/serviceAccount/switchToImpersonation
     # with 409, the dry run (apply=false) always works. true: the switch may clear the stored

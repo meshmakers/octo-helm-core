@@ -18,6 +18,9 @@
 {{- include "octo-mesh.stream-data-read-enforcement-validate" . }}
 {{- /* AB#9319: bot index upgrade values, validated once and independent of deploy */}}
 {{- include "octo-mesh.bot-index-upgrade-validate" . }}
+{{- /* AB#9309 / AB#9310: adapter pool hub mode and GraphQL mutation scope, validated once and independent of deploy */}}
+{{- include "octo-mesh.adapter-pool-hub-mode-validate" . }}
+{{- include "octo-mesh.mutation-scope-validate" . }}
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
 {{ if $svc.deploy -}}

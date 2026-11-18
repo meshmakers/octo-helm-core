@@ -4,7 +4,8 @@
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
-# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295), bot index upgrade schedule (AB#9319).
+# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295), bot index upgrade schedule (AB#9319),
+# adapter pool hub mode (AB#9309), GraphQL mutation scope gate (AB#9310).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -521,5 +522,84 @@ renders_fail "unknown key under window fails"             "services.bot.indexUpg
 renders_fail "indexUpgrade on another service fails"      "services.identity.indexUpgrade is not supported: only services.bot runs the index upgrade" render --set services.identity.indexUpgrade.schedule=Immediate
 renders_fail "non-map indexUpgrade fails the render"      "services.bot.indexUpgrade must be a map (schedule, window), got 'Immediate'" render --set services.bot.indexUpgrade=Immediate
 renders_fail "non-map window fails the render"            "services.bot.indexUpgrade.window must be a map (enabled, cron, maxDuration), got 'true'" render --set services.bot.indexUpgrade.window=true
+# 25. AB#9309 (AB#9199): /adapterPoolHub gate mode, communication controller only, chart default LogOnly (= code default)
+P=OCTO_ADAPTERPOOLHUBAUTHORIZATION__MODE
+pmode() { grep -A1 "name: $P" <<<"$(dep communication-controller-services)" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
+hmode() { grep -A1 "name: OCTO_$1HUBAUTHORIZATION__MODE" <<<"$(dep communication-controller-services)" | grep -o 'value: "[A-Za-z]*"'; }
+OUT="$(render)"
+check "AB#9309 communication controller deployment was found (test is not vacuous)" test -n "$(dep communication-controller-services)"
+check "pool hub mode defaults to LogOnly"                        test "$(pmode)" = 'value: "LogOnly" '
+check "pool hub mode rendered exactly once in the whole chart"   test "$(grep -c "name: $P" <<<"$OUT")" = 1
+for svc in identity asset-rep-services bot-services platform-services; do
+  check "$svc deployment was found (test is not vacuous)" test -n "$(dep "$svc")"
+  check "$svc deployment carries no pool hub variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$P"
+done
+for m in LogOnly Enforce; do
+  OUT="$(render --set services.communication.hubAuthorization.adapterPoolMode=$m)"
+  check "pool hub mode $m renders $m on the communication controller only" test "$(pmode)$(grep -c "name: $P" <<<"$OUT")" = "value: \"$m\" 1"
+  check "pool hub mode $m leaves adapter and operator hub on LogOnly" test "$(hmode ADAPTER) $(hmode OPERATOR)" = 'value: "LogOnly" value: "LogOnly"'
+done
+OUT="$(render --set services.communication.hubAuthorization.adapterMode=Enforce --set services.communication.hubAuthorization.operatorMode=Enforce)"
+check "adapter and operator hub on Enforce leave the pool hub on LogOnly" test "$(pmode)" = 'value: "LogOnly" '
+OUT="$(render --set services.communication.hubAuthorization.adapterPoolMode= )"
+check "empty pool hub mode falls back to LogOnly"                test "$(pmode)" = 'value: "LogOnly" '
+OUT="$(render --set services.communication.hubAuthorization.adapterPoolMode=null)"
+check "null pool hub mode falls back to LogOnly"                 test "$(pmode)" = 'value: "LogOnly" '
+renders_fail "invalid pool hub mode fails the render"            "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'Bogus'" render --set services.communication.hubAuthorization.adapterPoolMode=Bogus
+renders_fail "lower-case pool hub mode fails the render"         "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'enforce'" render --set services.communication.hubAuthorization.adapterPoolMode=enforce
+renders_fail "boolean pool hub mode fails the render"            "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'true'" render --set services.communication.hubAuthorization.adapterPoolMode=true
+renders_fail "invalid pool hub mode fails with deploy false"     "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'Warn'" render --set services.communication.hubAuthorization.adapterPoolMode=Warn --set services.communication.deploy=false
+PFILE="$(mktemp)"
+printf 'services:\n  communication:\n    hubAuthorization:\n      adapterPoolMode: Enforce\n' > "$PFILE"
+OUT="$(render -f "$PFILE")"
+check "values file with adapterPoolMode: Enforce renders Enforce" test "$(pmode)" = 'value: "Enforce" '
+# YAML 1.1 reads an unquoted On/Off/yes/no as a boolean: it must fail, never fall back to LogOnly
+printf 'services:\n  communication:\n    hubAuthorization:\n      adapterPoolMode: On\n' > "$PFILE"
+renders_fail "unquoted On in a values file (YAML boolean) fails the render" "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'true'" render -f "$PFILE"
+printf 'services:\n  communication:\n    hubAuthorization:\n      adapterPoolMode: Off\n' > "$PFILE"
+renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.communication.hubAuthorization.adapterPoolMode must be LogOnly or Enforce, got 'false'" render -f "$PFILE"
+rm -f "$PFILE"
+renders_fail "misspelled pool hub key fails the render"          "services.communication.hubAuthorization.adapterPoolMod is not a known value" render --set services.communication.hubAuthorization.adapterPoolMod=Enforce
+renders_fail "wrongly cased pool hub key fails the render"       "services.communication.hubAuthorization.AdapterPoolMode is not a known value" render --set services.communication.hubAuthorization.AdapterPoolMode=Enforce
+renders_fail "misspelled adapter hub key fails the render"       "services.communication.hubAuthorization.adapterHubMode is not a known value" render --set services.communication.hubAuthorization.adapterHubMode=Enforce
+renders_fail "pool hub mode outside hubAuthorization fails"      "services.communication.adapterPoolMode is not a known value" render --set services.communication.adapterPoolMode=Enforce
+renders_fail "misspelled hubAuthorization block fails"           "services.communication.hubAuthorisation is not a known value" render --set services.communication.hubAuthorisation.adapterPoolMode=Enforce
+renders_fail "pool hub mode on another service fails the render" "services.assetRepository.hubAuthorization is not supported" render --set services.assetRepository.hubAuthorization.adapterPoolMode=Enforce
+renders_fail "pool hub key on another service with deploy false fails" "services.identity.adapterPoolMode is not supported" render --set services.identity.adapterPoolMode=Enforce --set services.identity.deploy=false
+
+# 26. AB#9310 (AB#9199): GraphQL mutation scope gate, asset repository only, chart default false (= service default)
+M=OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE
+mscope() { grep -A1 "name: $M" <<<"$(dep asset-rep-services)" | grep -o 'value: "[a-z]*"' | tr '\n' ' '; }
+OUT="$(render)"
+check "AB#9310 asset repository deployment was found (test is not vacuous)" test -n "$(dep asset-rep-services)"
+check "mutation scope defaults to false"                         test "$(mscope)" = 'value: "false" '
+check "mutation scope rendered exactly once in the whole chart"  test "$(grep -c "name: $M" <<<"$OUT")" = 1
+for svc in identity bot-services communication-controller-services platform-services; do
+  check "$svc deployment was found (test is not vacuous)" test -n "$(dep "$svc")"
+  check "$svc deployment carries no mutation scope variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$M"
+done
+for b in true false; do
+  OUT="$(render --set services.assetRepository.enforceMutationScope=$b)"
+  check "mutation scope $b renders $b on the asset repository only" test "$(mscope)$(grep -c "name: $M" <<<"$OUT")" = "value: \"$b\" 1"
+done
+OUT="$(render --set services.assetRepository.enforceMutationScope= )"
+check "empty mutation scope falls back to false"                 test "$(mscope)" = 'value: "false" '
+OUT="$(render --set services.assetRepository.enforceMutationScope=null)"
+check "null mutation scope falls back to false"                  test "$(mscope)" = 'value: "false" '
+renders_fail "non-boolean mutation scope fails the render"       "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got 'Enforce'" render --set services.assetRepository.enforceMutationScope=Enforce
+renders_fail "string \"true\" mutation scope fails the render"   "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got 'true'" render --set-string services.assetRepository.enforceMutationScope=true
+renders_fail "number mutation scope fails the render"            "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got '1'" render --set services.assetRepository.enforceMutationScope=1
+renders_fail "non-boolean mutation scope fails with deploy false" "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got 'yes please'" render --set "services.assetRepository.enforceMutationScope=yes please" --set services.assetRepository.deploy=false
+MFILE="$(mktemp)"
+printf 'services:\n  assetRepository:\n    enforceMutationScope: true\n' > "$MFILE"
+OUT="$(render -f "$MFILE")"
+check "values file with enforceMutationScope: true renders true" test "$(mscope)" = 'value: "true" '
+printf 'services:\n  assetRepository:\n    enforceMutationScope: "true"\n' > "$MFILE"
+renders_fail "quoted \"true\" in a values file fails the render" "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got 'true'" render -f "$MFILE"
+rm -f "$MFILE"
+renders_fail "misspelled mutation scope key fails the render"    "services.assetRepository.enforceMutationScop is not a known value" render --set services.assetRepository.enforceMutationScop=true
+renders_fail "wrongly cased mutation scope key fails the render" "services.assetRepository.EnforceMutationScope is not a known value" render --set services.assetRepository.EnforceMutationScope=true
+renders_fail "mutation scope on another service fails the render" "services.communication.enforceMutationScope is not supported" render --set services.communication.enforceMutationScope=true
+renders_fail "mutation scope on a service not deployed fails"    "services.bot.enforceMutationScope is not supported" render --set services.bot.enforceMutationScope=true --set services.bot.deploy=false
 
 exit $fail

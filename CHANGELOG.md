@@ -11,6 +11,24 @@
   service fail the render, also with `services.bot.deploy: false`. Needed for the paging index upgrade of
   octo-bot-services AB#9118; production clusters are switched on only after the developer's go per cluster, the cluster
   values follow in `octo-mesh-deployment` (first test-2 with `schedule: Immediate`).
+### Added (AB#9309)
+- **octo-mesh: value `services.communication.hubAuthorization.adapterPoolMode` (`LogOnly` | `Enforce`).** Renders
+  `OCTO_ADAPTERPOOLHUBAUTHORIZATION__MODE` on the communication controller only (`/adapterPoolHub` gate,
+  `AdapterPoolHubAuthorization:Mode`); chart default `LogOnly`, identical to the code default, so no installation
+  changes its behaviour without a value (the controller deployment gets the new variable and rolls once). Unset or
+  empty renders `LogOnly`; any other value (also a YAML boolean) fails the render, also when the controller is not
+  deployed. Unknown keys under `services.communication.hubAuthorization`, misplaced or misspelled pool hub keys under
+  `services.communication` and such keys on any other service fail the render. Needed for the per-cluster switch to
+  `Enforce` (AB#9199); the cluster values follow in `octo-mesh-deployment`.
+
+### Added (AB#9310)
+- **octo-mesh: value `services.assetRepository.enforceMutationScope` (`true` | `false`).** Renders
+  `OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE` (`GraphQl:EnforceMutationScope`, AB#4973) on the asset repository only; chart
+  default `false`, identical to the service default (log-first), so no installation changes its behaviour without a
+  value (the asset repository deployment gets the new variable and rolls once). Unset, null or empty renders `false`;
+  anything but a YAML boolean fails the render, also when the asset repository is not deployed; a misspelled key under
+  `services.assetRepository` and the key on any other service fail the render. Needed for the per-cluster switch
+  (AB#9199); the cluster values follow in `octo-mesh-deployment`.
 
 ### Added (AB#9295)
 - **octo-mesh: value `services.assetRepository.streamDataReadEnforcement` (`Off` | `Warn` | `Enforce`).** Renders
