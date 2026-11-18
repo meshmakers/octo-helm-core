@@ -294,6 +294,7 @@ the service default (false). A non-boolean value fails the render. */}}
   value: {{ .global.Values.services.assetRepository.publicUri }}
 {{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.assetRepository.userTokenEnforcement" "mode" .global.Values.services.assetRepository.userTokenEnforcement) }}
 {{ include "octo-mesh.stream-data-read-enforcement-env" (dict "mode" .global.Values.services.assetRepository.streamDataReadEnforcement) }}
+{{ include "octo-mesh.mutation-scope-env" (dict "enforce" .global.Values.services.assetRepository.enforceMutationScope) }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /* AB#8280 CK method idempotency fingerprint key. Id (plain) and secret (secretKeyRef) are rendered
@@ -459,6 +460,7 @@ Any other value fails the render - a typo must not silently fall back to LogOnly
   value: {{ $adapterHubMode | quote }}
 - name: OCTO_OPERATORHUBAUTHORIZATION__MODE
   value: {{ $operatorHubMode | quote }}
+{{ include "octo-mesh.adapter-pool-hub-mode-env" (dict "mode" $hubAuthz.adapterPoolMode) }}
 {{- /*
 AB#5114 (SECRET phase 3): the impersonation switch may clear the stored secret of eligible
 standalone service accounts only when this is explicitly enabled; the controller refuses
@@ -697,6 +699,115 @@ Enforce never stays on Warn unnoticed. Called from deployment.yaml with the char
 {{- fail (printf "services.%s.streamDataReadEnforcement is not supported: only services.assetRepository runs the stream-data read gate" $name) }}
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{- define "octo-mesh.adapter-pool-hub-mode-env" -}}
+{{- /*
+AB#9309 (AB#9199): mode of the communication controller's /adapterPoolHub gate
+(AdapterPoolHubAuthorizationOptions, section AdapterPoolHubAuthorization, AdapterPoolHubAuthorizationMode
+LogOnly | Enforce). Rendered explicitly (chart default LogOnly = the controller's code default) so the mode in
+effect is visible on the deployment. LogOnly lets a pool member without a token or with a foreign pool tenant
+through and logs/counts it (would_refuse), Enforce refuses it. Any other value fails the render. Included only
+by communication; validated once per render, independent of deploy, by "octo-mesh.adapter-pool-hub-mode-validate".
+*/ -}}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" "services.communication.hubAuthorization.adapterPoolMode" "mode" .mode "env" "OCTO_ADAPTERPOOLHUBAUTHORIZATION__MODE" "allowed" (list "LogOnly" "Enforce")) }}
+{{- end }}
+
+{{- define "octo-mesh.adapter-pool-hub-mode-validate" -}}
+{{- /*
+AB#9309: validates services.communication.hubAuthorization once per render, also when the communication
+controller is not deployed (deploy: false). Fails closed on everything that would otherwise leave a hub on
+LogOnly unnoticed:
+- adapterPoolMode not LogOnly or Enforce (also a YAML boolean or a lower-case mode);
+- an unknown key under services.communication.hubAuthorization (known: adapterMode, operatorMode,
+  adapterPoolMode), e.g. a misspelled adapterPoolMod or AdapterPoolMode;
+- hubAuthorization set to anything but a map (also false, 0 or "");
+- a misplaced or misspelled pool hub key anywhere in the values (see "octo-mesh.gate-key-scan").
+Called from deployment.yaml with the chart root; renders nothing.
+*/ -}}
+{{- $comm := .Values.services.communication | default dict }}
+{{- $hub := $comm.hubAuthorization }}
+{{- if kindIs "invalid" $hub }}
+{{- $hub = dict }}
+{{- end }}
+{{- if not (kindIs "map" $hub) }}
+{{- fail (printf "services.communication.hubAuthorization must be a map, got '%v'" $hub) }}
+{{- end }}
+{{- range $k, $_ := $hub }}
+{{- if not (has $k (list "adapterMode" "operatorMode" "adapterPoolMode")) }}
+{{- fail (printf "services.communication.hubAuthorization.%s is not a known value: known are adapterMode, operatorMode and adapterPoolMode" $k) }}
+{{- end }}
+{{- end }}
+{{- $_ := include "octo-mesh.tenant-authorization-mode-env" (dict "key" "services.communication.hubAuthorization.adapterPoolMode" "mode" $hub.adapterPoolMode "env" "-" "allowed" (list "LogOnly" "Enforce")) }}
+{{- end }}
+
+{{- define "octo-mesh.gate-key-scan" -}}
+{{- /*
+AB#9309 / AB#9310: walks the whole values tree (maps and lists, every depth, also outside services) and fails
+the render on every key that looks like the adapter pool hub mode or the GraphQL mutation scope flag but is not
+at its one legal path. A key is suspicious when its name, lower-cased and with every character other than a-z
+and 0-9 removed, matches adapterpool, hubauthori or mutations?scop - so wrong casing, separators (_ - .),
+plural forms, nesting (services.assetRepository.graphQl.enforceMutationScope), another service, a misspelled
+service name and root-level sections (tenantAuthorization.adapterPoolMode) all fail instead of leaving the
+gate on its permissive default. Legal paths: services.communication.hubAuthorization,
+services.communication.hubAuthorization.adapterPoolMode and services.assetRepository.enforceMutationScope.
+Called with (dict "node" .Values "path" ""); renders nothing.
+*/ -}}
+{{- $legal := list "services.communication.hubAuthorization" "services.communication.hubAuthorization.adapterPoolMode" "services.assetRepository.enforceMutationScope" }}
+{{- $path := .path }}
+{{- if kindIs "map" .node }}
+{{- range $k, $v := .node }}
+{{- /* a key that itself contains a dot (a pasted --set path, `services.x.y: v` in a values file) is written as
+["<key>"], so its path can never equal a legal path and a suspicious key in or below it fails */ -}}
+{{- $seg := ternary (printf "[%q]" $k) $k (contains "." $k) }}
+{{- $full := ternary $seg (printf "%s.%s" $path $seg) (eq $path "") }}
+{{- $norm := regexReplaceAll "[^a-z0-9]" (lower $k) "" }}
+{{- if and (regexMatch "adapterpool|hubauthori|mutations?scop" $norm) (not (has $full $legal)) }}
+{{- if regexMatch "mutations?scop" $norm }}
+{{- fail (printf "%s is not a known value: the GraphQL mutation scope gate is set only by services.assetRepository.enforceMutationScope (true or false)" $full) }}
+{{- else }}
+{{- fail (printf "%s is not a known value: the adapter pool hub mode is set only by services.communication.hubAuthorization.adapterPoolMode (LogOnly or Enforce)" $full) }}
+{{- end }}
+{{- end }}
+{{- include "octo-mesh.gate-key-scan" (dict "node" $v "path" $full) }}
+{{- end }}
+{{- else if kindIs "slice" .node }}
+{{- range $i, $e := .node }}
+{{- include "octo-mesh.gate-key-scan" (dict "node" $e "path" (printf "%s[%d]" $path $i)) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "octo-mesh.mutation-scope-env" -}}
+{{- /*
+AB#9310 (AB#9199): the asset repository's GraphQL mutation scope gate (AB#4973, configuration key
+GraphQl:EnforceMutationScope, read with bool.TryParse; the OCTO_ prefix is stripped by the service's
+AddEnvironmentVariables("OCTO_"), configuration keys are case-insensitive). Rendered explicitly (chart default
+false = the service's default, log-first) so the setting in effect is visible on the deployment. false lets a
+generic mutation by a token without scope octo_api through and logs it; true refuses it. Only a YAML boolean is
+accepted; unset, null or "" renders false; anything else (also the string "true") fails the render. Included
+only by assetRepository; validated once per render, independent of deploy, by "octo-mesh.mutation-scope-validate".
+*/ -}}
+{{- $v := .enforce }}
+{{- if or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v "")) }}
+{{- $v = false }}
+{{- end }}
+{{- if not (kindIs "bool" $v) }}
+{{- fail (printf "services.assetRepository.enforceMutationScope must be true or false (a YAML boolean), got '%v'" $v) }}
+{{- end }}
+- name: OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE
+  value: {{ ternary "true" "false" $v | quote }}
+{{- end }}
+
+{{- define "octo-mesh.mutation-scope-validate" -}}
+{{- /*
+AB#9310: validates services.assetRepository.enforceMutationScope once per render, also when the asset
+repository is not deployed (deploy: false). Misplaced or misspelled keys anywhere in the values are caught by
+"octo-mesh.gate-key-scan", so a cluster meant to enforce never stays log-first unnoticed. Called from
+deployment.yaml with the chart root; renders nothing.
+*/ -}}
+{{- $asset := .Values.services.assetRepository | default dict }}
+{{- $_ := include "octo-mesh.mutation-scope-env" (dict "enforce" $asset.enforceMutationScope) }}
 {{- end }}
 
 {{- define "octo-mesh.service-token-enforcement-env" -}}

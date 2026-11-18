@@ -184,8 +184,11 @@ The communication controller gates `/{tenantId}/adapterHub` and `/operatorHub` w
 |---|---|---|
 | `services.communication.hubAuthorization.adapterMode` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_ADAPTERHUBAUTHORIZATION__MODE` |
 | `services.communication.hubAuthorization.operatorMode` = `LogOnly` \| `Enforce` | `LogOnly` | `OCTO_OPERATORHUBAUTHORIZATION__MODE` |
+| `services.communication.hubAuthorization.adapterPoolMode` = `LogOnly` \| `Enforce` (AB#9309) | `LogOnly` | `OCTO_ADAPTERPOOLHUBAUTHORIZATION__MODE` |
 
 `LogOnly` changes no connection outcome; every connection an enforcing run would refuse is logged and counted (`octo.communication.hub.authorization.decisions`, `outcome=would_refuse`). `Enforce` refuses those connections. Any other value fails the render. Switch per cluster only after the LogOnly evidence is clean — runbook: `octo-communication-controller-services/docs/runbooks/hub-authorization-enforce-rollout.md`. The operator hub additionally needs every operator to authenticate (`operator.authentication.*` on the operator chart, below).
+
+`adapterPoolMode` (AB#9309) gates `/adapterPoolHub`: under `LogOnly` a pool member may connect without a token or register into another tenant's pool (counted with `octo_hub_name="adapterPoolHub"`); `Enforce` refuses both. The chart default `LogOnly` is the controller's code default, so no installation changes its behaviour without a value (the controller deployment gets the new variable and rolls once). An unset or empty value renders `LogOnly`; any other value, also a lower-case mode or a YAML boolean (an unquoted `On`/`Off`/`yes`/`no` in a values file), fails the render. The value is validated also when the communication controller is not deployed. Fail-closed key checks: `hubAuthorization` must be a map (also `false`, `0` or `""` fail); any key under `services.communication.hubAuthorization` other than `adapterMode`, `operatorMode` and `adapterPoolMode` (e.g. a misspelled `adapterPoolMod` or `AdapterPoolMode`) fails the render; and the whole values tree (every depth, lists included, also outside `services`) is scanned for keys whose name, ignoring casing and every character other than letters and digits, contains `adapterpool` or `hubauthori` — every such key that is not exactly `services.communication.hubAuthorization` or `services.communication.hubAuthorization.adapterPoolMode` fails the render (e.g. `services.communication.adapter_pool_mode`, `services.identity.adapterPoolMode`, `tenantAuthorization.adapterPoolMode`, a root-level `hubAuthorization` block, or a single key with dots such as `services.communication.hubAuthorization.adapterPoolMode: Enforce` at the root of a values file — a key containing a dot never counts as the nested path). Switch per cluster by the plan of AB#9309 (values in `octo-mesh-deployment`). Rollback: set the value back to `LogOnly` and roll the controller deployment.
 
 ### User-token tenant gate mode (AB#6834)
 
@@ -295,6 +298,31 @@ other service fail the render as well, instead of being ignored.
 Switch a production cluster on (`schedule: Window` with `window.enabled: true`) only after the developer's go for that
 cluster and after measuring the duration on a copy (rollout procedure in octo-bot-services `docs/index-upgrade.md`). The
 cluster values live in `octo-mesh-deployment`.
+### GraphQL mutation scope gate (AB#9310)
+
+The asset repository requires the scope `octo_api` on the token of a generic GraphQL mutation once its configuration
+key `GraphQl:EnforceMutationScope` is `true` (AB#4973; CK method calls need `octo_api` regardless). The chart renders
+the setting explicitly on the asset repository deployment, and on no other service:
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.assetRepository.enforceMutationScope` = `true` \| `false` | `false` | `OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE` |
+
+`false` (the default, identical to the service's default, so no installation changes its behaviour without a value;
+the asset repository deployment gets the new variable and rolls once) lets the mutation run and logs a warning ("GraphQL
+mutation by subject '…' without the 'octo_api' scope — would be rejected once GraphQl:EnforceMutationScope is
+enabled"). `true` refuses it with the forbidden error code. Only a YAML boolean is accepted: an unset, null or empty
+value renders `false`; anything else, also the quoted string `"true"` or a number, fails the render. The value is
+validated also when the asset repository is not deployed. The whole values tree (every depth, lists included, also
+outside `services`) is scanned for keys whose name, ignoring casing and every character other than letters and digits,
+contains `mutationscop` or `mutationsscop`: every such key that is not exactly
+`services.assetRepository.enforceMutationScope` fails the render, e.g. `enforceMutationScop`, `enforceMutationsScope`,
+`enforce_mutation_scope`, `services.assetRepository.graphQl.enforceMutationScope` (the configuration key path), the
+key on another service, or an `assetRepository` block that slipped to the root of a values file; a single key containing dots (`services.assetRepository.enforceMutationScope: true` at the root of a values file) never counts as the nested path and fails too.
+
+Switch per cluster only after the 7-day log query names no legitimate client without `octo_api`, by the plan of
+AB#9310 (values in `octo-mesh-deployment`). Rollback: set the value back to `false` and roll the asset repository
+deployment.
 
 ### Render octo-mesh chart template locally and display the output
 
