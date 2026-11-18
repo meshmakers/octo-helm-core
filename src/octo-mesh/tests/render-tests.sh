@@ -450,7 +450,8 @@ OUT="$(render)"
 check "AB#9295 asset repository deployment was found (test is not vacuous)" test -n "$(dep asset-rep-services)"
 check "read gate mode defaults to Warn"                         test "$(rmode)" = 'value: "Warn" '
 check "read gate mode rendered exactly once in the whole chart" test "$(grep -c "name: $R" <<<"$OUT")" = 1
-for svc in identity bot-services communication-controller-services platform; do
+for svc in identity bot-services communication-controller-services platform-services; do
+  check "$svc deployment was found (test is not vacuous)" test -n "$(dep "$svc")"
   check "$svc deployment carries no read gate variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$R"
 done
 for m in Off Warn Enforce; do
@@ -465,6 +466,14 @@ renders_fail "invalid read gate mode fails the render"          "services.assetR
 renders_fail "lower-case read gate mode fails the render"       "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'enforce'" render --set services.assetRepository.streamDataReadEnforcement=enforce
 renders_fail "boolean read gate mode fails the render"          "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'false'" render --set services.assetRepository.streamDataReadEnforcement=false
 renders_fail "invalid read gate mode fails with deploy false"   "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'LogOnly'" render --set services.assetRepository.streamDataReadEnforcement=LogOnly --set services.assetRepository.deploy=false
+# YAML 1.1 reads an unquoted Off as boolean false: a values file must quote it
+RFILE="$(mktemp)"
+printf 'services:\n  assetRepository:\n    streamDataReadEnforcement: "Off"\n' > "$RFILE"
+OUT="$(render -f "$RFILE")"
+check "values file with streamDataReadEnforcement: \"Off\" renders Off" test "$(rmode)" = 'value: "Off" '
+printf 'services:\n  assetRepository:\n    streamDataReadEnforcement: Off\n' > "$RFILE"
+renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'false'" render -f "$RFILE"
+rm -f "$RFILE"
 renders_fail "read gate mode on another service fails the render" "services.communication.streamDataReadEnforcement is not supported" render --set services.communication.streamDataReadEnforcement=Enforce
 
 exit $fail

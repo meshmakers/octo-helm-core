@@ -446,7 +446,8 @@ services:
     #   Warn    - default (= the service's code default): the read is allowed and logged as
     #             "would be denied".
     #   Enforce - a caller without a stream-data role is refused (GraphQL error StreamDataReadRoleRequired).
-    # Any other value fails the render. Switch plan per cluster: AB#9296.
+    # Any other value fails the render. Quote it in a values file: an unquoted Off is a YAML boolean
+    # (false) and fails the render. Switch plan per cluster: AB#9296.
     streamDataReadEnforcement: Warn
     # set false to prevent deployment
     deploy: true

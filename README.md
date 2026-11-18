@@ -261,6 +261,8 @@ role check (the behaviour before AB#8559). An unset or empty value renders `Warn
 mode or a YAML boolean, fails the render. The value is validated also when the asset repository is not deployed, and
 the same key on any other service fails the render. On an asset repository before #158 the variable is bound but has
 no effect.
+In a values file write `streamDataReadEnforcement: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails
+the render.
 
 Switch per cluster only after the `Warn` log names no caller that still needs a role, by the switch plan of AB#9296
 (values in `octo-mesh-deployment`). Rollback: set the value back to `Warn` and roll the asset repository deployment.
