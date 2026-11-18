@@ -259,9 +259,9 @@ lets the read through and logs it as "would be denied" (at most once per caller,
 `Enforce` refuses a caller without a stream-data role (GraphQL error `StreamDataReadRoleRequired`). `Off` skips the
 role check (the behaviour before AB#8559). An unset or empty value renders `Warn`; any other value, also a lower-case
 mode or a YAML boolean, fails the render. The value is validated also when the asset repository is not deployed, and
-the same key on any other service fails the render. On an asset repository before #158 the variable is bound but has
-no effect.
-In a values file write `streamDataReadEnforcement: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails
+the same key on any other service fails the render, as does a misspelled key under `services.assetRepository` (any key
+containing `streamDataRead` in any casing that is not exactly `streamDataReadEnforcement`). On an asset repository
+before #158 the variable is bound but has no effect. In a values file write `streamDataReadEnforcement: "Off"` with quotes: an unquoted `Off` is a YAML boolean and fails
 the render.
 
 Switch per cluster only after the `Warn` log names no caller that still needs a role, by the switch plan of AB#9296

@@ -474,6 +474,8 @@ check "values file with streamDataReadEnforcement: \"Off\" renders Off" test "$(
 printf 'services:\n  assetRepository:\n    streamDataReadEnforcement: Off\n' > "$RFILE"
 renders_fail "unquoted Off in a values file (YAML boolean) fails the render" "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'false'" render -f "$RFILE"
 rm -f "$RFILE"
+renders_fail "misspelled read gate key fails the render"        "services.assetRepository.streamDataReadEnforcment is not a known value" render --set services.assetRepository.streamDataReadEnforcment=Enforce
+renders_fail "wrongly cased read gate key fails the render"     "services.assetRepository.StreamDataReadEnforcement is not a known value" render --set services.assetRepository.StreamDataReadEnforcement=Enforce
 renders_fail "read gate mode on another service fails the render" "services.communication.streamDataReadEnforcement is not supported" render --set services.communication.streamDataReadEnforcement=Enforce
 
 exit $fail

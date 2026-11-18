@@ -678,11 +678,18 @@ fails the render. Included only by assetRepository; it is validated once per ren
 {{- /*
 AB#9295: validates services.assetRepository.streamDataReadEnforcement once per render, also when the asset
 repository is not deployed (deploy: false), and refuses the value on any other service, where it would be
-ignored silently. Called from deployment.yaml with the chart root; renders nothing.
+ignored silently. A misspelled key under services.assetRepository (any key whose lower-cased name contains
+"streamdataread" but is not exactly streamDataReadEnforcement) also fails the render, so a cluster meant for
+Enforce never stays on Warn unnoticed. Called from deployment.yaml with the chart root; renders nothing.
 */ -}}
 {{- range $name, $svc := .Values.services }}
 {{- $v := dig "streamDataReadEnforcement" nil ($svc | default dict) }}
 {{- if eq $name "assetRepository" }}
+{{- range $k, $_ := ($svc | default dict) }}
+{{- if and (contains "streamdataread" (lower $k)) (ne $k "streamDataReadEnforcement") }}
+{{- fail (printf "services.assetRepository.%s is not a known value: did you mean services.assetRepository.streamDataReadEnforcement (Off, Warn or Enforce)?" $k) }}
+{{- end }}
+{{- end }}
 {{- $_ := include "octo-mesh.tenant-authorization-mode-env" (dict "key" "services.assetRepository.streamDataReadEnforcement" "mode" $v "env" "-" "allowed" (list "Off" "Warn" "Enforce") "default" "Warn") }}
 {{- else if not (or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v ""))) }}
 {{- fail (printf "services.%s.streamDataReadEnforcement is not supported: only services.assetRepository runs the stream-data read gate" $name) }}
