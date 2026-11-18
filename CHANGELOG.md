@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added (AB#9295)
+- **octo-mesh: value `services.assetRepository.streamDataReadEnforcement` (`Off` | `Warn` | `Enforce`).** Renders
+  `OCTO_STREAMDATAREADAUTHORIZATION__ROLEENFORCEMENT` on the asset repository only (stream-data read gate of
+  octo-asset-repo-services AB#8559); chart default `Warn`, identical to the code default, so no installation changes
+  its behaviour without a value (the asset repository deployment gets the new variable and rolls once). Unset or empty
+  renders `Warn`; any other value fails the render, also when the asset repository is not deployed, and the key on any
+  other service fails the render. Needed for the per-cluster switch to `Enforce` (AB#9199, switch plan AB#9296); the
+  cluster values follow in `octo-mesh-deployment`.
+
 ### Added (AB#9027)
 - **octo-mesh: value `tenantAuthorization.tenantGenerationEnforcement` (`LogOnly` | `Enforce` | `Disabled`) with the
   per-service override `services.<service>.tenantGenerationEnforcement`.** Renders

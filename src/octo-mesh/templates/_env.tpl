@@ -293,6 +293,7 @@ the service default (false). A non-boolean value fails the render. */}}
 - name: OCTO_ASSETREPOSITORY__PUBLICURL
   value: {{ .global.Values.services.assetRepository.publicUri }}
 {{ include "octo-mesh.user-token-enforcement-env" (dict "key" "services.assetRepository.userTokenEnforcement" "mode" .global.Values.services.assetRepository.userTokenEnforcement) }}
+{{ include "octo-mesh.stream-data-read-enforcement-env" (dict "mode" .global.Values.services.assetRepository.streamDataReadEnforcement) }}
 - name: OCTO_ASSETREPOSITORY__INSTANCEPREFIX
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /* AB#8280 CK method idempotency fingerprint key. Id (plain) and secret (secretKeyRef) are rendered
@@ -661,6 +662,41 @@ assetRepository and communication; every other service keeps its code default.
 {{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" .key "mode" .mode "env" "OCTO_TENANTAUTHORIZATION__USERTOKENENFORCEMENT" "allowed" (list "LogOnly" "Enforce")) }}
 {{- end }}
 
+{{- define "octo-mesh.stream-data-read-enforcement-env" -}}
+{{- /*
+AB#9295 (AB#9199): mode of the stream-data read role requirement of the asset repository (AB#8559,
+StreamDataReadAuthorization:RoleEnforcement, StreamDataReadRoleEnforcementMode). Rendered explicitly (chart
+default Warn = the service's code default) so the mode in effect is visible on the deployment. Off skips the
+role check, Warn logs a read without a stream-data role ("would be denied"), Enforce refuses it. Any other value
+fails the render. Included only by assetRepository; it is validated once per render, independent of deploy, by
+"octo-mesh.stream-data-read-enforcement-validate".
+*/ -}}
+{{ include "octo-mesh.tenant-authorization-mode-env" (dict "key" "services.assetRepository.streamDataReadEnforcement" "mode" .mode "env" "OCTO_STREAMDATAREADAUTHORIZATION__ROLEENFORCEMENT" "allowed" (list "Off" "Warn" "Enforce") "default" "Warn") }}
+{{- end }}
+
+{{- define "octo-mesh.stream-data-read-enforcement-validate" -}}
+{{- /*
+AB#9295: validates services.assetRepository.streamDataReadEnforcement once per render, also when the asset
+repository is not deployed (deploy: false), and refuses the value on any other service, where it would be
+ignored silently. A misspelled key under services.assetRepository (any key whose lower-cased name contains
+"streamdataread" but is not exactly streamDataReadEnforcement) also fails the render, so a cluster meant for
+Enforce never stays on Warn unnoticed. Called from deployment.yaml with the chart root; renders nothing.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- $v := dig "streamDataReadEnforcement" nil ($svc | default dict) }}
+{{- if eq $name "assetRepository" }}
+{{- range $k, $_ := ($svc | default dict) }}
+{{- if and (contains "streamdataread" (lower $k)) (ne $k "streamDataReadEnforcement") }}
+{{- fail (printf "services.assetRepository.%s is not a known value: did you mean services.assetRepository.streamDataReadEnforcement (Off, Warn or Enforce)?" $k) }}
+{{- end }}
+{{- end }}
+{{- $_ := include "octo-mesh.tenant-authorization-mode-env" (dict "key" "services.assetRepository.streamDataReadEnforcement" "mode" $v "env" "-" "allowed" (list "Off" "Warn" "Enforce") "default" "Warn") }}
+{{- else if not (or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v ""))) }}
+{{- fail (printf "services.%s.streamDataReadEnforcement is not supported: only services.assetRepository runs the stream-data read gate" $name) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "octo-mesh.service-token-enforcement-env" -}}
 {{- /*
 AB#9017 (AB#9000): mode of the service-token (client-credentials, no sub claim) tenant check of
@@ -722,13 +758,14 @@ check, nothing on the others. All values are validated by "octo-mesh.tenant-gene
 
 {{- define "octo-mesh.tenant-authorization-mode-env" -}}
 {{- /*
-Shared validation of the TenantAuthorization modes (AB#6834, AB#9017). Only an unset value (null) or
-"" falls back to LogOnly; every other value must be one of .allowed as a string. A YAML boolean or
-number (e.g. an empty-looking false or 0) fails the render instead of silently becoming LogOnly.
+Shared validation of the TenantAuthorization modes (AB#6834, AB#9017) and the stream-data read gate mode
+(AB#9295). Only an unset value (null) or "" falls back to .default (LogOnly when not given); every other value
+must be one of .allowed as a string. A YAML boolean or number (e.g. an empty-looking false or 0) fails the
+render instead of silently becoming the default.
 */ -}}
 {{- $mode := .mode }}
 {{- if or (kindIs "invalid" $mode) (and (kindIs "string" $mode) (eq $mode "")) }}
-{{- $mode = "LogOnly" }}
+{{- $mode = .default | default "LogOnly" }}
 {{- end }}
 {{- if not (and (kindIs "string" $mode) (has $mode .allowed)) }}
 {{- fail (printf "%s must be %s, got '%v'" .key (include "octo-mesh.or-list" .allowed) $mode) }}
