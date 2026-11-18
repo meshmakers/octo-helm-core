@@ -757,7 +757,10 @@ Called with (dict "node" .Values "path" ""); renders nothing.
 {{- $path := .path }}
 {{- if kindIs "map" .node }}
 {{- range $k, $v := .node }}
-{{- $full := ternary $k (printf "%s.%s" $path $k) (eq $path "") }}
+{{- /* a key that itself contains a dot (a pasted --set path, `services.x.y: v` in a values file) is written as
+["<key>"], so its path can never equal a legal path and a suspicious key in or below it fails */ -}}
+{{- $seg := ternary (printf "[%q]" $k) $k (contains "." $k) }}
+{{- $full := ternary $seg (printf "%s.%s" $path $seg) (eq $path "") }}
 {{- $norm := regexReplaceAll "[^a-z0-9]" (lower $k) "" }}
 {{- if and (regexMatch "adapterpool|hubauthori|mutations?scop" $norm) (not (has $full $legal)) }}
 {{- if regexMatch "mutations?scop" $norm }}

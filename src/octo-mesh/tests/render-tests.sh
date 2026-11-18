@@ -618,6 +618,16 @@ renders_fail "mutation scope in serviceDefaults fails the render" "): serviceDef
 MFILE="$(mktemp)"
 printf 'assetRepository:\n  enforceMutationScope: true\n' > "$MFILE"
 renders_fail "assetRepository block at the root (indentation slip) fails" "): assetRepository.enforceMutationScope is not a known value" render -f "$MFILE"
+# a single key containing dots must never pass as the legal nested path
+printf 'services.assetRepository.enforceMutationScope: true\n' > "$MFILE"
+renders_fail "dotted root key services.assetRepository.enforceMutationScope fails" '): ["services.assetRepository.enforceMutationScope"] is not a known value' render -f "$MFILE"
+printf 'services.communication.hubAuthorization.adapterPoolMode: Enforce\n' > "$MFILE"
+renders_fail "dotted root key services.communication.hubAuthorization.adapterPoolMode fails" '): ["services.communication.hubAuthorization.adapterPoolMode"] is not a known value' render -f "$MFILE"
+printf 'services:\n  communication.hubAuthorization:\n    adapterPoolMode: Enforce\n' > "$MFILE"
+renders_fail "dotted service key communication.hubAuthorization fails" '): services.["communication.hubAuthorization"] is not a known value' render -f "$MFILE"
 rm -f "$MFILE"
+# an escaped dot in --set makes a scalar entry in services, which serviceaccount.yaml already refuses before the scan runs:
+# only the failure matters here (never a render with the default)
+renders_fail "escaped dot in --set (services.assetRepository\\.enforceMutationScope) fails" "Error:" render --set 'services.assetRepository\.enforceMutationScope=true'
 
 exit $fail
