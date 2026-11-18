@@ -14,6 +14,8 @@
 
 {{- /* AB#9027: tenant generation check values, validated once and independent of deploy */}}
 {{- include "octo-mesh.tenant-generation-enforcement-validate" . }}
+{{- /* AB#9295: stream-data read gate mode, validated once and independent of deploy */}}
+{{- include "octo-mesh.stream-data-read-enforcement-validate" . }}
 {{- $global := . -}}
 {{- range $key, $svc := .Values.services }}
 {{ if $svc.deploy -}}

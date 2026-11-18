@@ -4,7 +4,7 @@
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
-# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027).
+# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -442,5 +442,29 @@ renders_fail "override on platform services fails the render"  "services.platfor
 renders_fail "override on studio fails the render"            "services.studio.tenantGenerationEnforcement is not supported" render --set services.studio.tenantGenerationEnforcement=Enforce
 renders_fail "invalid override on a service not deployed fails" "services.aiServices.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'bogus'" render --set services.aiServices.tenantGenerationEnforcement=bogus
 renders_fail "invalid global fails with every check service off" "tenantAuthorization.tenantGenerationEnforcement must be LogOnly, Enforce or Disabled, got 'nope'" render --set tenantAuthorization.tenantGenerationEnforcement=nope --set services.identity.deploy=false --set services.assetRepository.deploy=false --set services.bot.deploy=false --set services.communication.deploy=false
+
+# 23. AB#9295 (AB#9199): stream-data read gate mode, asset repository only, chart default Warn (= code default)
+R=OCTO_STREAMDATAREADAUTHORIZATION__ROLEENFORCEMENT
+rmode() { grep -A1 "name: $R" <<<"$(dep asset-rep-services)" | grep -o 'value: "[A-Za-z]*"' | tr '\n' ' '; }
+OUT="$(render)"
+check "AB#9295 asset repository deployment was found (test is not vacuous)" test -n "$(dep asset-rep-services)"
+check "read gate mode defaults to Warn"                         test "$(rmode)" = 'value: "Warn" '
+check "read gate mode rendered exactly once in the whole chart" test "$(grep -c "name: $R" <<<"$OUT")" = 1
+for svc in identity bot-services communication-controller-services platform; do
+  check "$svc deployment carries no read gate variable" bash -c '! grep -q "$1" <<<"$0"' "$(dep "$svc")" "$R"
+done
+for m in Off Warn Enforce; do
+  OUT="$(render --set services.assetRepository.streamDataReadEnforcement=$m)"
+  check "read gate mode $m renders $m on the asset repository only" test "$(rmode)$(grep -c "name: $R" <<<"$OUT")" = "value: \"$m\" 1"
+done
+OUT="$(render --set services.assetRepository.streamDataReadEnforcement= )"
+check "empty read gate mode falls back to Warn"                 test "$(rmode)" = 'value: "Warn" '
+OUT="$(render --set services.assetRepository.streamDataReadEnforcement=null)"
+check "null read gate mode falls back to Warn"                  test "$(rmode)" = 'value: "Warn" '
+renders_fail "invalid read gate mode fails the render"          "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'Bogus'" render --set services.assetRepository.streamDataReadEnforcement=Bogus
+renders_fail "lower-case read gate mode fails the render"       "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'enforce'" render --set services.assetRepository.streamDataReadEnforcement=enforce
+renders_fail "boolean read gate mode fails the render"          "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'false'" render --set services.assetRepository.streamDataReadEnforcement=false
+renders_fail "invalid read gate mode fails with deploy false"   "services.assetRepository.streamDataReadEnforcement must be Off, Warn or Enforce, got 'LogOnly'" render --set services.assetRepository.streamDataReadEnforcement=LogOnly --set services.assetRepository.deploy=false
+renders_fail "read gate mode on another service fails the render" "services.communication.streamDataReadEnforcement is not supported" render --set services.communication.streamDataReadEnforcement=Enforce
 
 exit $fail

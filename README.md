@@ -243,6 +243,28 @@ Switch per cluster only by the plan `octo-common-services/docs/tenant-generation
 all services of a cluster in one CD run, together with the same value in the reporting, MCP and AI charts
 (`octo-helm-pro`). Rollback: set the value back to `LogOnly` and roll the deployments.
 
+### Stream-data read gate mode (AB#9295)
+
+From octo-asset-repo-services #158 (AB#8559) on, a stream-data read of the asset repository (the transient queries
+`simple`, `aggregation`, `groupingAggregation`, `downsampling` and the persisted `streamDataQuery`) needs one of the
+tenant roles `StreamDataReader`, `StreamDataWriter` or `StreamDataAdmin`. The chart renders the mode explicitly on the
+asset repository deployment, and on no other service:
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.assetRepository.streamDataReadEnforcement` = `Off` \| `Warn` \| `Enforce` | `Warn` | `OCTO_STREAMDATAREADAUTHORIZATION__ROLEENFORCEMENT` |
+
+`Warn` (the default, identical to the service's code default, so no installation changes its behaviour without a value)
+lets the read through and logs it as "would be denied" (at most once per caller, tenant and query kind per hour).
+`Enforce` refuses a caller without a stream-data role (GraphQL error `StreamDataReadRoleRequired`). `Off` skips the
+role check (the behaviour before AB#8559). An unset or empty value renders `Warn`; any other value, also a lower-case
+mode or a YAML boolean, fails the render. The value is validated also when the asset repository is not deployed, and
+the same key on any other service fails the render. On an asset repository before #158 the variable is bound but has
+no effect.
+
+Switch per cluster only after the `Warn` log names no caller that still needs a role, by the switch plan of AB#9296
+(values in `octo-mesh-deployment`). Rollback: set the value back to `Warn` and roll the asset repository deployment.
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
