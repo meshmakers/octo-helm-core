@@ -725,6 +725,20 @@ services:
       # name of the account to create or use; empty with create=true = the bot's full name
       name: ""
       annotations: {}
+    # Paging index upgrade (AB#9319; bot-services AB#9118, octo-bot-services docs/index-upgrade.md), env
+    # OCTO_INDEXUPGRADE__*. Every key is optional: unset (null) renders nothing and the service keeps its code
+    # default (schedule Window with the window off: no index is built). A set value is validated and fails the
+    # render when invalid. Switch a production cluster on only after the developer's go for that cluster.
+    indexUpgrade:
+      # Immediate | Window
+      schedule: null
+      window:
+        # true | false (a YAML boolean)
+        enabled: null
+        # when the window opens (Hangfire cron, UTC), e.g. "0 1 * * *"; must not be empty when set
+        cron: null
+        # how long the window stays open, a .NET TimeSpan string such as "04:00:00" or "1.00:00:00"
+        maxDuration: null
 
   communication:
     # Public URI of service

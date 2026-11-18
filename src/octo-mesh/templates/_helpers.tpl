@@ -223,6 +223,50 @@ bot has a PVC, otherwise "" (no OCTO_ARTIFACTSTORAGE__* at all, the bot keeps it
 {{- end }}
 
 {{/*
+AB#9319 bot index upgrade env: services.bot.indexUpgrade.* -> OCTO_INDEXUPGRADE__* (section IndexUpgrade of
+octo-bot-services, AB#9118). Each variable is rendered only when its value is set (not null); an unset value leaves
+the service's code default (Window schedule, window off). A set value that the service could not use fails the
+render with the key in the message.
+*/}}
+{{- define "octo-mesh.bot-index-upgrade-env" -}}
+{{- $iu := .svc.indexUpgrade | default dict }}
+{{- $window := $iu.window | default dict }}
+{{- $schedule := $iu.schedule }}
+{{- if not (kindIs "invalid" $schedule) }}
+{{- if not (and (kindIs "string" $schedule) (has $schedule (list "Immediate" "Window"))) }}
+{{- fail (printf "services.bot.indexUpgrade.schedule must be Immediate or Window, got '%v'" $schedule) }}
+{{- end }}
+- name: OCTO_INDEXUPGRADE__SCHEDULE
+  value: {{ $schedule | quote }}
+{{- end }}
+{{- $enabled := $window.enabled }}
+{{- if not (kindIs "invalid" $enabled) }}
+{{- if not (kindIs "bool" $enabled) }}
+{{- fail (printf "services.bot.indexUpgrade.window.enabled must be true or false, got '%v'" $enabled) }}
+{{- end }}
+- name: OCTO_INDEXUPGRADE__WINDOW__ENABLED
+  value: {{ $enabled | toString | quote }}
+{{- end }}
+{{- $cron := $window.cron }}
+{{- if not (kindIs "invalid" $cron) }}
+{{- if not (and (kindIs "string" $cron) (ne (trim $cron) "")) }}
+{{- fail (printf "services.bot.indexUpgrade.window.cron must be a non-empty cron expression, got '%v'" $cron) }}
+{{- end }}
+- name: OCTO_INDEXUPGRADE__WINDOW__CRON
+  value: {{ $cron | quote }}
+{{- end }}
+{{- $maxDuration := $window.maxDuration }}
+{{- if not (kindIs "invalid" $maxDuration) }}
+{{- /* .NET TimeSpan "[d.]hh:mm[:ss[.fffffff]]", e.g. 04:00:00 or 1.00:00:00 */}}
+{{- if not (and (kindIs "string" $maxDuration) (regexMatch `^([0-9]+\.)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,7})?)?$` $maxDuration)) }}
+{{- fail (printf "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan such as \"04:00:00\", got '%v'" $maxDuration) }}
+{{- end }}
+- name: OCTO_INDEXUPGRADE__WINDOW__MAXDURATION
+  value: {{ $maxDuration | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
 AB#5560 bot storage env: pre-sweep backup path on the PVC and OCTO_ARTIFACTSTORAGE__* (config section
 ArtifactStorage, octo-common-services AB#5561). Credentials only as secretKeyRef into an existing Secret.
 Renders nothing with the defaults.
