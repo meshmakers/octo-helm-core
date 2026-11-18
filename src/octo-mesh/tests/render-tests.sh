@@ -479,7 +479,7 @@ renders_fail "wrongly cased read gate key fails the render"     "services.assetR
 renders_fail "read gate mode on another service fails the render" "services.communication.streamDataReadEnforcement is not supported" render --set services.communication.streamDataReadEnforcement=Enforce
 
 # 24. AB#9319: bot index upgrade schedule (services.bot.indexUpgrade.*, OCTO_INDEXUPGRADE__*), bot container only
-iu() { tr -d '' <<<"$OUT" | grep -A1 "name: OCTO_INDEXUPGRADE__$1\$" | grep -o 'value: .*'; }
+iu() { tr -d '\r' <<<"$OUT" | grep -A1 "name: OCTO_INDEXUPGRADE__$1\$" | grep -o 'value: .*'; }
 BASE="$(render)"
 check "unset renders no OCTO_INDEXUPGRADE variable" bash -c "! grep -q OCTO_INDEXUPGRADE <<<\"\$1\"" _ "$BASE"
 OUT="$(render --set services.bot.indexUpgrade.schedule=Immediate)"
@@ -507,6 +507,9 @@ renders_fail "string window.enabled fails the render"     "services.bot.indexUpg
 renders_fail "quoted \"true\" window.enabled fails"       "services.bot.indexUpgrade.window.enabled must be true or false, got 'true'" render --set-string services.bot.indexUpgrade.window.enabled=true
 renders_fail "invalid window.maxDuration fails the render" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan" render --set-string services.bot.indexUpgrade.window.maxDuration=4h
 renders_fail "window.maxDuration 25:00:00 fails the render" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan" render --set-string services.bot.indexUpgrade.window.maxDuration=25:00:00
+OUT="$(render --set-string services.bot.indexUpgrade.window.maxDuration=9999999.00:00:00)"
+check "window.maxDuration with 7 day digits renders" test "$(iu WINDOW__MAXDURATION)" = 'value: "9999999.00:00:00"'
+renders_fail "window.maxDuration above the TimeSpan maximum fails" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero with at most 7 day digits" render --set-string services.bot.indexUpgrade.window.maxDuration=99999999.00:00:00
 renders_fail "empty window.cron fails the render"         "services.bot.indexUpgrade.window.cron must be a non-empty cron expression" render --set-string services.bot.indexUpgrade.window.cron=
 renders_fail "blank window.cron fails the render"         "services.bot.indexUpgrade.window.cron must be a non-empty cron expression" render --set-string 'services.bot.indexUpgrade.window.cron=  '
 renders_fail "zero window.maxDuration fails the render"   "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero" render --set-string services.bot.indexUpgrade.window.maxDuration=00:00

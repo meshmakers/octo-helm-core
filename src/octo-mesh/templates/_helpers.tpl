@@ -304,15 +304,17 @@ nothing.
 {{- end }}
 {{- $maxDuration := $window.maxDuration }}
 {{- if not (kindIs "invalid" $maxDuration) }}
-{{- /* .NET TimeSpan "[d.]hh:mm[:ss[.fffffff]]", e.g. 04:00:00 or 1.00:00:00, longer than zero */}}
-{{- if not (and (kindIs "string" $maxDuration) (regexMatch `^([0-9]+\.)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,7})?)?$` $maxDuration) (regexMatch `[1-9]` $maxDuration)) }}
-{{- fail (printf "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero such as \"04:00:00\", got '%v'" $maxDuration) }}
+{{- /* .NET TimeSpan "[d.]hh:mm[:ss[.fffffff]]", e.g. 04:00:00 or 1.00:00:00, longer than zero; at most 7 day
+   digits, so the value stays below TimeSpan.MaxValue (about 10675199 days) and binding cannot overflow */}}
+{{- if not (and (kindIs "string" $maxDuration) (regexMatch `^([0-9]{1,7}\.)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,7})?)?$` $maxDuration) (regexMatch `[1-9]` $maxDuration)) }}
+{{- fail (printf "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero with at most 7 day digits such as \"04:00:00\", got '%v'" $maxDuration) }}
 {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
 
+{{/*
 AB#5560 bot storage env: pre-sweep backup path on the PVC and OCTO_ARTIFACTSTORAGE__* (config section
 ArtifactStorage, octo-common-services AB#5561). Credentials only as secretKeyRef into an existing Secret.
 Renders nothing with the defaults.

@@ -285,7 +285,8 @@ is built. `Immediate` builds after every deploy (after a start delay) and for cr
 builds only inside the window the cron opens, and only with `window.enabled: true`. A set value that the service could
 not use fails the render with the key in the message: a schedule other than `Immediate` or `Window` (also lower case or
 empty), a `window.enabled` that is no YAML boolean (also the string `"true"`), an empty `window.cron` and a
-`window.maxDuration` that is no TimeSpan of the form `[d.]hh:mm[:ss[.fffffff]]` longer than zero. The values are
+`window.maxDuration` that is no TimeSpan of the form `[d.]hh:mm[:ss[.fffffff]]` longer than zero (at most 7 day
+digits, so it stays below the .NET TimeSpan maximum). The values are
 checked once per render, also with `services.bot.deploy: false`; a misspelled or unknown key (for example
 `services.bot.indexupgrade` or `window.enable`), an `indexUpgrade` or `window` that is no map, and `indexUpgrade` on any
 other service fail the render as well, instead of being ignored.
