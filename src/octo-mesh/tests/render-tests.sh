@@ -564,8 +564,18 @@ renders_fail "wrongly cased pool hub key fails the render"       "services.commu
 renders_fail "misspelled adapter hub key fails the render"       "services.communication.hubAuthorization.adapterHubMode is not a known value" render --set services.communication.hubAuthorization.adapterHubMode=Enforce
 renders_fail "pool hub mode outside hubAuthorization fails"      "services.communication.adapterPoolMode is not a known value" render --set services.communication.adapterPoolMode=Enforce
 renders_fail "misspelled hubAuthorization block fails"           "services.communication.hubAuthorisation is not a known value" render --set services.communication.hubAuthorisation.adapterPoolMode=Enforce
-renders_fail "pool hub mode on another service fails the render" "services.assetRepository.hubAuthorization is not supported" render --set services.assetRepository.hubAuthorization.adapterPoolMode=Enforce
-renders_fail "pool hub key on another service with deploy false fails" "services.identity.adapterPoolMode is not supported" render --set services.identity.adapterPoolMode=Enforce --set services.identity.deploy=false
+renders_fail "pool hub mode on another service fails the render" "services.assetRepository.hubAuthorization is not a known value" render --set services.assetRepository.hubAuthorization.adapterPoolMode=Enforce
+renders_fail "pool hub key on another service with deploy false fails" "services.identity.adapterPoolMode is not a known value" render --set services.identity.adapterPoolMode=Enforce --set services.identity.deploy=false
+renders_fail "pool hub key with separators fails the render"     "services.communication.adapter_pool_mode is not a known value" render --set services.communication.adapter_pool_mode=Enforce
+renders_fail "pool hub key nested below another block fails"     "services.communication.signalr.adapterPoolMode is not a known value" render --set services.communication.signalr.adapterPoolMode=Enforce
+renders_fail "pool hub key in the root tenantAuthorization section fails" "): tenantAuthorization.adapterPoolMode is not a known value" render --set tenantAuthorization.adapterPoolMode=Enforce
+renders_fail "hubAuthorization block at the root fails"          "): hubAuthorization is not a known value" render --set hubAuthorization.adapterPoolMode=Enforce
+renders_fail "pool hub key on a misspelled service fails"        "services.comunication.hubAuthorization is not a known value" render --set services.comunication.hubAuthorization.adapterPoolMode=Enforce
+renders_fail "pool hub key inside a list fails"                  "services.identity.extra[0].adapterPoolMode is not a known value" render --set 'services.identity.extra[0].adapterPoolMode=Enforce'
+for bad in false 0; do
+  renders_fail "hubAuthorization: $bad (not a map) fails the render" "services.communication.hubAuthorization must be a map, got '$bad'" render --set services.communication.hubAuthorization=$bad
+done
+renders_fail "hubAuthorization: \"\" (not a map) fails the render" "services.communication.hubAuthorization must be a map, got ''" render --set-string services.communication.hubAuthorization=
 
 # 26. AB#9310 (AB#9199): GraphQL mutation scope gate, asset repository only, chart default false (= service default)
 M=OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE
@@ -599,7 +609,15 @@ renders_fail "quoted \"true\" in a values file fails the render" "services.asset
 rm -f "$MFILE"
 renders_fail "misspelled mutation scope key fails the render"    "services.assetRepository.enforceMutationScop is not a known value" render --set services.assetRepository.enforceMutationScop=true
 renders_fail "wrongly cased mutation scope key fails the render" "services.assetRepository.EnforceMutationScope is not a known value" render --set services.assetRepository.EnforceMutationScope=true
-renders_fail "mutation scope on another service fails the render" "services.communication.enforceMutationScope is not supported" render --set services.communication.enforceMutationScope=true
-renders_fail "mutation scope on a service not deployed fails"    "services.bot.enforceMutationScope is not supported" render --set services.bot.enforceMutationScope=true --set services.bot.deploy=false
+renders_fail "mutation scope on another service fails the render" "services.communication.enforceMutationScope is not a known value" render --set services.communication.enforceMutationScope=true
+renders_fail "mutation scope on a service not deployed fails"    "services.bot.enforceMutationScope is not a known value" render --set services.bot.enforceMutationScope=true --set services.bot.deploy=false
+renders_fail "mutation scope at the config key path (graphQl block) fails" "services.assetRepository.graphQl.enforceMutationScope is not a known value" render --set services.assetRepository.graphQl.enforceMutationScope=true
+renders_fail "plural mutation scope key fails the render"        "services.assetRepository.enforceMutationsScope is not a known value" render --set services.assetRepository.enforceMutationsScope=true
+renders_fail "mutation scope key with separators fails the render" "services.assetRepository.enforce_mutation_scope is not a known value" render --set services.assetRepository.enforce_mutation_scope=true
+renders_fail "mutation scope in serviceDefaults fails the render" "): serviceDefaults.enforceMutationScope is not a known value" render --set serviceDefaults.enforceMutationScope=true
+MFILE="$(mktemp)"
+printf 'assetRepository:\n  enforceMutationScope: true\n' > "$MFILE"
+renders_fail "assetRepository block at the root (indentation slip) fails" "): assetRepository.enforceMutationScope is not a known value" render -f "$MFILE"
+rm -f "$MFILE"
 
 exit $fail

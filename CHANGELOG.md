@@ -17,8 +17,9 @@
   `AdapterPoolHubAuthorization:Mode`); chart default `LogOnly`, identical to the code default, so no installation
   changes its behaviour without a value (the controller deployment gets the new variable and rolls once). Unset or
   empty renders `LogOnly`; any other value (also a YAML boolean) fails the render, also when the controller is not
-  deployed. Unknown keys under `services.communication.hubAuthorization`, misplaced or misspelled pool hub keys under
-  `services.communication` and such keys on any other service fail the render. Needed for the per-cluster switch to
+  deployed. A non-map `hubAuthorization`, unknown keys under `services.communication.hubAuthorization` and any
+  pool-hub-like key (`adapterpool`/`hubauthori`, ignoring casing and separators) anywhere else in the values tree fail
+  the render. Needed for the per-cluster switch to
   `Enforce` (AB#9199); the cluster values follow in `octo-mesh-deployment`.
 
 ### Added (AB#9310)
@@ -26,8 +27,9 @@
   `OCTO_GRAPHQL__ENFORCEMUTATIONSCOPE` (`GraphQl:EnforceMutationScope`, AB#4973) on the asset repository only; chart
   default `false`, identical to the service default (log-first), so no installation changes its behaviour without a
   value (the asset repository deployment gets the new variable and rolls once). Unset, null or empty renders `false`;
-  anything but a YAML boolean fails the render, also when the asset repository is not deployed; a misspelled key under
-  `services.assetRepository` and the key on any other service fail the render. Needed for the per-cluster switch
+  anything but a YAML boolean fails the render, also when the asset repository is not deployed; any
+  mutation-scope-like key (`mutations?scop`, ignoring casing and separators) anywhere in the values tree other than
+  `services.assetRepository.enforceMutationScope` fails the render (misspelled, nested, other service, root). Needed for the per-cluster switch
   (AB#9199); the cluster values follow in `octo-mesh-deployment`.
 
 ### Added (AB#9295)

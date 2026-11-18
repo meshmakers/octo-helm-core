@@ -455,8 +455,9 @@ services:
     #   false - default (= the service's default, log-first): the mutation runs and a warning is logged
     #           ("... would be rejected once GraphQl:EnforceMutationScope is enabled").
     #   true  - the mutation is refused (forbidden error).
-    # Only a YAML boolean is accepted: a quoted "true" fails the render, as does a misspelled key
-    # (e.g. enforceMutationScop) or the key on another service. Switch plan per cluster: AB#9310.
+    # Only a YAML boolean is accepted: a quoted "true" fails the render, as does a misspelled or
+    # misplaced key anywhere in the values (enforceMutationScop, enforce_mutation_scope,
+    # graphQl.enforceMutationScope, another service, the root). Switch plan per cluster: AB#9310.
     enforceMutationScope: false
     # set false to prevent deployment
     deploy: true
@@ -804,8 +805,8 @@ services:
     # (counted with octo_hub_name="adapterPoolHub", outcome=would_refuse); Enforce
     # refuses it. Its row in the same runbook; switch plan per cluster: AB#9309.
     # Only adapterMode, operatorMode and adapterPoolMode are known keys here: any
-    # other key (e.g. a misspelled adapterPoolMod) fails the render, as does the
-    # value on another service.
+    # other key (e.g. a misspelled adapterPoolMod) fails the render, as does a
+    # pool-hub-like key anywhere else in the values (another service, the root).
     hubAuthorization:
       adapterMode: LogOnly
       operatorMode: LogOnly
