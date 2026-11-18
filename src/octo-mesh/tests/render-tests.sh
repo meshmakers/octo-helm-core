@@ -4,7 +4,7 @@
 # /metrics never routed through an ingress (AB#5868), removed identity license keys (AB#6726), user-token tenant gate mode (AB#6834), operator.forceClassicWatch (AB#6901),
 # removed files migration settings (AB#7033), identity SecretManagement enforcement and Data Protection key encryption (AB#8093), identity admin role migration (AB#8165), CK method idempotency fingerprint key (AB#8280),
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
-# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295).
+# identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295), bot index upgrade schedule (AB#9319).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -477,5 +477,49 @@ rm -f "$RFILE"
 renders_fail "misspelled read gate key fails the render"        "services.assetRepository.streamDataReadEnforcment is not a known value" render --set services.assetRepository.streamDataReadEnforcment=Enforce
 renders_fail "wrongly cased read gate key fails the render"     "services.assetRepository.StreamDataReadEnforcement is not a known value" render --set services.assetRepository.StreamDataReadEnforcement=Enforce
 renders_fail "read gate mode on another service fails the render" "services.communication.streamDataReadEnforcement is not supported" render --set services.communication.streamDataReadEnforcement=Enforce
+
+# 24. AB#9319: bot index upgrade schedule (services.bot.indexUpgrade.*, OCTO_INDEXUPGRADE__*), bot container only
+iu() { tr -d '\r' <<<"$OUT" | grep -A1 "name: OCTO_INDEXUPGRADE__$1\$" | grep -o 'value: .*'; }
+BASE="$(render)"
+check "unset renders no OCTO_INDEXUPGRADE variable" bash -c "! grep -q OCTO_INDEXUPGRADE <<<\"\$1\"" _ "$BASE"
+OUT="$(render --set services.bot.indexUpgrade.schedule=Immediate)"
+check "schedule=Immediate renders exactly OCTO_INDEXUPGRADE__SCHEDULE" test "$(grep -c 'OCTO_INDEXUPGRADE' <<<"$OUT") $(iu SCHEDULE)" = '1 value: "Immediate"'
+# Without the variable (its name line and the value line after it) the render is byte-identical to the unset one.
+# (Carriage returns are dropped on both sides: helm on Windows ends lines with CRLF.)
+check "schedule adds only its two lines to the rendered chart" test "$(tr -d '\r' <<<"$OUT" | awk '/name: OCTO_INDEXUPGRADE__SCHEDULE$/ {skip=1; next} skip {skip=0; next} {print}')" = "$(tr -d '\r' <<<"$BASE")"
+check "schedule is rendered in the bot Deployment only" test "$(tr -d '\r' <<<"$OUT" | awk 'BEGIN{RS="\n---\n"} /OCTO_INDEXUPGRADE__SCHEDULE/' | grep -E '^kind:|^  name:' | tr '\n' ' ')" = 'kind: Deployment   name: t-bot-services '
+OUT="$(render --set services.bot.indexUpgrade.schedule=Window)"
+check "schedule=Window renders" test "$(iu SCHEDULE)" = 'value: "Window"'
+OUT="$(render --set services.bot.indexUpgrade.window.enabled=true)"
+check "window.enabled=true renders exactly __WINDOW__ENABLED \"true\"" test "$(grep -c 'OCTO_INDEXUPGRADE' <<<"$OUT") $(iu WINDOW__ENABLED)" = '1 value: "true"'
+OUT="$(render --set services.bot.indexUpgrade.window.enabled=false)"
+check "window.enabled=false renders \"false\"" test "$(iu WINDOW__ENABLED)" = 'value: "false"'
+OUT="$(render --set-string 'services.bot.indexUpgrade.window.cron=0 2 * * *')"
+check "window.cron renders exactly __WINDOW__CRON, quoted" test "$(grep -c 'OCTO_INDEXUPGRADE' <<<"$OUT") $(iu WINDOW__CRON)" = '1 value: "0 2 * * *"'
+OUT="$(render --set-string services.bot.indexUpgrade.window.maxDuration=04:00:00)"
+check "window.maxDuration renders exactly __WINDOW__MAXDURATION, quoted" test "$(grep -c 'OCTO_INDEXUPGRADE' <<<"$OUT") $(iu WINDOW__MAXDURATION)" = '1 value: "04:00:00"'
+OUT="$(render --set-string services.bot.indexUpgrade.window.maxDuration=1.12:30:00.5)"
+check "window.maxDuration with days and fraction renders" test "$(iu WINDOW__MAXDURATION)" = 'value: "1.12:30:00.5"'
+renders_fail "invalid schedule fails the render"          "services.bot.indexUpgrade.schedule must be Immediate or Window, got 'Bogus'" render --set services.bot.indexUpgrade.schedule=Bogus
+renders_fail "lower-case schedule fails the render"       "services.bot.indexUpgrade.schedule must be Immediate or Window, got 'immediate'" render --set services.bot.indexUpgrade.schedule=immediate
+renders_fail "empty schedule fails the render"            "services.bot.indexUpgrade.schedule must be Immediate or Window, got ''" render --set-string services.bot.indexUpgrade.schedule=
+renders_fail "string window.enabled fails the render"     "services.bot.indexUpgrade.window.enabled must be true or false, got 'yes'" render --set-string services.bot.indexUpgrade.window.enabled=yes
+renders_fail "quoted \"true\" window.enabled fails"       "services.bot.indexUpgrade.window.enabled must be true or false, got 'true'" render --set-string services.bot.indexUpgrade.window.enabled=true
+renders_fail "invalid window.maxDuration fails the render" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan" render --set-string services.bot.indexUpgrade.window.maxDuration=4h
+renders_fail "window.maxDuration 25:00:00 fails the render" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan" render --set-string services.bot.indexUpgrade.window.maxDuration=25:00:00
+OUT="$(render --set-string services.bot.indexUpgrade.window.maxDuration=9999999.00:00:00)"
+check "window.maxDuration with 7 day digits renders" test "$(iu WINDOW__MAXDURATION)" = 'value: "9999999.00:00:00"'
+renders_fail "window.maxDuration above the TimeSpan maximum fails" "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero with at most 7 day digits" render --set-string services.bot.indexUpgrade.window.maxDuration=99999999.00:00:00
+renders_fail "empty window.cron fails the render"         "services.bot.indexUpgrade.window.cron must be a non-empty cron expression" render --set-string services.bot.indexUpgrade.window.cron=
+renders_fail "blank window.cron fails the render"         "services.bot.indexUpgrade.window.cron must be a non-empty cron expression" render --set-string 'services.bot.indexUpgrade.window.cron=  '
+renders_fail "zero window.maxDuration fails the render"   "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero" render --set-string services.bot.indexUpgrade.window.maxDuration=00:00
+# Validated once per render, also when bot is not deployed; misspelled, unknown and misplaced keys fail.
+renders_fail "invalid value fails also with bot deploy=false" "services.bot.indexUpgrade.schedule must be Immediate or Window, got 'Bogus'" render --set services.bot.deploy=false --set services.bot.indexUpgrade.schedule=Bogus
+renders_fail "miscased indexupgrade key fails the render" "services.bot.indexupgrade is not a known value: did you mean services.bot.indexUpgrade?" render --set services.bot.indexupgrade.schedule=Immediate
+renders_fail "unknown key under indexUpgrade fails"       "services.bot.indexUpgrade.scedule is not a known value (schedule, window)" render --set services.bot.indexUpgrade.scedule=Immediate
+renders_fail "unknown key under window fails"             "services.bot.indexUpgrade.window.enable is not a known value (enabled, cron, maxDuration)" render --set services.bot.indexUpgrade.window.enable=true
+renders_fail "indexUpgrade on another service fails"      "services.identity.indexUpgrade is not supported: only services.bot runs the index upgrade" render --set services.identity.indexUpgrade.schedule=Immediate
+renders_fail "non-map indexUpgrade fails the render"      "services.bot.indexUpgrade must be a map (schedule, window), got 'Immediate'" render --set services.bot.indexUpgrade=Immediate
+renders_fail "non-map window fails the render"            "services.bot.indexUpgrade.window must be a map (enabled, cron, maxDuration), got 'true'" render --set services.bot.indexUpgrade.window=true
 
 exit $fail

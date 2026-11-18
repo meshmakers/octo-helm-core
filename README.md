@@ -267,6 +267,35 @@ the render.
 Switch per cluster only after the `Warn` log names no caller that still needs a role, by the switch plan of AB#9296
 (values in `octo-mesh-deployment`). Rollback: set the value back to `Warn` and roll the asset repository deployment.
 
+### Bot index upgrade schedule (AB#9319)
+
+From octo-bot-services AB#9118 on, bot-services rebuilds the paging indexes of every tenant in the shape
+`{ckTypeId, attr…, _id, rtState}` with one Hangfire job per tenant (octo-bot-services `docs/index-upgrade.md`). When it
+builds is set per cluster; the chart renders each variable on the bot deployment only, and only when its value is set:
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.bot.indexUpgrade.schedule` = `Immediate` \| `Window` | unset | `OCTO_INDEXUPGRADE__SCHEDULE` |
+| `services.bot.indexUpgrade.window.enabled` = `true` \| `false` (YAML boolean) | unset | `OCTO_INDEXUPGRADE__WINDOW__ENABLED` |
+| `services.bot.indexUpgrade.window.cron` (Hangfire cron, UTC, e.g. `"0 1 * * *"`) | unset | `OCTO_INDEXUPGRADE__WINDOW__CRON` |
+| `services.bot.indexUpgrade.window.maxDuration` (.NET TimeSpan string, e.g. `"04:00:00"`, `"1.00:00:00"`) | unset | `OCTO_INDEXUPGRADE__WINDOW__MAXDURATION` |
+
+Unset (the default) renders nothing, and the service keeps its code default: `Window` with the window off, so no index
+is built. `Immediate` builds after every deploy (after a start delay) and for created or attached tenants; `Window`
+builds only inside the window the cron opens, and only with `window.enabled: true`. These set values fail the render
+with the key in the message: a schedule other than `Immediate` or `Window` (also lower case or empty), a
+`window.enabled` that is no YAML boolean (also the string `"true"`), an empty or blank `window.cron` and a
+`window.maxDuration` that is no TimeSpan of the form `[d.]hh:mm[:ss[.fffffff]]` longer than zero (at most 7 day
+digits, so it stays below the .NET TimeSpan maximum). For `window.cron` the chart checks only that it is a non-empty
+string; bot-services (Hangfire) validates the cron expression at start, and with an invalid one no window opens. The
+values are checked once per render, also with `services.bot.deploy: false`; a misspelled or unknown key (for example
+`services.bot.indexupgrade` or `window.enable`), an `indexUpgrade` or `window` that is no map, and `indexUpgrade` on any
+other service fail the render as well, instead of being ignored.
+
+Switch a production cluster on (`schedule: Window` with `window.enabled: true`) only after the developer's go for that
+cluster and after measuring the duration on a copy (rollout procedure in octo-bot-services `docs/index-upgrade.md`). The
+cluster values live in `octo-mesh-deployment`.
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash

@@ -411,6 +411,8 @@ byte counts never render in float notation (1.048576e+08).
   value: {{ .global.Values.serviceDefaults.instancePrefix }}
 {{- /* AB#5560 PVC / artifact store; renders nothing with the defaults. */}}
 {{- include "octo-mesh.bot-storage-env" . }}
+{{- /* AB#9319 index upgrade schedule; renders nothing with the defaults. */}}
+{{- include "octo-mesh.bot-index-upgrade-env" . }}
 
 {{- else if eq .name "communication" -}}
 {{- $name := "OCTO_COMMUNICATIONCONTROLLER" }}

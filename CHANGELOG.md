@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added (AB#9319)
+- **octo-mesh: values `services.bot.indexUpgrade.schedule` (`Immediate` | `Window`), `.window.enabled`, `.window.cron`
+  and `.window.maxDuration`.** Render `OCTO_INDEXUPGRADE__SCHEDULE`, `OCTO_INDEXUPGRADE__WINDOW__ENABLED`,
+  `OCTO_INDEXUPGRADE__WINDOW__CRON` and `OCTO_INDEXUPGRADE__WINDOW__MAXDURATION` on the bot deployment, each only when
+  set; unset (default) renders nothing and bot-services keeps its code default (Window, window off: no index is built),
+  so no installation changes without a value. Invalid values, misspelled or unknown keys and `indexUpgrade` on another
+  service fail the render, also with `services.bot.deploy: false`. Needed for the paging index upgrade of
+  octo-bot-services AB#9118; production clusters are switched on only after the developer's go per cluster, the cluster
+  values follow in `octo-mesh-deployment` (first test-2 with `schedule: Immediate`).
+
 ### Added (AB#9295)
 - **octo-mesh: value `services.assetRepository.streamDataReadEnforcement` (`Off` | `Warn` | `Enforce`).** Renders
   `OCTO_STREAMDATAREADAUTHORIZATION__ROLEENFORCEMENT` on the asset repository only (stream-data read gate of
