@@ -225,48 +225,94 @@ bot has a PVC, otherwise "" (no OCTO_ARTIFACTSTORAGE__* at all, the bot keeps it
 {{/*
 AB#9319 bot index upgrade env: services.bot.indexUpgrade.* -> OCTO_INDEXUPGRADE__* (section IndexUpgrade of
 octo-bot-services, AB#9118). Each variable is rendered only when its value is set (not null); an unset value leaves
-the service's code default (Window schedule, window off). A set value that the service could not use fails the
-render with the key in the message.
+the service's code default (Window schedule, window off). Included only by the bot block of _env.tpl; the values are
+validated once per render by "octo-mesh.bot-index-upgrade-validate", so this only renders.
 */}}
 {{- define "octo-mesh.bot-index-upgrade-env" -}}
 {{- $iu := .svc.indexUpgrade | default dict }}
 {{- $window := $iu.window | default dict }}
-{{- $schedule := $iu.schedule }}
-{{- if not (kindIs "invalid" $schedule) }}
-{{- if not (and (kindIs "string" $schedule) (has $schedule (list "Immediate" "Window"))) }}
-{{- fail (printf "services.bot.indexUpgrade.schedule must be Immediate or Window, got '%v'" $schedule) }}
-{{- end }}
+{{- if not (kindIs "invalid" $iu.schedule) }}
 - name: OCTO_INDEXUPGRADE__SCHEDULE
-  value: {{ $schedule | quote }}
+  value: {{ $iu.schedule | quote }}
 {{- end }}
-{{- $enabled := $window.enabled }}
-{{- if not (kindIs "invalid" $enabled) }}
-{{- if not (kindIs "bool" $enabled) }}
-{{- fail (printf "services.bot.indexUpgrade.window.enabled must be true or false, got '%v'" $enabled) }}
-{{- end }}
+{{- if not (kindIs "invalid" $window.enabled) }}
 - name: OCTO_INDEXUPGRADE__WINDOW__ENABLED
-  value: {{ $enabled | toString | quote }}
+  value: {{ $window.enabled | toString | quote }}
 {{- end }}
-{{- $cron := $window.cron }}
-{{- if not (kindIs "invalid" $cron) }}
-{{- if not (and (kindIs "string" $cron) (ne (trim $cron) "")) }}
-{{- fail (printf "services.bot.indexUpgrade.window.cron must be a non-empty cron expression, got '%v'" $cron) }}
-{{- end }}
+{{- if not (kindIs "invalid" $window.cron) }}
 - name: OCTO_INDEXUPGRADE__WINDOW__CRON
-  value: {{ $cron | quote }}
+  value: {{ $window.cron | quote }}
 {{- end }}
-{{- $maxDuration := $window.maxDuration }}
-{{- if not (kindIs "invalid" $maxDuration) }}
-{{- /* .NET TimeSpan "[d.]hh:mm[:ss[.fffffff]]", e.g. 04:00:00 or 1.00:00:00 */}}
-{{- if not (and (kindIs "string" $maxDuration) (regexMatch `^([0-9]+\.)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,7})?)?$` $maxDuration)) }}
-{{- fail (printf "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan such as \"04:00:00\", got '%v'" $maxDuration) }}
-{{- end }}
+{{- if not (kindIs "invalid" $window.maxDuration) }}
 - name: OCTO_INDEXUPGRADE__WINDOW__MAXDURATION
-  value: {{ $maxDuration | quote }}
+  value: {{ $window.maxDuration | quote }}
 {{- end }}
 {{- end }}
 
 {{/*
+AB#9319: validates services.bot.indexUpgrade once per render, also when bot is not deployed (deploy: false), like
+AB#9027/AB#9295. A set value the service could not use fails the render with the key in the message; so do a
+misspelled key (a key under services.bot containing "indexupgrade" in any casing that is not exactly indexUpgrade, or
+an unknown key under indexUpgrade or indexUpgrade.window), indexUpgrade or window that is not a map, and indexUpgrade
+on any other service, where it would be ignored silently. Called from deployment.yaml with the chart root; renders
+nothing.
+*/}}
+{{- define "octo-mesh.bot-index-upgrade-validate" -}}
+{{- range $name, $svc := .Values.services }}
+{{- range $k, $v := ($svc | default dict) }}
+{{- if contains "indexupgrade" (lower $k) }}
+{{- if ne $name "bot" }}
+{{- if not (kindIs "invalid" $v) }}
+{{- fail (printf "services.%s.%s is not supported: only services.bot runs the index upgrade (services.bot.indexUpgrade)" $name $k) }}
+{{- end }}
+{{- else if ne $k "indexUpgrade" }}
+{{- fail (printf "services.bot.%s is not a known value: did you mean services.bot.indexUpgrade?" $k) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $iu := .Values.services.bot.indexUpgrade }}
+{{- if not (kindIs "invalid" $iu) }}
+{{- if not (kindIs "map" $iu) }}
+{{- fail (printf "services.bot.indexUpgrade must be a map (schedule, window), got '%v'" $iu) }}
+{{- end }}
+{{- range $k, $_ := $iu }}
+{{- if not (has $k (list "schedule" "window")) }}
+{{- fail (printf "services.bot.indexUpgrade.%s is not a known value (schedule, window)" $k) }}
+{{- end }}
+{{- end }}
+{{- $schedule := $iu.schedule }}
+{{- if and (not (kindIs "invalid" $schedule)) (not (and (kindIs "string" $schedule) (has $schedule (list "Immediate" "Window")))) }}
+{{- fail (printf "services.bot.indexUpgrade.schedule must be Immediate or Window, got '%v'" $schedule) }}
+{{- end }}
+{{- $window := $iu.window }}
+{{- if not (kindIs "invalid" $window) }}
+{{- if not (kindIs "map" $window) }}
+{{- fail (printf "services.bot.indexUpgrade.window must be a map (enabled, cron, maxDuration), got '%v'" $window) }}
+{{- end }}
+{{- range $k, $_ := $window }}
+{{- if not (has $k (list "enabled" "cron" "maxDuration")) }}
+{{- fail (printf "services.bot.indexUpgrade.window.%s is not a known value (enabled, cron, maxDuration)" $k) }}
+{{- end }}
+{{- end }}
+{{- if and (not (kindIs "invalid" $window.enabled)) (not (kindIs "bool" $window.enabled)) }}
+{{- fail (printf "services.bot.indexUpgrade.window.enabled must be true or false, got '%v'" $window.enabled) }}
+{{- end }}
+{{- $cron := $window.cron }}
+{{- if and (not (kindIs "invalid" $cron)) (not (and (kindIs "string" $cron) (ne (trim $cron) ""))) }}
+{{- fail (printf "services.bot.indexUpgrade.window.cron must be a non-empty cron expression, got '%v'" $cron) }}
+{{- end }}
+{{- $maxDuration := $window.maxDuration }}
+{{- if not (kindIs "invalid" $maxDuration) }}
+{{- /* .NET TimeSpan "[d.]hh:mm[:ss[.fffffff]]", e.g. 04:00:00 or 1.00:00:00, longer than zero */}}
+{{- if not (and (kindIs "string" $maxDuration) (regexMatch `^([0-9]+\.)?([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,7})?)?$` $maxDuration) (regexMatch `[1-9]` $maxDuration)) }}
+{{- fail (printf "services.bot.indexUpgrade.window.maxDuration must be a .NET TimeSpan longer than zero such as \"04:00:00\", got '%v'" $maxDuration) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 AB#5560 bot storage env: pre-sweep backup path on the PVC and OCTO_ARTIFACTSTORAGE__* (config section
 ArtifactStorage, octo-common-services AB#5561). Credentials only as secretKeyRef into an existing Secret.
 Renders nothing with the defaults.

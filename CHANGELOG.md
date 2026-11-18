@@ -7,7 +7,8 @@
   and `.window.maxDuration`.** Render `OCTO_INDEXUPGRADE__SCHEDULE`, `OCTO_INDEXUPGRADE__WINDOW__ENABLED`,
   `OCTO_INDEXUPGRADE__WINDOW__CRON` and `OCTO_INDEXUPGRADE__WINDOW__MAXDURATION` on the bot deployment, each only when
   set; unset (default) renders nothing and bot-services keeps its code default (Window, window off: no index is built),
-  so no installation changes without a value. Invalid values fail the render. Needed for the paging index upgrade of
+  so no installation changes without a value. Invalid values, misspelled or unknown keys and `indexUpgrade` on another
+  service fail the render, also with `services.bot.deploy: false`. Needed for the paging index upgrade of
   octo-bot-services AB#9118; production clusters are switched on only after the developer's go per cluster, the cluster
   values follow in `octo-mesh-deployment` (first test-2 with `schedule: Immediate`).
 
