@@ -324,6 +324,24 @@ Switch per cluster only after the 7-day log query names no legitimate client wit
 AB#9310 (values in `octo-mesh-deployment`). Rollback: set the value back to `false` and roll the asset repository
 deployment.
 
+### Runtime query time limit (AB#8897)
+
+The asset repository sends every runtime-entity query and count (by type, by id, by type with navigation, by CK
+interface) to MongoDB with a server-side time limit (`maxTimeMS`). A query that runs longer is stopped on the database
+and answered with the coded error `ASSET1008` (GraphQL) or `504` problem details (REST) instead of keeping the service
+busy; above 80 % of the limit the service logs a warning. The limit applies per database operation (page and count of a
+paged query each get the full limit). Blueprint installs and CK migrations run without the limit.
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `services.assetRepository.runtimeQuery.maxTimeMs` | `120000` (2 min) | `OCTO_RuntimeQuery__MaxTimeMs` |
+
+Whole milliseconds from `0` to `2147483647`; `0` switches the limit off. A negative value, a fraction or text fails the
+render, also when the asset repository is not deployed (`deploy: false`); `null` renders no variable, so the service
+default (120000) applies. Any other key under `runtimeQuery` (for example MongoDB's spelling `maxTimeMS`) fails the
+render instead of being ignored, and so does a `runtimeQuery` that is not a map (`false`, `0`, `""`, text). Raise it per cluster only for a measured
+reason (the query durations of that cluster).
+
 ### Render octo-mesh chart template locally and display the output
 
 ```bash
