@@ -654,5 +654,8 @@ renders_fail "negative value fails the render"                 "services.assetRe
 renders_fail "fraction fails the render"                       "got '1.5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=1.5
 renders_fail "text fails the render"                           "got '2m'" render --set-string services.assetRepository.runtimeQuery.maxTimeMs=2m
 renders_fail "value above int32 fails the render"              "got '3000000000'" render --set services.assetRepository.runtimeQuery.maxTimeMs=3000000000
+renders_fail "invalid value fails also with deploy false"      "got '-5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=-5 --set services.assetRepository.deploy=false
+OUT="$(render --set services.assetRepository.deploy=false)"
+check "deploy false renders no runtime query variable"         bash -c '! grep -q "$1" <<<"$0"' "$OUT" "$RQ"
 
 exit $fail

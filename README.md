@@ -337,7 +337,8 @@ paged query each get the full limit). Blueprint installs and CK migrations run w
 | `services.assetRepository.runtimeQuery.maxTimeMs` | `120000` (2 min) | `OCTO_RuntimeQuery__MaxTimeMs` |
 
 Whole milliseconds from `0` to `2147483647`; `0` switches the limit off. A negative value, a fraction or text fails the
-render; `null` renders no variable, so the service default (120000) applies. Raise it per cluster only for a measured
+render, also when the asset repository is not deployed (`deploy: false`); `null` renders no variable, so the service
+default (120000) applies. Raise it per cluster only for a measured
 reason (the query durations of that cluster).
 
 ### Render octo-mesh chart template locally and display the output

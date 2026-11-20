@@ -6,7 +6,8 @@
 - **octo-mesh: value `services.assetRepository.runtimeQuery.maxTimeMs`** (default `120000`, `0` = off), rendered as
   `OCTO_RuntimeQuery__MaxTimeMs` on the asset repository only: the server-side time limit of runtime-entity queries
   (MongoDB `maxTimeMS`, error `ASSET1008` / `504`). A negative value, a fraction, text or a value above `2147483647`
-  fails the render; `null` renders nothing (service default). Needs an asset repository with the time limit; older
+  fails the render, also with `services.assetRepository.deploy: false`; `null` renders nothing (service default).
+  Needs an asset repository with the time limit; older
   versions ignore the variable.
 
 ### Added (AB#9319)

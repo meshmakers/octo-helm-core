@@ -394,28 +394,7 @@ byte counts never render in float notation (1.048576e+08).
 - name: OCTO_Files__PreviewMaxBytes
   value: {{ .previewMaxBytes | int64 | quote }}
 {{- end }}
-{{- /*
-AB#8897 server-side time limit of runtime-entity queries (section "RuntimeQuery"). A whole number of
-milliseconds from 0 (off) to 2147483647; anything else fails the render. Unset or null renders nothing: the service
-default (120000) applies.
-*/}}
-{{- with .global.Values.services.assetRepository.runtimeQuery }}
-{{- $maxTimeMs := .maxTimeMs }}
-{{- /* Helm 3.18.0 loads chart values as json.Number (a string kind); convert it, text still fails below. */}}
-{{- if eq (typeOf $maxTimeMs) "json.Number" }}
-{{- $maxTimeMs = float64 $maxTimeMs }}
-{{- end }}
-{{- if not (kindIs "invalid" $maxTimeMs) }}
-{{- if not (or (kindIs "float64" $maxTimeMs) (kindIs "int64" $maxTimeMs) (kindIs "int" $maxTimeMs)) }}
-{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
-{{- end }}
-{{- if or (lt (float64 $maxTimeMs) 0.0) (gt (float64 $maxTimeMs) 2147483647.0) (ne (float64 (int64 $maxTimeMs)) (float64 $maxTimeMs)) }}
-{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
-{{- end }}
-- name: OCTO_RuntimeQuery__MaxTimeMs
-  value: {{ $maxTimeMs | int64 | quote }}
-{{- end }}
-{{- end }}
+{{ include "octo-mesh.runtime-query-env" (dict "runtimeQuery" .global.Values.services.assetRepository.runtimeQuery) }}
 
 {{- else if eq .name "bot" -}}
 {{- $name := "OCTO_BOT" }}
@@ -913,5 +892,31 @@ render instead of silently becoming the default.
 {{- $n := len . }}
 {{- if eq $n 1 }}{{ index . 0 }}
 {{- else }}{{ join ", " (initial .) }} or {{ last . }}
+{{- end }}
+{{- end }}
+
+{{- define "octo-mesh.runtime-query-env" -}}
+{{- /*
+AB#8897 server-side time limit of runtime-entity queries (section "RuntimeQuery"). A whole number of
+milliseconds from 0 (off) to 2147483647; anything else fails the render. Unset or null renders nothing: the service
+default (120000) applies. Rendered on the asset repository; deployment.yaml also calls it once per render with the
+output discarded, so an invalid value fails the render also when the asset repository is not deployed.
+*/ -}}
+{{- with .runtimeQuery }}
+{{- $maxTimeMs := .maxTimeMs }}
+{{- /* Helm 3.18.0 loads chart values as json.Number (a string kind); convert it, text still fails below. */}}
+{{- if eq (typeOf $maxTimeMs) "json.Number" }}
+{{- $maxTimeMs = float64 $maxTimeMs }}
+{{- end }}
+{{- if not (kindIs "invalid" $maxTimeMs) }}
+{{- if not (or (kindIs "float64" $maxTimeMs) (kindIs "int64" $maxTimeMs) (kindIs "int" $maxTimeMs)) }}
+{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
+{{- end }}
+{{- if or (lt (float64 $maxTimeMs) 0.0) (gt (float64 $maxTimeMs) 2147483647.0) (ne (float64 (int64 $maxTimeMs)) (float64 $maxTimeMs)) }}
+{{- fail (printf "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '%v'" $maxTimeMs) }}
+{{- end }}
+- name: OCTO_RuntimeQuery__MaxTimeMs
+  value: {{ $maxTimeMs | int64 | quote }}
+{{- end }}
 {{- end }}
 {{- end }}
