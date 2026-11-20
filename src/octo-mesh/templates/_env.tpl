@@ -903,6 +903,15 @@ default (120000) applies. Rendered on the asset repository; deployment.yaml also
 output discarded, so an invalid value fails the render also when the asset repository is not deployed.
 */ -}}
 {{- with .runtimeQuery }}
+{{- if not (kindIs "map" .) }}
+{{- fail (printf "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got '%v'" .) }}
+{{- end }}
+{{- /* An unknown key (e.g. MongoDB's spelling maxTimeMS) would be ignored silently and the default would stay. */}}
+{{- range $key, $_ := . }}
+{{- if ne $key "maxTimeMs" }}
+{{- fail (printf "services.assetRepository.runtimeQuery.%s is not a known value: did you mean services.assetRepository.runtimeQuery.maxTimeMs?" $key) }}
+{{- end }}
+{{- end }}
 {{- $maxTimeMs := .maxTimeMs }}
 {{- /* Helm 3.18.0 loads chart values as json.Number (a string kind); convert it, text still fails below. */}}
 {{- if eq (typeOf $maxTimeMs) "json.Number" }}

@@ -651,7 +651,13 @@ check "a values-file number renders without float notation"    test "$(rq)" = 'v
 OUT="$(render --set services.assetRepository.runtimeQuery.maxTimeMs=null)"
 check "null renders no variable (service default applies)"     test -z "$(rq)"
 renders_fail "negative value fails the render"                 "services.assetRepository.runtimeQuery.maxTimeMs must be a whole number of milliseconds from 0 (off) to 2147483647, got '-1'" render --set services.assetRepository.runtimeQuery.maxTimeMs=-1
-renders_fail "fraction fails the render"                       "got '1.5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=1.5
+# --set reads 1.5 as text (strvals parses only integers); the whole-number check needs a values-file float.
+renders_fail "fraction via --set (text) fails the render"      "got '1.5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=1.5
+RQ_FILE="$(mktemp)"; printf 'services:\n  assetRepository:\n    runtimeQuery:\n      maxTimeMs: 1.5\n' >"$RQ_FILE"
+renders_fail "values-file fraction fails the whole-number check" "got '1.5'" render -f "$RQ_FILE"
+rm -f "$RQ_FILE"
+renders_fail "MongoDB spelling maxTimeMS fails the render"     "services.assetRepository.runtimeQuery.maxTimeMS is not a known value: did you mean services.assetRepository.runtimeQuery.maxTimeMs?" render --set services.assetRepository.runtimeQuery.maxTimeMS=0
+renders_fail "unknown key under runtimeQuery fails with deploy false" "services.assetRepository.runtimeQuery.limit is not a known value" render --set services.assetRepository.runtimeQuery.limit=5 --set services.assetRepository.deploy=false
 renders_fail "text fails the render"                           "got '2m'" render --set-string services.assetRepository.runtimeQuery.maxTimeMs=2m
 renders_fail "value above int32 fails the render"              "got '3000000000'" render --set services.assetRepository.runtimeQuery.maxTimeMs=3000000000
 renders_fail "invalid value fails also with deploy false"      "got '-5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=-5 --set services.assetRepository.deploy=false
