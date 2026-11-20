@@ -339,7 +339,7 @@ paged query each get the full limit). Blueprint installs and CK migrations run w
 Whole milliseconds from `0` to `2147483647`; `0` switches the limit off. A negative value, a fraction or text fails the
 render, also when the asset repository is not deployed (`deploy: false`); `null` renders no variable, so the service
 default (120000) applies. Any other key under `runtimeQuery` (for example MongoDB's spelling `maxTimeMS`) fails the
-render instead of being ignored. Raise it per cluster only for a measured
+render instead of being ignored, and so does a `runtimeQuery` that is not a map (`false`, `0`, `""`, text). Raise it per cluster only for a measured
 reason (the query durations of that cluster).
 
 ### Render octo-mesh chart template locally and display the output

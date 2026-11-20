@@ -658,6 +658,13 @@ renders_fail "values-file fraction fails the whole-number check" "got '1.5'" ren
 rm -f "$RQ_FILE"
 renders_fail "MongoDB spelling maxTimeMS fails the render"     "services.assetRepository.runtimeQuery.maxTimeMS is not a known value: did you mean services.assetRepository.runtimeQuery.maxTimeMs?" render --set services.assetRepository.runtimeQuery.maxTimeMS=0
 renders_fail "unknown key under runtimeQuery fails with deploy false" "services.assetRepository.runtimeQuery.limit is not a known value" render --set services.assetRepository.runtimeQuery.limit=5 --set services.assetRepository.deploy=false
+renders_fail "runtimeQuery false fails the render"             "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got 'false'" render --set services.assetRepository.runtimeQuery=false
+renders_fail "runtimeQuery 0 fails the render"                 "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got '0'" render --set services.assetRepository.runtimeQuery=0
+renders_fail "runtimeQuery empty string fails the render"      "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got ''" render --set-string services.assetRepository.runtimeQuery=
+renders_fail "runtimeQuery text fails the render"              "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got 'foo'" render --set services.assetRepository.runtimeQuery=foo
+RQ_FILE="$(mktemp)"; printf 'services:\n  assetRepository:\n    runtimeQuery: false\n' >"$RQ_FILE"
+renders_fail "values-file runtimeQuery false fails also with deploy false" "got 'false'" render -f "$RQ_FILE" --set services.assetRepository.deploy=false
+rm -f "$RQ_FILE"
 renders_fail "text fails the render"                           "got '2m'" render --set-string services.assetRepository.runtimeQuery.maxTimeMs=2m
 renders_fail "value above int32 fails the render"              "got '3000000000'" render --set services.assetRepository.runtimeQuery.maxTimeMs=3000000000
 renders_fail "invalid value fails also with deploy false"      "got '-5'" render --set services.assetRepository.runtimeQuery.maxTimeMs=-5 --set services.assetRepository.deploy=false

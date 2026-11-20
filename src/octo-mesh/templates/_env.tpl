@@ -902,10 +902,11 @@ milliseconds from 0 (off) to 2147483647; anything else fails the render. Unset o
 default (120000) applies. Rendered on the asset repository; deployment.yaml also calls it once per render with the
 output discarded, so an invalid value fails the render also when the asset repository is not deployed.
 */ -}}
-{{- with .runtimeQuery }}
-{{- if not (kindIs "map" .) }}
-{{- fail (printf "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got '%v'" .) }}
+{{- /* Checked before "with": a falsy non-map (false, 0, "") would otherwise be skipped silently. */}}
+{{- if and (not (kindIs "invalid" .runtimeQuery)) (not (kindIs "map" .runtimeQuery)) }}
+{{- fail (printf "services.assetRepository.runtimeQuery must be a map with the key maxTimeMs, got '%v'" .runtimeQuery) }}
 {{- end }}
+{{- with .runtimeQuery }}
 {{- /* An unknown key (e.g. MongoDB's spelling maxTimeMS) would be ignored silently and the default would stay. */}}
 {{- range $key, $_ := . }}
 {{- if ne $key "maxTimeMs" }}
