@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Documentation (AB#9058)
+- **octo-mesh: REST deprecation wave `StreamDataWave4` documented** in `values.yaml` and the README: the asset repository's
+  16 stream-data archive endpoints served by the Archive methods take their `Deprecation` date from
+  `restDeprecation.waves.StreamDataWave4.since` (set at rollout) and send no `Sunset` header while
+  `restDeprecation.waves.StreamDataWave4.sunset` stays empty (to be announced). No template change, no default value: the
+  existing generic `restDeprecation.waves.<wave>` rendering covers the wave.
+
 ### Added (AB#8897)
 - **octo-mesh: value `services.assetRepository.runtimeQuery.maxTimeMs`** (default `120000`, `0` = off), rendered as
   `OCTO_RuntimeQuery__MaxTimeMs` on the asset repository only: the server-side time limit of runtime-entity queries

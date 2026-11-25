@@ -174,7 +174,9 @@ and `Sunset` headers take the dates from `restDeprecation.waves.<wave>.since|sun
 is the delivery day of the release that contains the wave on prod; the `sunset` date is to be announced — Gerald decides it
 once the migration functions are implemented (2026-11-11, no fixed compatibility window), until then it stays empty and no
 `Sunset` header is sent; removal after the sunset only on the `octo.rest.deprecated.calls` evidence. Waves: `IdentityUsers1`
-(since `2026-11-08`, sunset to be announced, set for all clusters in `octo-mesh-deployment/base/values-octo-mesh.yaml`). Details: octo-common-services `docs/rest-deprecation.md`.
+(since `2026-11-08`, sunset to be announced, set for all clusters in `octo-mesh-deployment/base/values-octo-mesh.yaml`);
+`StreamDataWave4` (asset repository: the 16 stream-data archive endpoints served by the Archive methods; `since` is set at
+rollout, sunset to be announced). Details: octo-common-services `docs/rest-deprecation.md`.
 
 ### SignalR hub authorization mode (AB#5063, AB#5059)
 
