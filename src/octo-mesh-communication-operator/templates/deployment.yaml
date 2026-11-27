@@ -191,6 +191,17 @@ spec:
         - name: OPERATOR__REPORTINGSERVICEURI
           value: {{ .Values.operator.reportingServiceUri | quote }}
         {{- end }}
+        {{- /*
+          AB#8452: cluster default of the central-key LLM gateway, projected by the operator into every workload's
+          values as llmGatewayUrl (lowest layer; a per-adapter ValueOverride wins). Empty renders nothing.
+        */}}
+        {{- with .Values.operator.llmGatewayUrl }}
+        {{- if not (regexMatch "^https?://[^/\\s]+(/[^\\s]*)?$" (toString .)) }}
+        {{- fail (printf "operator.llmGatewayUrl must be an absolute http(s) URL, got %q" (toString .)) }}
+        {{- end }}
+        - name: OPERATOR__LLMGATEWAYURL
+          value: {{ . | quote }}
+        {{- end }}
         {{- if .Values.operator.authUri }}
         - name: OPERATOR__AUTHURI
           value: {{ .Values.operator.authUri | quote }}

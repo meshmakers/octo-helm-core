@@ -424,6 +424,14 @@ The client must be a confidential `client_credentials` client with scope `octo_a
 
 The operator asks the API server for a consistent watch start and falls back to classic list+watch (`resourceVersion=0`) on its own when the API server refuses it (AB#6898). Setting `operator.forceClassicWatch: true` starts in classic mode from the first request and logs a WARN at startup. It is an incident lever for a cluster known to refuse the consistent start, not a default: leave it `false` elsewhere. The value must be `true` or `false` (a string `"false"` stays off, anything else fails the render); changing it restarts the operator pod. Enabling it on a cluster is a separate decision per cluster.
 
+### Cluster default of the LLM gateway (AB#8452)
+
+| Value | Default | Environment variable |
+|---|---|---|
+| `operator.llmGatewayUrl` | `""` | `OPERATOR__LLMGATEWAYURL` (rendered only when set) |
+
+The operator projects the value into every workload's Helm values as `llmGatewayUrl`. The mesh adapter chart renders it as `OCTO_ADAPTER__LLMGATEWAYURL`, the address `AnthropicAiQuery@1` with `keySource: Central` sends its model calls to. It is the lowest value layer: a per-adapter ValueOverride with Path `llmGatewayUrl` still wins, so existing overrides keep working. Set it only on a cluster whose central-key gateway is open; empty renders nothing and the central-key path fails closed as before. Anything but an absolute `http(s)` URL fails the render. A running adapter gets the value with its next deploy, not at once.
+
 ### Running multiple operators on one cluster (edge devices)
 
 When deploying multiple operator instances onto the same Kubernetes cluster — typically one per target communication controller on an edge device — each instance must be isolated to its own namespace. Otherwise all operators watch every `DeploymentSite` CR cluster-wide and race on reconciliation.

@@ -148,6 +148,13 @@ operator:
   # clusters that do not host a reporting service.
   reportingServiceUri: ""
 
+  # Base URL of the AI service's central-key LLM gateway on this cluster (AB#8452), e.g.
+  # "https://ai.test-2.mm.cloud". Projected into each workload's Helm values as `llmGatewayUrl`, the cluster
+  # default the mesh adapter renders as OCTO_ADAPTER__LLMGATEWAYURL; a per-adapter ValueOverride (Path
+  # llmGatewayUrl) still wins. Set it only on clusters whose gateway is open; empty (default) renders nothing and
+  # AnthropicAiQuery@1 with keySource: Central fails closed. Anything but an absolute http(s) URL fails the render.
+  llmGatewayUrl: ""
+
   # Public URI of the identity service issuing the access tokens that secured
   # trigger nodes accept. Projected into each workload's Helm values as
   # `authUri`. Use the public issuer address, not a cluster-internal service
