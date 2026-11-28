@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added (AB#8452)
+- **communication operator chart 0.14.0: value `operator.llmGatewayUrl`**, rendered as `OPERATOR__LLMGATEWAYURL` only when
+  set. The operator projects it into every workload's values as `llmGatewayUrl`, the cluster default of the central-key
+  LLM gateway the mesh adapter renders as `OCTO_ADAPTER__LLMGATEWAYURL`; a per-adapter ValueOverride still wins. A value
+  that is not an absolute http(s) URL without user info, query or fragment fails the render. Needs a communication operator with AB#8452; older operators
+  ignore the variable. Not set on any cluster here; the cluster values follow in `octo-mesh-deployment`.
+
 ### Documentation (AB#9058)
 - **octo-mesh: REST deprecation wave `StreamDataWave4` documented** in `values.yaml` and the README: the asset repository's
   16 stream-data archive endpoints served by the Archive methods take their `Deprecation` date from

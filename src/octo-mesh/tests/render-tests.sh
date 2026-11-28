@@ -6,7 +6,7 @@
 # REST deprecation wave dates (AB#8415), identity password methods switch (AB#8603), tenant-database prefix (AB#8797),
 # identity tenant authorization modes (AB#9017), tenant generation check mode (AB#9027), stream-data read gate mode (AB#9295), bot index upgrade schedule (AB#9319),
 # adapter pool hub mode (AB#9309), GraphQL mutation scope gate (AB#9310),
-# runtime query time limit (AB#8897).
+# runtime query time limit (AB#8897), operator LLM gateway default (AB#8452).
 # Needs only `helm` (no cluster). Run from anywhere: src/octo-mesh/tests/render-tests.sh
 set -euo pipefail
 CHART="$(cd "$(dirname "$0")/.." && pwd)"
@@ -134,6 +134,19 @@ check "forceClassicWatch=true renders OPERATOR__FORCECLASSICWATCH=true once" tes
 check "forceClassicWatch=true renders the env exactly once" test "$(grep -c 'FORCECLASSICWATCH' <<<"$OUT")" = 1
 check "forceClassicWatch string \"false\" stays off (not truthy)" bash -c "! helm template o '$TMP/octo-mesh-communication-operator' --set operator.authUri=https://connect.example.test --set-string operator.forceClassicWatch=false | grep -q 'FORCECLASSICWATCH'"
 renders_fail "forceClassicWatch garbage value fails" "must be true or false" op --set operator.forceClassicWatch=yes
+
+# 9b. AB#8452: operator.llmGatewayUrl -> OPERATOR__LLMGATEWAYURL (cluster default of the LLM gateway). Empty by default.
+OUT="$(op)"
+check "llmGatewayUrl default: no env rendered" bash -c "! grep -q 'LLMGATEWAYURL' <<<\"\$1\"" _ "$OUT"
+OUT="$(op --set operator.llmGatewayUrl=https://ai.test-2.mm.cloud)"
+check "llmGatewayUrl renders OPERATOR__LLMGATEWAYURL with the value once" test "$(grep -A1 'name: OPERATOR__LLMGATEWAYURL$' <<<"$OUT" | grep -c 'value: "https://ai.test-2.mm.cloud"')" = 1
+check "llmGatewayUrl with port and path renders" op --set operator.llmGatewayUrl=http://octo-ai.octo.svc.cluster.local:5019/base
+renders_fail "llmGatewayUrl without scheme fails" "must be an absolute http(s) URL" op --set operator.llmGatewayUrl=ai.test-2.mm.cloud
+renders_fail "llmGatewayUrl with another scheme fails" "must be an absolute http(s) URL" op --set operator.llmGatewayUrl=ftp://ai.test-2.mm.cloud
+renders_fail "llmGatewayUrl with user info fails" "must be an absolute http(s) URL" op --set 'operator.llmGatewayUrl=https://user:pw@ai.test-2.mm.cloud'
+renders_fail "llmGatewayUrl with a query fails" "must be an absolute http(s) URL" op --set-string 'operator.llmGatewayUrl=https://ai.test-2.mm.cloud?x=1'
+renders_fail "llmGatewayUrl with a fragment fails" "must be an absolute http(s) URL" op --set-string 'operator.llmGatewayUrl=https://ai.test-2.mm.cloud#f'
+renders_fail "llmGatewayUrl with only blanks fails" "must be an absolute http(s) URL" op --set-string 'operator.llmGatewayUrl= '
 
 # 10. AB#5868: /metrics must not be reachable through the public ingress.
 #     Layer 1 (services): /metrics only on a dedicated listener that no Service port and no Ingress backend names.
