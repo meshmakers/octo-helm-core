@@ -193,11 +193,12 @@ spec:
         {{- end }}
         {{- /*
           AB#8452: cluster default of the central-key LLM gateway, projected by the operator into every workload's
-          values as llmGatewayUrl (lowest layer; a per-adapter ValueOverride wins). Empty renders nothing.
+          values as llmGatewayUrl (lowest layer; a per-adapter ValueOverride wins). Empty renders nothing. The pattern
+          is the one the adapter accepts: http(s), a host, an optional path, no user info, query or fragment.
         */}}
         {{- with .Values.operator.llmGatewayUrl }}
-        {{- if not (regexMatch "^https?://[^/\\s]+(/[^\\s]*)?$" (toString .)) }}
-        {{- fail (printf "operator.llmGatewayUrl must be an absolute http(s) URL, got %q" (toString .)) }}
+        {{- if not (regexMatch "^https?://[^/\\s?#@]+(/[^\\s?#]*)?$" (toString .)) }}
+        {{- fail (printf "operator.llmGatewayUrl must be an absolute http(s) URL without user info, query or fragment, got %q" (toString .)) }}
         {{- end }}
         - name: OPERATOR__LLMGATEWAYURL
           value: {{ . | quote }}

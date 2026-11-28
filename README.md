@@ -430,7 +430,7 @@ The operator asks the API server for a consistent watch start and falls back to 
 |---|---|---|
 | `operator.llmGatewayUrl` | `""` | `OPERATOR__LLMGATEWAYURL` (rendered only when set) |
 
-The operator projects the value into every workload's Helm values as `llmGatewayUrl`. The mesh adapter chart renders it as `OCTO_ADAPTER__LLMGATEWAYURL`, the address `AnthropicAiQuery@1` with `keySource: Central` sends its model calls to. It is the lowest value layer: a per-adapter ValueOverride with Path `llmGatewayUrl` still wins, so existing overrides keep working. Set it only on a cluster whose central-key gateway is open; empty renders nothing and the central-key path fails closed as before. Anything but an absolute `http(s)` URL fails the render. A running adapter gets the value with its next deploy, not at once.
+The operator projects the value into every workload's Helm values as `llmGatewayUrl`. The mesh adapter chart renders it as `OCTO_ADAPTER__LLMGATEWAYURL`, the address `AnthropicAiQuery@1` with `keySource: Central` sends its model calls to. It is the lowest value layer: a per-adapter ValueOverride with Path `llmGatewayUrl` still wins, so existing overrides keep working. Set it only on a cluster whose central-key gateway is open; empty renders nothing and the central-key path fails closed as before. Anything but an absolute `http(s)` URL without user info, query or fragment (the form the adapter accepts) fails the render. Setting or changing it changes the desired state of every workload on the cluster, so the next reconciliation redeploys each of them once. A running adapter gets the value with its next deploy, not at once.
 
 ### Running multiple operators on one cluster (edge devices)
 
